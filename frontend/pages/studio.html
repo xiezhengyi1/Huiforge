@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%231f8069'/%3E%3Cpath d='M8 9v14M24 9v14M8 16h16' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://images.unsplash.com data: blob:; media-src 'self' blob: data:; connect-src 'self'; font-src 'self'; form-action 'self'" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="huiju-release" content="20260908-member-access-v41" />
+    <title>绘域 · 创作工作台</title>
+    <link rel="stylesheet" href="css/layout.css?v=20260908-member-access-v41" />
+    <link rel="stylesheet" href="css/theme.css?v=20260908-member-access-v41" />
+    <link rel="stylesheet" href="css/onboarding.css?v=20260908-member-access-v41" />
+    <link rel="stylesheet" href="css/design-refresh.css?v=20260909-workflow-svg-v50" />
+    <script src="js/theme.js?v=20260908-member-access-v41">
+</script>
+  </head>
+  <body class="studio-page" data-view="studio">
+    <a class="skip-link" href="#prompt">跳至提示词输入</a>
+    <main>
+      <section class="studio-section" id="studio" aria-labelledby="studio-title">
+        <div class="studio-app">
+          <aside class="studio-sidebar" aria-label="创作工具栏">
+            <div class="sidebar-head">
+<a class="sidebar-brand" href="index.html" aria-label="绘域首页">
+<span class="brand-mark" aria-hidden="true">H</span>
+<span>绘域</span>
+</a>
+<button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="收起侧栏" aria-expanded="true">
+<span aria-hidden="true">‹</span>
+</button>
+</div>
+            <p class="sidebar-label sidebar-quick-label">快速访问</p>
+            <nav class="workspace-nav quick-access-nav" aria-label="快速访问">
+              <button class="active" type="button" data-workspace-view="quick" aria-label="主页面" title="主页面" aria-current="page">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<path d="M4 11.2 12 4l8 7.2v8.3a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/>
+</svg>
+</span>
+<b>主页面</b>
+</button>
+              <button type="button" data-workspace-view="workflow" aria-label="工作流幕布" title="工作流幕布">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<rect x="3" y="4" width="7" height="6" rx="1.5"/>
+<rect x="14" y="14" width="7" height="6" rx="1.5"/>
+<path d="M10 7h3a4 4 0 0 1 4 4v3M14 17h-3a4 4 0 0 1-4-4v-3"/>
+</svg>
+</span>
+<b>工作流幕布</b>
+</button>
+              <div class="quick-access-pins" id="quick-access-pins" aria-label="已固定的功能">
+</div>
+            </nav>
+            <nav class="capability-nav" aria-label="创作能力一级分类">
+              <span class="sidebar-loading-copy">正在加载创作能力…</span>
+            </nav>
+            <button class="sidebar-section-toggle" id="discover-toggle" type="button" aria-controls="discover-nav" aria-expanded="true">
+<b>发现</b>
+<span aria-hidden="true">⌄</span>
+</button>
+            <nav class="discover-nav" id="discover-nav" aria-label="发现更多内容">
+              <a href="#studio-discovery" data-open-discovery="skills">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.1 2.1M15.9 15.9 18 18M18 6l-2.1 2.1M8.1 15.9 6 18"/>
+<circle cx="12" cy="12" r="3.4"/>
+</svg>
+</span> 技能推荐</a>
+              <a href="#studio-discovery" data-open-discovery="plaza">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/>
+<rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/>
+<rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/>
+<path d="M17 13.5v7M13.5 17h7"/>
+</svg>
+</span> 共绘广场</a>
+              <a href="#studio-discovery" data-open-discovery="workflows">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<rect x="3.5" y="4" width="6.5" height="5.5" rx="1.4"/>
+<rect x="14" y="14.5" width="6.5" height="5.5" rx="1.4"/>
+<path d="M10 6.8h2.2a4.2 4.2 0 0 1 4.2 4.2v3.5M14 17.2h-2.2A4.2 4.2 0 0 1 7.6 13V9.5"/>
+</svg>
+</span> 工作流分享</a>
+              <a href="#studio-discovery" data-open-discovery="models">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<path d="m12 3.5 8 4.2-8 4.2-8-4.2zM4 12l8 4.2 8-4.2M4 16.3l8 4.2 8-4.2"/>
+</svg>
+</span> 模型说明</a>
+            </nav>
+            <div class="sidebar-bottom">
+<button class="feedback-button" id="feedback-button" type="button">
+<span aria-hidden="true">✎</span> 留言</button>
+<a class="sidebar-user-card" href="profile.html" aria-label="打开神秘画家的个人资料">
+<span class="sidebar-user-avatar" id="sidebar-user-avatar" aria-hidden="true">神</span>
+<b id="sidebar-user-name">神秘画家</b>
+</a>
+</div>
+          </aside>
+          <div class="studio-content">
+            <div class="studio-topbar" aria-label="账户状态">
+<p class="visually-hidden" id="mode-eyebrow">AI 生图工作台</p>
+<h1 class="visually-hidden" id="studio-title">把脑海中的画面说出来。</h1>
+<div class="topbar-actions">
+<div class="theme-picker" id="theme-picker">
+<button class="theme-picker-trigger" id="theme-picker-trigger" type="button" aria-label="切换界面主题" aria-haspopup="true" aria-controls="theme-picker-menu" aria-expanded="false">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M12 3.5a8.5 8.5 0 1 0 0 17h1.2a1.8 1.8 0 0 0 0-3.6h-.7a1.5 1.5 0 0 1 0-3h2.2A5.8 5.8 0 0 0 20.5 8C20.5 5.2 16.7 3.5 12 3.5Z"/>
+<circle cx="7.8" cy="10" r=".8"/>
+<circle cx="10.4" cy="6.9" r=".8"/>
+<circle cx="14.4" cy="7" r=".8"/>
+</svg>
+</button>
+<div class="theme-picker-menu" id="theme-picker-menu" role="radiogroup" aria-label="界面主题" hidden>
+<header>
+<strong>界面主题</strong>
+<small>仅改变色彩</small>
+</header>
+<button class="theme-option" type="button" role="radio" aria-checked="true" data-theme-option="jade">
+<span class="theme-swatches jade" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>雾松墨绿</b>
+<small>浅雾背景 · 深松行动色</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="indigo">
+<span class="theme-swatches indigo" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>墨蓝珊瑚</b>
+<small>深墨背景 · 钴蓝与珊瑚</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="cinnabar">
+<span class="theme-swatches cinnabar" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>冰川钴蓝</b>
+<small>冷白背景 · 钴蓝与珊瑚</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="monochrome-blue">
+<span class="theme-swatches monochrome-blue" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>瓷白石墨</b>
+<small>暖白背景 · 石墨与铜棕</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="monochrome-accent">
+<span class="theme-swatches monochrome-accent" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>炭黑鼠尾草</b>
+<small>炭黑背景 · 鼠尾草与暖橙</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="graphite-amber">
+<span class="theme-swatches graphite-amber" aria-hidden="true">
+<i>
+</i>
+<i>
+</i>
+<i>
+</i>
+</span>
+<span class="theme-option-copy">
+<b>铁灰琥珀</b>
+<small>铁灰背景 · 琥珀与雾蓝</small>
+</span>
+<svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
+<path d="m4 10 4 4 8-9"/>
+</svg>
+</button>
+</div>
+</div>
+<a class="credits-button credits-link" href="pricing.html" aria-label="查看额度与会员">
+<span aria-hidden="true">✦</span>
+<b id="credits-total">—</b>
+</a>
+</div>
+</div>
+            <section class="capability-center" id="capability-center" aria-labelledby="capability-title" hidden>
+              <header class="capability-center-head">
+<div>
+<span>能力目录</span>
+<h2 id="capability-title">分类说明</h2>
+<p>每个入口都标明真实运行位置；缺少接口的功能会直接告诉你需要什么。</p>
+</div>
+<button id="capability-close" type="button" aria-label="关闭分类说明">×</button>
+</header>
+              <div class="capability-provider-strip" id="capability-provider-strip" aria-live="polite">
+</div>
+              <div class="capability-toolbar">
+<label>
+<span aria-hidden="true">⌕</span>
+<input id="capability-search" type="search" placeholder="搜索图片编辑、电商、视频或配音" />
+</label>
+<div class="capability-tabs" id="capability-tabs" role="tablist" aria-label="能力分类">
+</div>
+</div>
+              <div class="capability-content" id="capability-content">
+</div>
+              <p class="capability-notice" id="capability-notice" role="status" hidden>
+</p>
+            </section>
+            <div class="studio-grid" id="quick-workspace">
+              <form class="controls-panel" id="generation-form" data-mode="unified_image" novalidate>
+                <div class="field-group prompt-group">
+<div class="active-capability-chip" id="active-capability-chip" data-mode="unified_image" role="status" aria-live="polite" title="AI 生图">
+<strong id="active-capability-name">AI 生图</strong>
+</div>
+<textarea id="prompt" name="prompt" minlength="3" placeholder="描述主体、场景、机位、光线与质感。例如：雨后旧城区，风衣女性回头，低机位中景，霓虹倒影，35mm 胶片，无文字水印。" required>
+</textarea>
+                  <div class="prompt-toolbar">
+                    <div class="prompt-tools">
+                      <span class="model-select-wrap">
+                        <button type="button" id="model-select-trigger" class="model-select-trigger" aria-label="选择模型" aria-expanded="false">
+                          <img id="model-select-icon" src="/icons/alibaba-ai.png" alt="" class="model-select-icon" />
+                          <span id="model-select-label">正在加载模型…</span>
+                          <span class="model-select-chevron">▾</span>
+                        </button>
+                        <div id="model-select-menu" class="model-select-menu" role="listbox" hidden>
+</div>
+                        <input type="hidden" id="model-select" value="qwen_image" />
+                      </span>
+                      <span class="output-settings-wrap">
+                        <button type="button" id="output-settings-trigger" class="output-settings-trigger">
+                          <span id="output-settings-summary">1:1 · 720p · 1 张</span>
+<span class="model-select-chevron">▾</span>
+                        </button>
+                        <div id="output-settings-menu" class="output-settings-menu" hidden>
+                          <div class="output-settings-section" id="output-ratio-section">
+<span class="output-settings-title">比例</span>
+<select name="aspect_ratio">
+<option value="1:1">方图 1:1</option>
+<option value="4:5">人像 4:5</option>
+<option value="3:4">竖幅 3:4</option>
+<option value="2:3">海报 2:3</option>
+<option value="9:16">短视频 9:16</option>
+<option value="16:9">横幅 16:9</option>
+<option value="3:2">照片 3:2</option>
+<option value="21:9">影院 21:9</option>
+</select>
+</div>
+                          <div class="output-settings-section" id="output-resolution-section">
+<span class="output-settings-title">分辨率</span>
+<select name="resolution">
+<option value="480p">480p</option>
+<option value="720p" selected>720p</option>
+<option value="1k">1K</option>
+<option value="2k">2K · AI 超分</option>
+<option value="4k">4K · AI 超分</option>
+</select>
+</div>
+                          <div class="output-settings-section" id="output-quality-section">
+<span class="output-settings-title">质量</span>
+<select name="quality">
+<option value="standard">标准</option>
+<option value="fine">精细</option>
+<option value="ultra">极致精细</option>
+</select>
+</div>
+                          <div class="output-settings-section" id="output-count-section">
+<span class="output-settings-title">张数</span>
+<select name="count">
+<option value="1">1 张</option>
+<option value="2">2 张</option>
+<option value="3">3 张</option>
+<option value="4">4 张</option>
+</select>
+</div>
+                          <div class="output-settings-section video-duration-section" id="video-duration-section" hidden>
+<span class="output-settings-title">时长 <output id="video-duration-value" for="video-duration">5 秒</output>
+</span>
+<input id="video-duration" name="video_duration" type="range" min="2" max="15" step="1" value="5" />
+</div>
+                          <div class="output-settings-section audio-setting-section" id="audio-voice-section" hidden>
+<span class="output-settings-title">音色</span>
+<select id="audio-voice" name="audio_voice">
+<option value="Cherry">芊悦 · 自然女声</option>
+<option value="Serena">苏瑶 · 温柔女声</option>
+<option value="Ethan">晨煦 · 沉稳男声</option>
+</select>
+</div>
+                          <div class="output-settings-section audio-setting-section" id="audio-language-section" hidden>
+<span class="output-settings-title">语言</span>
+<select id="audio-language" name="audio_language">
+<option value="Auto">自动识别</option>
+<option value="Chinese">中文</option>
+<option value="English">英文</option>
+<option value="Japanese">日语</option>
+<option value="Korean">韩语</option>
+</select>
+</div>
+                          <div class="output-settings-section audio-setting-section" id="audio-speed-section" hidden>
+<span class="output-settings-title">语速 <output id="audio-speed-value" for="audio-speed">1.0×</output>
+</span>
+<input id="audio-speed" name="audio_speed" type="range" min="0.5" max="2" step="0.1" value="1" />
+</div>
+                          <div class="output-settings-section audio-setting-section" id="audio-emotion-section" hidden>
+<span class="output-settings-title">情绪</span>
+<select id="audio-emotion" name="audio_emotion">
+<option value="">自动理解</option>
+<option value="happy">开心</option>
+<option value="sad">悲伤</option>
+<option value="angry">生气</option>
+<option value="fear">恐惧</option>
+<option value="surprise">惊喜</option>
+</select>
+</div>
+                        </div>
+                      </span>
+                      <label class="tool-preset-field" hidden>
+                        <span class="visually-hidden">任务预设</span>
+                        <select id="tool-preset-select" aria-label="图生图任务预设">
+                        </select>
+                      </label>
+                      <span class="toolbar-select-wrap" id="preset-select-wrap">
+<button type="button" id="preset-select-trigger" class="toolbar-select-trigger" aria-label="选择预设模板" aria-haspopup="listbox" aria-expanded="false">
+<span id="preset-select-label">不使用预设</span><span class="model-select-chevron">▾</span>
+</button>
+<div id="preset-select-menu" class="toolbar-select-menu" role="listbox" aria-label="预设模板" hidden>
+</div>
+<select id="preset-select" aria-label="预设模板" hidden>
+<option value="">预设模板</option>
+</select>
+</span>
+                      <span class="toolbar-select-wrap" id="style-select-wrap">
+<button type="button" id="style-select-trigger" class="toolbar-select-trigger" aria-label="选择画面风格" aria-haspopup="listbox" aria-expanded="false">
+<span id="style-select-label">自然写实</span><span class="model-select-chevron">▾</span>
+</button>
+<div id="style-select-menu" class="toolbar-select-menu" role="listbox" aria-label="画面风格" hidden>
+</div>
+<select id="style-select" aria-label="画面风格" hidden>
+<option value="">风格</option>
+</select>
+</span>
+                      <div class="mask-toolbar-actions" id="mask-toolbar-actions" hidden>
+<div class="mask-brush-menu">
+<button id="mask-brush-trigger" class="mask-brush-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mask-brush-popover">
+<span>画笔</span>
+<b id="mask-brush-summary">36 px</b>
+<i aria-hidden="true">⌄</i>
+</button>
+<div class="mask-brush-popover" id="mask-brush-popover" role="dialog" aria-label="画笔大小" hidden>
+<div><span>画笔大小</span><output id="mask-brush-value">36 px</output></div>
+<input id="mask-brush" type="range" min="8" max="120" value="36" aria-label="画笔大小" />
+<div class="mask-brush-bounds" aria-hidden="true"><span>8 px</span><span>120 px</span></div>
+</div>
+</div>
+<button id="mask-clear" class="mask-clear-button" type="button" disabled><span aria-hidden="true">↺</span>清除</button>
+<button id="mask-focus-trigger" class="mask-focus-trigger" type="button" disabled><span aria-hidden="true">⛶</span>放大精修</button>
+</div>
+                    </div>
+                    <div class="prompt-actions">
+                      <button class="toolbar-history-button" id="history-trigger-button" type="button" aria-label="查看已生成记录" aria-expanded="false" aria-controls="history-panel">
+<span aria-hidden="true">◷</span>
+</button>
+                      <button class="button button-primary generate-button" id="generate-button" type="submit">
+<span class="button-label">生成</span>
+<span class="generate-credit-cost" id="generate-credit-cost" aria-label="本次生成预计消耗 8 额度">
+<span aria-hidden="true">✦</span>
+<b>8</b>
+</span>
+</button>
+                      <button class="cancel-button" id="cancel-button" type="button" hidden>取消</button>
+                    </div>
+                  </div>
+                </div>
+                <fieldset class="field-group source-image-group image-tool-workspace reference-composer" id="source-image-group" hidden>
+<legend class="visually-hidden">参考素材</legend>
+<div class="image-tool-grid">
+<label class="upload-drop" for="source-image">
+<input id="source-image" type="file" accept="image/png,image/jpeg,image/webp" />
+<span aria-hidden="true">＋</span>
+<b id="source-action">选择需要处理的图片</b>
+<small id="source-file-help">PNG、JPG、WebP · 最大 15MB</small>
+</label>
+<div class="tool-command-panel">
+<label class="tool-prompt-field"><span class="tool-prompt-label" id="tool-prompt-label" hidden></span><textarea id="tool-prompt" rows="4" aria-label="编辑要求（选填）" placeholder="描述希望改变或保留的细节">
+</textarea>
+</label>
+<label class="custom-voice-preview-field" hidden>试听文案<input id="custom-voice-preview-text" type="text" maxlength="2000" value="欢迎使用绘域" />
+</label>
+<div class="source-meta">
+<span id="source-meta">尚未选择素材</span>
+<label id="views-control" hidden>视角数量<select id="views">
+<option value="3">3 视角</option>
+<option value="4">4 视角</option>
+<option value="9">9 视角</option>
+</select>
+</label>
+</div>
+</div>
+</div>
+<div class="source-preview-shell" id="source-preview-shell" hidden>
+<img id="source-preview" alt="待处理的参考图预览" hidden />
+<video id="source-video-preview" aria-label="待处理的视频参考预览" controls muted playsinline hidden>
+</video>
+</div>
+<section class="mask-editor" id="mask-editor" hidden>
+<div class="mask-toolbar">
+<div class="mask-toolbar-copy">
+<b>重绘区域</b>
+<span>直接在图片上涂抹需要替换的部分</span>
+</div>
+</div>
+<canvas id="mask-canvas" aria-label="重绘区域画笔画布">
+</canvas>
+<p>着色区域会被重新生成，其余画面保持不变。</p>
+</section>
+<section class="camera-editor" id="camera-editor" hidden aria-label="多角度相机控制台">
+<div class="camera-stage-heading">
+<div>
+<b>拖动黑色摄像机调整机位</b>
+<span>正面为图片朝向的一侧；滚轮调整距离，方向键微调</span>
+</div>
+<output id="camera-prompt">front-right three-quarter view, elevated shot, medium shot</output>
+</div>
+<nav class="camera-quickbar" aria-label="快捷机位">
+<div class="camera-quickbar-heading">
+<b>快捷机位</b>
+<output id="camera-offset-value" aria-live="polite">偏移 52°</output>
+</div>
+<div class="camera-preset-grid">
+<button type="button" data-camera-preset data-azimuth="0" data-elevation="12" data-distance="5.4" aria-pressed="false">正面</button>
+<button type="button" data-camera-preset data-azimuth="-45" data-elevation="20" data-distance="5.4" aria-pressed="false">左前 3/4</button>
+<button type="button" data-camera-preset data-azimuth="45" data-elevation="20" data-distance="5.4" aria-pressed="false">右前 3/4</button>
+<button type="button" data-camera-preset data-azimuth="-90" data-elevation="12" data-distance="5.8" aria-pressed="false">左侧</button>
+<button type="button" data-camera-preset data-azimuth="90" data-elevation="12" data-distance="5.8" aria-pressed="false">右侧</button>
+<button type="button" data-camera-preset data-azimuth="180" data-elevation="12" data-distance="5.8" aria-pressed="false">背面</button>
+</div>
+</nav>
+<div id="camera-stage" class="camera-stage-viewport" role="application" tabindex="0" aria-label="三维相机机位工作区；拖动黑色摄像机调整机位，拖动空白处旋转视图，滚轮缩放">
+<div class="camera-axis-legend" aria-hidden="true">
+<span class="axis-x">X · 正面</span>
+<span class="axis-y">Y · 右侧</span>
+<span class="axis-z">Z · 上方</span>
+</div>
+<p class="camera-stage-hint">拖动相机调整机位 · 拖动空白处旋转场景 · 滚轮缩放</p>
+</div>
+<div class="camera-controls">
+<label>水平 <input id="camera-azimuth" type="range" min="-180" max="180" value="45" />
+<output id="camera-azimuth-value">45°</output>
+</label>
+<label>垂直 <input id="camera-elevation" type="range" min="-30" max="75" value="30" />
+<output id="camera-elevation-value">30°</output>
+</label>
+<label>距离 <input id="camera-distance" type="range" min="2" max="12" step=".1" value="5.4" />
+<output id="camera-distance-value">5.4</output>
+</label>
+<button id="camera-reset" type="button" aria-label="重置相机">重置机位</button>
+</div>
+</section>
+</fieldset>
+<p class="form-error" id="form-error" role="alert" hidden>
+</p>
+              </form>
+              <dialog class="mask-focus-dialog" id="mask-focus-dialog" aria-labelledby="mask-focus-title">
+<div class="mask-focus-shell">
+<header class="mask-focus-header">
+<div class="mask-focus-heading">
+<b id="mask-focus-title">放大精修</b>
+<span>滚动查看细节，按住 Ctrl 滚轮缩放，涂抹会同步保留到原图。</span>
+</div>
+<div class="mask-focus-header-tools">
+<div class="mask-focus-toolbar-host" id="mask-focus-toolbar-host"></div>
+<div class="mask-zoom-controls" aria-label="画布缩放">
+<button id="mask-zoom-out" type="button" aria-label="缩小画布">−</button>
+<output id="mask-zoom-value" aria-live="polite">100%</output>
+<button id="mask-zoom-in" type="button" aria-label="放大画布">＋</button>
+<button id="mask-zoom-fit" type="button">适应窗口</button>
+</div>
+<button class="mask-focus-done" id="mask-focus-done" type="button">完成精修</button>
+</div>
+</header>
+<div class="mask-focus-stage" id="mask-focus-stage" tabindex="0" aria-label="可缩放的局部重绘画布">
+<div class="mask-focus-canvas-host" id="mask-focus-canvas-host"></div>
+</div>
+</div>
+</dialog>
+              <section class="results-panel" aria-labelledby="results-title">
+<div class="results-bar">
+<div>
+<p>本次创作</p>
+<h2 id="results-title">等待你的描述</h2>
+</div>
+<span class="status-pill" id="status-pill" data-state="idle">准备就绪</span>
+</div>
+<div class="result-stage" id="result-stage" aria-live="polite" aria-busy="false">
+<div class="result-placeholder" id="result-placeholder">
+<span class="spark" aria-hidden="true">✦</span>
+<strong>一个清晰的描述，正在等待发生。</strong>
+<p>生成的图像会显示在这里，并可直接下载。</p>
+</div>
+<div class="result-grid" id="result-grid" hidden>
+</div>
+</div>
+<p class="result-tip" id="result-tip">先确定创作目标，再补充场景、主体、构图、光色、材质和约束。</p>
+</section>
+              <aside class="history-panel" id="history-panel" tabindex="-1" aria-labelledby="history-title" aria-hidden="true">
+<div class="history-heading">
+<div>
+<h2 id="history-title">生成记录</h2>
+</div>
+<div class="history-actions">
+<button id="clear-history-button" type="button" hidden>清空</button>
+<button class="history-drawer-close" id="history-drawer-close" type="button" aria-label="关闭生成记录">×</button>
+<button class="history-toggle" id="history-toggle" type="button" aria-expanded="true" aria-controls="history-list" title="收起历史记录">收起</button>
+</div>
+</div>
+<p class="history-privacy">保留本浏览器生成过的全部图片链接、时间与提示词；滚动列表可查看全部记录。</p>
+<div class="history-list" id="history-list" aria-live="polite">
+</div>
+<div class="history-empty" id="history-empty">
+<span aria-hidden="true">◌</span>
+<strong>暂无记录</strong>
+<p>生成图片后会显示在这里</p>
+</div>
+</aside>
+            </div>
+            <section class="studio-discovery" id="studio-discovery" aria-label="创作灵感与技能">
+              <div class="discovery-switch">
+<div role="tablist" aria-label="发现内容">
+<button class="active" type="button" role="tab" aria-selected="true" aria-controls="discovery-skills" data-discovery-tab="skills">技能推荐</button>
+<button type="button" role="tab" aria-selected="false" aria-controls="discovery-plaza" data-discovery-tab="plaza">共绘广场</button>
+<button type="button" role="tab" aria-selected="false" aria-controls="discovery-workflows" data-discovery-tab="workflows">工作流分享</button>
+<button type="button" role="tab" aria-selected="false" aria-controls="discovery-models" data-discovery-tab="models">模型说明</button>
+</div>
+<label class="discovery-search" id="discovery-search-wrap" hidden>
+<span aria-hidden="true">⌕</span>
+<input id="discovery-search" type="search" maxlength="40" placeholder="搜索风格、场景或作品" />
+</label>
+</div>
+              <section class="discovery-panel" id="discovery-skills" role="tabpanel" data-discovery-panel="skills">
+                <div class="skill-filters discovery-subnav" role="group" aria-label="技能分类">
+<button class="active" type="button" data-skill-filter="all">全部</button>
+<button type="button" data-skill-filter="commercial">商业</button>
+<button type="button" data-skill-filter="portrait">人像</button>
+<button type="button" data-skill-filter="character">角色</button>
+<button type="button" data-skill-filter="design">设计</button>
+<button type="button" data-skill-filter="scene">场景</button>
+<button type="button" data-skill-filter="edit">编辑</button>
+</div>
+                <div class="skill-grid" id="skill-grid">
+                  <button class="skill-card skill-card-featured" type="button" data-skill-mode="text" data-skill-prompt="高级商业产品摄影，一件质感精致的产品置于极简展台中央，柔和轮廓光与克制的反射，高级品牌广告构图，干净背景，高细节，无文字无水印。">
+<img class="skill-cover" src="/static/showcase/v167/skills/commercial-product.webp" alt="墨绿色香水瓶商业摄影示例" loading="lazy" />
+<span>01</span>
+<i aria-hidden="true">◈</i>
+<div>
+<b>商业产品图</b>
+<small>干净布光 · 品牌质感</small>
+</div>
+<em>开始创作 ↗</em>
+</button>
+                  <button class="skill-card" type="button" data-skill-mode="text" data-skill-prompt="真人写实人像摄影，自然抓拍感，人物与镜头产生轻微互动，柔和侧光勾勒轮廓，胶片颗粒，层次丰富，细节真实，克制高级的色彩。">
+<img class="skill-cover" src="/static/showcase/v167/skills/editorial-portrait.webp" alt="米白与墨绿色时尚人像示例" loading="lazy" />
+<span>02</span>
+<i aria-hidden="true">◎</i>
+<div>
+<b>质感人像</b>
+<small>自然抓拍 · 胶片氛围</small>
+</div>
+<em>使用技能 ↗</em>
+</button>
+                  <button class="skill-card" type="button" data-skill-mode="multiangle">
+<img class="skill-cover" src="/static/showcase/v167/skills/multi-angle.webp" alt="环形摄影棚多角度拍摄示例" loading="lazy" />
+<span>03</span>
+<i aria-hidden="true">◒</i>
+<div>
+<b>多角度设定</b>
+<small>调节机位 · 保持主体一致</small>
+</div>
+<em>使用技能 ↗</em>
+</button>
+                  <button class="skill-card" type="button" data-skill-mode="redraw">
+<img class="skill-cover" src="/static/showcase/v167/skills/local-redraw.webp" alt="人物肖像局部画笔重绘示例" loading="lazy" />
+<span>04</span>
+<i aria-hidden="true">◌</i>
+<div>
+<b>局部重绘</b>
+<small>画笔蒙版 · 精准修改</small>
+</div>
+<em>使用技能 ↗</em>
+</button>
+                </div>
+              </section>
+              <section class="discovery-panel" id="discovery-plaza" role="tabpanel" data-discovery-panel="plaza" hidden>
+                <div class="plaza-search-tools discovery-subnav" aria-label="作品标签筛选">
+                  <div class="plaza-tag-bar" id="plaza-tag-bar">
+</div>
+                  <div class="plaza-community-actions"><p id="plaza-search-status" role="status" aria-live="polite">为你推荐多种风格的作品</p><button id="plaza-open-history" type="button">发布我的作品 <span aria-hidden="true">↗</span></button></div>
+                </div>
+                <div class="plaza-preview-grid" aria-label="共绘作品">
+                  <button class="plaza-preview-card plaza-ratio-4-3" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="东方 静物 商业" data-plaza-user="清川" data-plaza-likes="326" data-plaza-prompt="东方静物摄影，青瓷茶壶与两只茶杯置于浅色石台，深绿松枝投下柔和影子，清晨自然侧光，真实釉面与克制留白，主体完整，无文字水印。">
+<img src="/static/showcase/v167/plaza/tea-still-life.webp" alt="松影茶事" loading="lazy" />
+<span>
+<b>松影茶事</b>
+<small>东方静物 · 清晨侧光</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-3-4" type="button" data-plaza-media="image" data-plaza-model="Seedream 5.0 Pro" data-gallery-tags="人像 东方 时尚" data-plaza-user="南川" data-plaza-likes="603" data-plaza-prompt="成年东方女性时尚编辑人像，墨绿色丝绒上衣，冷白背景，柔和侧光勾勒轮廓，真实皮肤纹理与细腻胶片颗粒。">
+<img src="/static/showcase/v167/plaza/jade-editorial.webp" alt="翡翠侧影" loading="lazy" />
+<span>
+<b>翡翠侧影</b>
+<small>人物写真 · 编辑质感</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-16-9" type="button" data-plaza-media="image" data-plaza-model="Qwen-Image-2512" data-gallery-tags="城市 霓虹 电影" data-plaza-user="凌晨两点" data-plaza-likes="712" data-plaza-prompt="雨后旧城区夜景，低机位望向长街，青绿色与琥珀色霓虹倒映在湿地面，远处行人轻微运动模糊，三十五毫米胶片颗粒。">
+<img src="/static/showcase/v167/plaza/rain-city-cinema.webp" alt="雨夜信号" loading="lazy" />
+<span>
+<b>雨夜信号</b>
+<small>城市霓虹 · 电影宽幅</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-9-16" type="button" data-plaza-media="image" data-plaza-model="Seedream 5.0 Pro" data-gallery-tags="舞蹈 时尚 动态" data-plaza-user="弥生" data-plaza-likes="581" data-plaza-prompt="成年现代舞者身穿流动的陶土红长裙，在深墨绿色摄影棚完成旋转动作，布料形成优美弧线，强轮廓光，真实动态摄影。">
+<img src="/static/showcase/v167/plaza/red-dancer.webp" alt="赤色回旋" loading="lazy" />
+<span>
+<b>赤色回旋</b>
+<small>动态人像 · 流动布料</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-4-3" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="抽象 梦幻 肌理" data-plaza-user="折光旅人" data-plaza-likes="491" data-plaza-prompt="抽象艺术，半透明液态玻璃与虹彩薄膜在深绿色空间中缓慢交叠，洋红与青金色反射，细密肌理和呼吸感。">
+<img src="/static/showcase/v167/plaza/liquid-aurora.webp" alt="虹膜流体" loading="lazy" />
+<span>
+<b>虹膜流体</b>
+<small>抽象艺术 · 虹彩肌理</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-3-4" type="button" data-plaza-media="image" data-plaza-model="Qwen-Image-2512" data-gallery-tags="街拍 时尚 橙色" data-plaza-user="早八摄影师" data-plaza-likes="352" data-plaza-prompt="成年时尚人物站在明亮城市街角，橙色运动夹克与深色长裤，自然步态，午后硬光形成干净阴影，真实街拍。">
+<img src="/static/showcase/v167/plaza/orange-street-style.webp" alt="街角橙光" loading="lazy" />
+<span>
+<b>街角橙光</b>
+<small>城市街拍 · 午后硬光</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-16-9" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="科幻 建筑 沙漠" data-plaza-user="星尘档案" data-plaza-likes="534" data-plaza-prompt="辽阔沙漠中的未来天文台，白色弧形建筑与巨大观测镜面，日落暖光和蓝紫天空形成冷暖对比，史诗尺度。">
+<img src="/static/showcase/v167/plaza/desert-observatory.webp" alt="沙海观星站" loading="lazy" />
+<span>
+<b>沙海观星站</b>
+<small>未来建筑 · 沙漠日落</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-9-16" type="button" data-plaza-media="image" data-plaza-model="Qwen-Image-2512" data-gallery-tags="未来 城市 霓虹" data-plaza-user="夜航星" data-plaza-likes="496" data-plaza-prompt="未来城市的狭长雨夜巷道，青绿与暖橙灯光向远处延伸，湿润墙面和地面具有真实反射，一个微小人物位于纵深中心。">
+<img src="/static/showcase/v167/plaza/neon-alley.webp" alt="霓虹纵深" loading="lazy" />
+<span>
+<b>霓虹纵深</b>
+<small>未来城市 · 雨夜纵深</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-4-3" type="button" data-plaza-media="image" data-plaza-model="Seedream 5.0 Pro" data-gallery-tags="生活 室内 书店" data-plaza-user="纸页漫游者" data-plaza-likes="218" data-plaza-prompt="雨天街角的独立书店室内，木质书架、绿色沙发与暖色阅读灯，窗上细密雨滴，安静生活感，纪实室内摄影。">
+<img src="/static/showcase/v167/plaza/quiet-bookshop.webp" alt="雨日书店" loading="lazy" />
+<span>
+<b>雨日书店</b>
+<small>生活空间 · 安静纪实</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-3-4" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="幻想 角色 森林" data-plaza-user="鹿鸣" data-plaza-likes="447" data-plaza-prompt="原创东方幻想成年角色，墨绿与铜金服装，站在薄雾森林入口，细腻写实概念艺术，柔和逆光与空气透视。">
+<img src="/static/showcase/v167/plaza/forest-guardian.webp" alt="雾林守望" loading="lazy" />
+<span>
+<b>雾林守望</b>
+<small>幻想角色 · 薄雾森林</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-16-9" type="button" data-plaza-media="image" data-plaza-model="Qwen-Image-2512" data-gallery-tags="室内 家居 建筑" data-plaza-user="空间拾荒者" data-plaza-likes="365" data-plaza-prompt="现代客厅室内设计，米白石材、原木和深绿色模块沙发，落地窗外是安静花园，晨光穿过薄纱，专业建筑摄影。">
+<img src="/static/showcase/v167/plaza/green-living-room.webp" alt="绿意居所" loading="lazy" />
+<span>
+<b>绿意居所</b>
+<small>空间设计 · 自然晨光</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-9-16" type="button" data-plaza-media="image" data-plaza-model="Seedream 5.0 Pro" data-gallery-tags="东方 人像 新中式" data-plaza-user="云锦" data-plaza-likes="667" data-plaza-prompt="成年东方女性身穿现代新中式长礼服，站在高挑拱门前，墨绿色丝绸与香槟金发饰，柔和逆光形成修长轮廓。">
+<img src="/static/showcase/v167/plaza/oriental-silhouette.webp" alt="长门月影" loading="lazy" />
+<span>
+<b>长门月影</b>
+<small>新中式 · 修长剪影</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-4-3" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="建筑 极简 庭院" data-plaza-user="折线建筑师" data-plaza-likes="275" data-plaza-prompt="现代美术馆庭院，米白清水混凝土、浅水面与一棵形态优美的树，阴天漫射光，精确建筑透视，极简宁静。">
+<img src="/static/showcase/v167/plaza/museum-courtyard.webp" alt="庭院留白" loading="lazy" />
+<span>
+<b>庭院留白</b>
+<small>极简建筑 · 水院秩序</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-3-4" type="button" data-plaza-media="image" data-plaza-model="Qwen-Image-2512" data-gallery-tags="花卉 雕塑 超现实" data-plaza-user="花房来信" data-plaza-likes="389" data-plaza-prompt="超现实花卉雕塑，白色花瓣、透明水晶与深绿色叶片向上生长，米白展览空间，柔和顶光，材质真实。">
+<img src="/static/showcase/v167/plaza/floral-sculpture.webp" alt="透明花期" loading="lazy" />
+<span>
+<b>透明花期</b>
+<small>花卉雕塑 · 透明材质</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-16-9" type="button" data-plaza-media="video" data-plaza-model="Seedance 2.0" data-gallery-tags="视频 海洋 灯塔 电影" data-plaza-user="潮汐观察员" data-plaza-likes="428" data-plaza-prompt="海边黑色悬崖与孤独灯塔，巨浪在下方形成白色雾气，暴风雨前的蓝灰天空，一束暖光穿过云层。镜头缓慢向灯塔推进，海雾横向掠过悬崖，浪花连续拍击礁石，电影级稳定运镜。">
+<video src="/static/showcase/v167/plaza/ocean-cliff-motion.mp4" poster="/static/showcase/v167/plaza/ocean-cliff.webp" muted loop playsinline preload="metadata" aria-label="风暴前沿视频"></video>
+<span>
+<b>风暴前沿</b>
+<small>自然电影 · 海岸风暴</small>
+</span>
+</button>
+                  <button class="plaza-preview-card plaza-ratio-9-16" type="button" data-plaza-media="image" data-plaza-model="Seedream 5.0 Pro" data-gallery-tags="建筑 超现实 云海" data-plaza-user="高空造梦者" data-plaza-likes="509" data-plaza-prompt="云海中的超现实细长高塔，米白石材结构向天空延伸，塔身缠绕深绿色植物与暖金光带，俯仰透视和巨大纵深。">
+<img src="/static/showcase/v167/plaza/cloud-tower.webp" alt="云上高塔" loading="lazy" />
+<span>
+<b>云上高塔</b>
+<small>超现实建筑 · 云海纵深</small>
+</span>
+</button>
+                </div>
+                <p class="gallery-empty" id="gallery-empty" hidden>没有找到匹配的作品，换一个关键词试试。</p>
+              </section>
+              <section class="discovery-panel workflow-discovery" id="discovery-workflows" role="tabpanel" data-discovery-panel="workflows" hidden>
+                <div class="workflow-discovery-toolbar discovery-subnav">
+                  <div class="workflow-sort-tabs" role="tablist" aria-label="工作流排序">
+<button class="active" type="button" data-workflow-sort="recommended">推荐</button>
+<button type="button" data-workflow-sort="latest">最新</button>
+<button type="button" data-workflow-sort="liked">最多点赞</button>
+<button type="button" data-workflow-sort="used">最多使用</button>
+</div>
+                  <div class="workflow-discovery-toolbar-actions">
+<span id="workflow-discovery-status" role="status">发现创作者公开的工作流</span>
+<button id="workflow-discovery-publish" type="button">分享我的工作流</button>
+</div>
+                </div>
+                <div class="workflow-discovery-grid" id="workflow-discovery-grid" aria-live="polite">
+<p class="workflow-discovery-empty">正在读取社区工作流…</p>
+</div>
+              </section>
+              <section class="discovery-panel model-guide" id="discovery-models" role="tabpanel" data-discovery-panel="models" hidden>
+                <nav class="model-family-nav discovery-subnav" aria-label="模型系列">
+<button class="active" type="button" data-model-family="qwen">Qwen 系列</button>
+<button type="button" data-model-family="seedream">Seedream 系列</button>
+<button type="button" data-model-family="wan">Wan 系列</button>
+</nav>
+                <div class="model-family-page" data-model-family-page="qwen">
+                  <article class="model-family-feature">
+<div>
+<span>文字与复杂排版</span>
+<h2>Qwen 图像模型</h2>
+<p>适合中文海报、信息图、界面概念和需要准确执行多项要求的创作。Qwen-Image 3.0 支持约四千五百个文本单位的复杂输入，可生成密集图文版式；标准版偏向日常高频，专业版更适合最终成片与细节要求。</p>
+<ul>
+<li>同一模型兼顾文生图与一至三张参考图编辑</li>
+<li>支持中文在内的多语言文字与多种字体</li>
+<li>最多一次生成六张，最高输出 2048 × 2048</li>
+</ul>
+<a href="https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 ↗</a>
+</div>
+<img src="/static/showcase/v167/skills/model-qwen.webp" alt="Qwen 图像模型适用的中文排版与视觉设计示例" loading="lazy" />
+</article>
+                  <div class="model-detail-grid">
+<article>
+<img src="/icons/alibaba-ai.png" alt="" />
+<div>
+<h3>Qwen-Image 3.0 标准版</h3>
+<p>响应更快、成本更克制，适合批量配图、社交内容、网页概念与日常迭代。</p>
+<span>高频创作</span>
+<span>中英文字</span>
+<span>图像编辑</span>
+</div>
+</article>
+<article>
+<img src="/icons/alibaba-ai.png" alt="" />
+<div>
+<h3>Qwen-Image 3.0 专业版</h3>
+<p>更强调复杂排版、微小文字、面部与材质细节，适合海报、菜单、分镜和交付成片。</p>
+<span>复杂版式</span>
+<span>精细质感</span>
+<span>最多六张</span>
+</div>
+</article>
+</div>
+                </div>
+                <div class="model-family-page" data-model-family-page="seedream" hidden>
+                  <article class="model-family-feature">
+<div>
+<span>理解、参考与成套创作</span>
+<h2>Seedream 图像模型</h2>
+<p>Seedream 5.0 面向专业视觉生产，强调复杂指令解析、参考一致性与成套内容生成。它可以用自然语言完成生成、编辑、参考图融合与组图任务，并能根据用途理解广告、分镜、品牌物料等专业场景。</p>
+<ul>
+<li>文生图、图片编辑、参考图生图与组图统一完成</li>
+<li>支持角色连贯、风格统一的分镜和成套设计</li>
+<li>适合商业摄影、电商视觉和高完成度创意探索</li>
+</ul>
+<a href="https://www.volcengine.com/docs/82379/1829186" target="_blank" rel="noopener noreferrer">查看火山引擎官方说明 ↗</a>
+</div>
+<img src="/static/showcase/v167/skills/model-seedream.webp" alt="Seedream 图像模型适用的商业视觉和组图示例" loading="lazy" />
+</article>
+                  <div class="model-detail-grid">
+<article>
+<img src="/icons/bytedance.png" alt="" />
+<div>
+<h3>Seedream 5.0 Lite</h3>
+<p>兼顾速度与完成度，适合快速探索、参考图编辑、批量配图和连续组图。</p>
+<span>快速组图</span>
+<span>参考一致</span>
+<span>自然语言</span>
+</div>
+</article>
+<article>
+<img src="/icons/bytedance.png" alt="" />
+<div>
+<h3>Seedream 5.0 Pro</h3>
+<p>面向高质量商业视觉与精细成片，适合对构图、材质、知识和细节要求更高的任务。</p>
+<span>专业视觉</span>
+<span>高完成度</span>
+<span>精细输出</span>
+</div>
+</article>
+</div>
+                </div>
+                <div class="model-family-page" data-model-family-page="wan" hidden>
+                  <article class="model-family-feature">
+<div>
+<span>高分辨率与连续画面</span>
+<h2>Wan 图像与视频模型</h2>
+<p>Wan 系列适合需要更大画布、更多参考图和角色连续性的生产任务。Wan 2.7 图像专业版可处理多图编辑、品牌色控制与连续组图；视频系列则覆盖文生视频、图生视频和参考生视频。</p>
+<ul>
+<li>图像专业版文生图最高支持 4096 × 4096</li>
+<li>最多九张参考图，适合多主体融合与结构化编辑</li>
+<li>可生成角色一致的连续画面，衔接分镜与视频工作流</li>
+</ul>
+<a href="https://help.aliyun.com/zh/model-studio/image-model/" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 ↗</a>
+</div>
+<img src="/static/showcase/v167/skills/model-wan.webp" alt="Wan 模型适用的连续分镜与高分辨率画面示例" loading="lazy" />
+</article>
+                  <div class="model-detail-grid">
+<article>
+<img src="/icons/alibaba-ai.png" alt="" />
+<div>
+<h3>Wan 2.7 图像标准版</h3>
+<p>更快完成常规图像生成与编辑，适合连续插画、人物设计与多参考融合。</p>
+<span>生成与编辑</span>
+<span>连续组图</span>
+<span>更快响应</span>
+</div>
+</article>
+<article>
+<img src="/icons/alibaba-ai.png" alt="" />
+<div>
+<h3>Wan 2.7 图像专业版</h3>
+<p>提供更高分辨率、更多参考输入与品牌色控制，适合大型商业画面和系列资产。</p>
+<span>最高 4K</span>
+<span>九图参考</span>
+<span>品牌色</span>
+</div>
+</article>
+</div>
+                </div>
+              </section>
+            </section>
+            <section class="capability-tool-workspace" id="capability-tool-workspace" aria-labelledby="capability-workspace-title" hidden>
+              <header class="capability-workspace-head">
+<button id="capability-workspace-back" type="button" aria-label="返回主页面">←</button>
+<div>
+<p id="capability-workspace-eyebrow">
+</p>
+<h2 id="capability-workspace-title">图片编辑</h2>
+<span id="capability-workspace-note">
+</span>
+</div>
+</header>
+              <div class="capability-tool-view image-editor" id="local-tool-view">
+                <div class="image-editor-commandbar" aria-label="图片编辑工具栏">
+                  <div class="image-editor-history" aria-label="编辑历史">
+                    <button id="local-editor-undo" type="button" title="撤销" aria-label="撤销" disabled>
+<svg viewBox="0 0 24 24">
+<path d="M9 7 4 12l5 5M5 12h8a6 6 0 0 1 6 6"/>
+</svg>
+</button>
+                    <button id="local-editor-redo" type="button" title="重做" aria-label="重做" disabled>
+<svg viewBox="0 0 24 24">
+<path d="m15 7 5 5-5 5m4-5h-8a6 6 0 0 0-6 6"/>
+</svg>
+</button>
+                  </div>
+                  <div class="image-editor-tabs" id="local-editor-tabs" role="tablist" aria-label="编辑能力">
+                    <button type="button" data-editor-tool="collage" role="tab">
+<svg viewBox="0 0 24 24">
+<rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+<path d="M12 3.5v17M3.5 12H12"/>
+</svg>
+<span>拼图</span>
+</button>
+                    <button type="button" data-editor-tool="resize" role="tab" aria-selected="true" class="active">
+<svg viewBox="0 0 24 24">
+<path d="M8 4H4v4m12-4h4v4M8 20H4v-4m12 4h4v-4M8 8l8 8m0-8-8 8"/>
+</svg>
+<span>尺寸</span>
+</button>
+                    <button type="button" data-editor-tool="crop" role="tab">
+<svg viewBox="0 0 24 24">
+<path d="M7 3v14h14M3 7h14v14"/>
+</svg>
+<span>裁剪</span>
+</button>
+                    <button type="button" data-editor-tool="convert" role="tab">
+<svg viewBox="0 0 24 24">
+<path d="M4 8h14m-3-3 3 3-3 3M20 16H6m3 3-3-3 3-3"/>
+</svg>
+<span>格式</span>
+</button>
+                    <button type="button" data-editor-tool="watermark" role="tab">
+<svg viewBox="0 0 24 24">
+<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+<path d="M9 15c.5 1.3 1.5 2 3 2"/>
+</svg>
+<span>水印</span>
+</button>
+                  </div>
+                  <div class="image-editor-file-actions">
+                    <input id="local-tool-input" type="file" multiple accept="image/png,image/jpeg,image/webp" hidden />
+                    <button id="local-tool-save-asset" type="button" disabled>存入资产库</button>
+                    <a id="local-tool-download" download="huiju-image.png" hidden>保存</a>
+                  </div>
+                </div>
+                <div class="local-tool-body image-editor-body">
+                  <div class="local-tool-preview image-editor-stage" id="local-tool-stage">
+                    <div class="image-editor-canvas-shell" id="local-editor-canvas-shell">
+                      <canvas id="local-tool-canvas" width="960" height="640">
+</canvas>
+                      <div class="image-editor-crop-frame" id="local-editor-crop-frame" hidden>
+                        <span class="crop-grid-line crop-grid-v crop-grid-v1">
+</span>
+<span class="crop-grid-line crop-grid-v crop-grid-v2">
+</span>
+                        <span class="crop-grid-line crop-grid-h crop-grid-h1">
+</span>
+<span class="crop-grid-line crop-grid-h crop-grid-h2">
+</span>
+                        <button type="button" data-crop-handle="nw" aria-label="拖动左上裁剪点">
+</button>
+<button type="button" data-crop-handle="n" aria-label="拖动顶部裁剪点">
+</button>
+<button type="button" data-crop-handle="ne" aria-label="拖动右上裁剪点">
+</button>
+                        <button type="button" data-crop-handle="e" aria-label="拖动右侧裁剪点">
+</button>
+<button type="button" data-crop-handle="se" aria-label="拖动右下裁剪点">
+</button>
+<button type="button" data-crop-handle="s" aria-label="拖动底部裁剪点">
+</button>
+                        <button type="button" data-crop-handle="sw" aria-label="拖动左下裁剪点">
+</button>
+<button type="button" data-crop-handle="w" aria-label="拖动左侧裁剪点">
+</button>
+                      </div>
+                    </div>
+                    <div id="local-tool-empty" role="button" tabindex="0" aria-label="选择图片">
+<span aria-hidden="true">＋</span>
+<b>点击或拖入图片</b>
+<div class="local-editor-source-actions">
+<button id="local-editor-open-local" type="button">本地图片</button>
+<button id="local-editor-open-assets" type="button">资产库</button>
+</div>
+</div>
+                  </div>
+                  <section class="local-tool-controls image-editor-inspector" id="local-editor-inspector">
+                    <div class="image-editor-inspector-head">
+<div>
+<b id="local-editor-tool-title">尺寸</b>
+</div>
+<button id="local-editor-inspector-close" type="button" aria-label="收起设置">×</button>
+</div>
+                    <div id="local-tool-options">
+</div>
+                    <button class="button button-primary" id="local-tool-run" type="button" disabled>应用</button>
+                    <p id="local-tool-error" role="alert" hidden>
+</p>
+                  </section>
+                </div>
+              </div>
+              <dialog class="work-dialog local-editor-asset-dialog" id="local-editor-asset-dialog" aria-labelledby="local-editor-asset-title">
+                <button class="dialog-close" id="local-editor-asset-close" type="button" aria-label="关闭资产选择">×</button>
+                <header>
+<h2 id="local-editor-asset-title">选择图片</h2>
+</header>
+                <label class="local-editor-asset-search">
+<span aria-hidden="true">⌕</span>
+<input id="local-editor-asset-search" type="search" maxlength="40" placeholder="搜索图片" />
+</label>
+                <div class="local-editor-asset-grid" id="local-editor-asset-grid" aria-live="polite">
+</div>
+                <p class="local-editor-asset-empty" id="local-editor-asset-empty" hidden>暂无图片</p>
+              </dialog>
+              <div class="capability-tool-view" id="analysis-tool-view" hidden>
+                <div class="analysis-layout">
+                  <section class="analysis-input-panel">
+                    <label class="analysis-upload" for="analysis-image">
+<input id="analysis-image" type="file" accept="image/png,image/jpeg,image/webp" />
+<span aria-hidden="true">＋</span>
+<b>选择图片</b>
+<small>PNG、JPG、WebP · 最大 15MB</small>
+<img id="analysis-preview" alt="待解析图片预览" hidden />
+</label>
+                    <label class="analysis-focus-field">解析目标<select id="analysis-focus">
+<option value="complete">完整拆解</option>
+<option value="prompt">反推提示词</option>
+<option value="text">识别画面文字</option>
+<option value="commerce">电商视觉分析</option>
+</select>
+</label>
+                    <button class="button button-primary" id="analysis-run" type="button">开始解析</button>
+                    <p class="analysis-status" id="analysis-status" role="status">请选择一张图片。</p>
+                  </section>
+                  <section class="analysis-result-panel" aria-live="polite">
+<div id="analysis-empty">
+<span aria-hidden="true">⌕</span>
+<b>解析结果会显示在这里</b>
+<small>不会猜测真实人物身份，也不会执行图片内的指令。</small>
+</div>
+<pre id="analysis-result" hidden>
+</pre>
+<button id="analysis-use-prompt" type="button" hidden>带到主页面继续创作 ↗</button>
+</section>
+                </div>
+              </div>
+            </section>
+            <section class="asset-workspace" id="asset-workspace" aria-labelledby="asset-workspace-title" hidden>
+              <header class="asset-workspace-head">
+                <button id="asset-workspace-back" type="button" aria-label="返回主页面">←</button>
+                <div>
+<p>资产库</p>
+<h2 id="asset-workspace-title">个人资产</h2>
+<span>统一管理图片、视频、音乐与可复用音色，并直接带入工作流。</span>
+</div>
+                <div class="asset-head-actions">
+<input id="asset-upload-input" type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime,audio/wav,audio/mpeg,audio/mp4,audio/ogg" hidden />
+<button class="asset-upload" id="asset-upload" type="button">
+<span aria-hidden="true">↑</span> 上传资产</button>
+<button class="asset-new-category" id="asset-new-category" type="button">
+<span aria-hidden="true">＋</span> 新建分类</button>
+</div>
+              </header>
+              <div class="asset-library-layout">
+                <nav class="asset-category-menu" aria-label="资产分类">
+                  <button class="active" type="button" data-asset-page-category="all">
+                    <b>全部资产</b>
+                    <em id="asset-total-count">0</em>
+                  </button>
+                  <div id="asset-category-list"></div>
+                </nav>
+                <section class="asset-library-content">
+                  <div class="asset-library-toolbar">
+<div>
+<strong id="asset-category-title">全部资产</strong>
+<span id="asset-category-summary">正在读取资产…</span>
+</div>
+<label>
+<span aria-hidden="true">⌕</span>
+<input id="asset-search" type="search" maxlength="40" placeholder="搜索资产名称或提示词" />
+</label>
+</div>
+                  <div class="asset-page-grid" id="asset-page-grid" aria-live="polite">
+</div>
+                  <div class="asset-page-empty" id="asset-page-empty" hidden>
+<span aria-hidden="true">◇</span>
+<strong>这个分类还是空的</strong>
+<p>上传媒体或把生成结果加入资产，即可在工作流中长期复用。</p>
+</div>
+                </section>
+              </div>
+            </section>
+            <section class="workflow-workspace" id="workflow-workspace" aria-label="工作流幕布" hidden>
+              <div class="workflow-layout">
+                <div class="workflow-canvas-shell" id="workflow-canvas-shell" tabindex="0" aria-label="无界、可平移缩放的工作流画布">
+                  <input id="workflow-import-file" type="file" accept="application/json,.json" hidden />
+                  <div class="workflow-canvas-context" aria-hidden="true"><b>工作流幕布</b><span>双击添加节点 · 拖动端口连线</span></div>
+                  <div class="workflow-actions workflow-floating-actions">
+<button id="workflow-new" type="button" title="新建空白工作流" aria-label="新建空白工作流">新建</button>
+<button id="workflow-import" type="button" title="导入工作流" aria-label="导入工作流">导入</button>
+<button id="workflow-fit" type="button" title="适配全部节点" aria-label="适配全部节点">适配</button>
+<button id="workflow-reset" type="button" title="恢复示例工作流" aria-label="恢复示例工作流">示例</button>
+<button id="workflow-share" type="button">保存 / 分享</button>
+<label class="workflow-edge-style-control">
+<span>连线</span>
+<select id="workflow-edge-style" aria-label="连接线显示方式">
+<option value="solid">实线</option>
+<option value="dashed">虚线</option>
+<option value="hidden">隐藏</option>
+</select>
+</label>
+<button class="workflow-run" id="workflow-run" type="button">运行 <span aria-hidden="true">✦</span>
+</button>
+</div>
+                  <button class="workflow-edge-delete" id="workflow-edge-delete" type="button" hidden>删除连线</button>
+                  <nav class="workflow-resource-dock" role="tablist" aria-label="工作流资源">
+<button type="button" role="tab" aria-selected="false" data-workflow-library-tab="scenes">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<path d="M3.5 18.5 9 12l3.2 3.4 2.3-2.4 6 5.5"/>
+<path d="M4 5.5h16v14H4z"/>
+<circle cx="15.8" cy="9" r="1.5"/>
+</svg>
+</span>
+<b>场景</b>
+</button>
+<button type="button" role="tab" aria-selected="false" data-workflow-library-tab="assets">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<path d="M4 7.5h6l1.7-2h8.3v13H4z"/>
+<path d="m7.5 15 2.7-3 2.1 2.1 1.7-1.8 2.6 2.7"/>
+</svg>
+</span>
+<b>资产</b>
+</button>
+<button type="button" role="tab" aria-selected="false" data-workflow-library-tab="shared">
+<span aria-hidden="true">
+<svg viewBox="0 0 24 24">
+<circle cx="6" cy="12" r="2.3"/>
+<circle cx="18" cy="7" r="2.3"/>
+<circle cx="18" cy="17" r="2.3"/>
+<path d="m8.2 11 7.5-3M8.2 13l7.5 3"/>
+</svg>
+</span>
+<b>工作流</b>
+</button>
+</nav>
+                  <aside class="scenario-library workflow-resource-drawer" id="workflow-resource-drawer" aria-label="工作流资源库" aria-hidden="true" hidden>
+                    <button class="workflow-resource-close" id="workflow-resource-close" type="button" aria-label="关闭资源面板">×</button>
+                  <section class="workflow-library-panel" data-workflow-library-panel="scenes">
+                    <header>
+<div>
+<h3>图片场景</h3>
+</div>
+<b id="scenario-count">0</b>
+</header>
+                    <div class="scenario-filters" role="group" aria-label="场景分类">
+<button class="active" type="button" data-scene-filter="all">全部</button>
+<button type="button" data-scene-filter="commercial">电商</button>
+<button type="button" data-scene-filter="architecture">空间</button>
+<button type="button" data-scene-filter="portrait">人像</button>
+<button type="button" data-scene-filter="character">角色</button>
+<button type="button" data-scene-filter="design">创意</button>
+</div>
+                    <div class="scenario-list" id="scenario-list">
+</div>
+                  </section>
+                  <section class="workflow-library-panel shared-workflow-panel" data-workflow-library-panel="shared" hidden>
+                    <header>
+<div>
+<h3>创作者工作流</h3>
+</div>
+<button id="shared-workflow-refresh" type="button" aria-label="刷新共享工作流">↻</button>
+</header>
+                    <div class="shared-workflow-scopes" role="tablist" aria-label="工作流来源">
+<button class="active" type="button" data-workflow-scope="community">社区</button>
+<button type="button" data-workflow-scope="local">本机</button>
+</div>
+                    <div class="shared-workflow-list" id="shared-workflow-list" aria-live="polite">
+<p class="workflow-list-status">正在读取工作流…</p>
+</div>
+                  </section>
+                  <section class="workflow-library-panel workflow-assets-panel" data-workflow-library-panel="assets" hidden>
+                    <header>
+<div>
+<h3>个人资产</h3>
+</div>
+<button id="workflow-assets-refresh" type="button" aria-label="刷新个人资产">↻</button>
+</header>
+                    <div class="workflow-asset-filters" id="workflow-asset-filters" role="group" aria-label="个人资产分类">
+<button class="active" type="button" data-asset-filter="all">全部</button>
+</div>
+                    <div class="workflow-asset-list" id="workflow-asset-list" aria-live="polite">
+<p class="workflow-list-status">正在读取个人资产…</p>
+</div>
+                  </section>
+                  </aside>
+                  <div class="workflow-canvas-toolbar">
+<button id="workflow-zoom-out" type="button" aria-label="缩小画布">−</button>
+<output id="workflow-zoom-value">100%</output>
+<button id="workflow-zoom-in" type="button" aria-label="放大画布">＋</button>
+<span>拖动空白移动幕布 · 从输出点连到输入点 · 双击添加节点</span>
+</div>
+                  <div class="workflow-viewport" id="workflow-viewport">
+                    <div class="workflow-board" id="workflow-board">
+                      <svg class="workflow-lines" id="workflow-lines" aria-label="工作流连接线">
+</svg>
+                      <article class="workflow-node workflow-node-dynamic workflow-node-media_input" data-workflow-node="media_input" data-node-id="image-input-base" data-node-type="media_input" data-node-category="input" data-x="70" data-y="145">
+                        <header>
+<span><svg class="workflow-svg-icon workflow-svg-icon-input" data-workflow-icon="input" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg></span>
+<div>
+<b>输入</b>
+</div>
+<i aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-drag" data-workflow-icon="drag" viewBox="0 0 24 24"><circle cx="8" cy="6" r="1"/><circle cx="16" cy="6" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg></i>
+</header>
+                        <label class="workflow-node-upload">
+<input id="workflow-image-input" type="file" accept="image/png,image/jpeg,image/webp" data-workflow-file="image" hidden />
+<img id="workflow-scene-cover" src="/static/showcase/v167/skills/commercial-product.webp" alt="当前输入图像预览" />
+<span>
+<b>选择原图</b>
+<small>PNG / JPG / WebP</small>
+</span>
+</label>
+                        <div class="workflow-input-meta">
+<strong id="workflow-scene-name">商业产品主图</strong>
+<p id="workflow-scene-note">干净棚拍与准确材质</p>
+</div>
+                        <button class="workflow-port workflow-port-out" type="button" data-port-direction="output" data-port-name="image" data-port-type="image" data-port-label="图像" aria-label="从图像输入节点输出图像">
+</button>
+                      </article>
+                      <article class="workflow-node workflow-node-dynamic workflow-node-redraw workflow-node-capability" data-workflow-node="redraw" data-node-id="redraw-base" data-node-type="redraw" data-node-category="edit" data-x="460" data-y="105">
+                        <button class="workflow-port workflow-port-in" type="button" data-port-direction="input" data-port-index="0" data-port-name="image" data-port-type="image" data-port-label="原图" aria-label="连接重绘原图">
+</button>
+                        <button class="workflow-port workflow-port-in" type="button" data-port-direction="input" data-port-index="1" data-port-name="prompt" data-port-type="prompt" data-port-label="提示词" aria-label="连接重绘提示词">
+</button>
+                        <header>
+<span><svg class="workflow-svg-icon workflow-svg-icon-image-edit" data-workflow-icon="image-edit" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="13" height="14" rx="2"/><path d="m7 16 3-3 2 2"/><path d="m14 15 5-5 2 2-5 5-3 1z"/></svg></span>
+<div>
+<b>局部重绘</b>
+</div>
+<i aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-drag" data-workflow-icon="drag" viewBox="0 0 24 24"><circle cx="8" cy="6" r="1"/><circle cx="16" cy="6" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg></i>
+</header>
+                        <div class="workflow-port-caption">
+<span>原图</span>
+<span>提示词</span>
+</div>
+                        <label>模型<select data-node-field="model" data-workflow-model="edit">
+<option value="qwen_image_edit">Qwen Image Edit FP8</option>
+<option value="bailian_qwen_3_pro">Qwen-Image 3.0 Pro</option>
+<option value="seedream_5_0_pro">Seedream 5.0 Pro</option>
+</select>
+</label>
+                        <div class="workflow-mask-stage" data-workflow-mask-stage>
+<canvas id="workflow-redraw-canvas" width="280" height="176" aria-label="在原图上绘制重绘区域">
+</canvas>
+<span data-mask-empty>连接或选择一张原图后，在画面上涂抹</span>
+</div>
+                        <div class="workflow-mask-controls">
+<label>画笔 <input type="range" min="8" max="100" value="36" data-node-field="brush" data-mask-brush /><output data-mask-brush-value>36px</output>
+</label>
+<button type="button" data-mask-source>选择原图</button>
+<button type="button" data-mask-clear>清除</button>
+<input type="file" accept="image/png,image/jpeg,image/webp" data-workflow-file="redraw" hidden />
+</div>
+                        <label>输出分辨率<select data-node-field="resolution">
+<option value="720p">720p</option>
+<option value="1k">1K</option>
+<option value="2k">2K</option>
+<option value="4k">4K</option>
+</select>
+</label>
+                        <button class="workflow-port workflow-port-out" type="button" data-port-direction="output" data-port-name="image" data-port-type="image" data-port-label="图像" aria-label="从重绘节点输出图像">
+</button>
+                      </article>
+                      <article class="workflow-node workflow-node-dynamic workflow-node-upscale workflow-node-capability" data-workflow-node="upscale" data-node-id="upscale-base" data-node-type="upscale" data-node-category="edit" data-x="855" data-y="245">
+                        <button class="workflow-port workflow-port-in" type="button" data-port-direction="input" data-port-name="image" data-port-type="image" data-port-label="图像" aria-label="连接待超分图像">
+</button>
+                        <header>
+<span><svg class="workflow-svg-icon workflow-svg-icon-upscale" data-workflow-icon="upscale" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/><path d="M5 11v8h8"/></svg></span>
+<div>
+<b>AI 超分</b>
+</div>
+<i aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-drag" data-workflow-icon="drag" viewBox="0 0 24 24"><circle cx="8" cy="6" r="1"/><circle cx="16" cy="6" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg></i>
+</header>
+                        <label>超分引擎<select data-node-field="model">
+<option value="ai_upscaler">AI 超分 · 细节修复</option>
+</select>
+</label>
+                        <label>目标清晰度<select id="workflow-resolution" data-node-field="resolution">
+<option value="2k">2K</option>
+<option value="4k">4K</option>
+</select>
+</label>
+                        <button class="workflow-port workflow-port-out" type="button" data-port-direction="output" data-port-name="image" data-port-type="image" data-port-label="图像" aria-label="从超分节点输出图像">
+</button>
+                      </article>
+                      <article class="workflow-node workflow-node-dynamic workflow-node-media_output workflow-node-output" data-workflow-node="media_output" data-node-id="output-base" data-node-type="media_output" data-node-category="output" data-x="1195" data-y="255">
+                        <button class="workflow-port workflow-port-in" type="button" data-port-direction="input" data-port-name="image" data-port-type="image" data-port-label="图像" aria-label="连接最终图像输出">
+</button>
+                        <header>
+<span><svg class="workflow-svg-icon workflow-svg-icon-output" data-workflow-icon="output" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg></span>
+<div>
+<b>输出</b>
+</div>
+<i aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-drag" data-workflow-icon="drag" viewBox="0 0 24 24"><circle cx="8" cy="6" r="1"/><circle cx="16" cy="6" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg></i>
+</header>
+                        <div class="workflow-output-preview" data-workflow-output-preview>
+<span aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-spark" data-workflow-icon="spark" viewBox="0 0 24 24"><path d="M12 3c.5 4.5 2.5 6.5 7 7-4.5.5-6.5 2.5-7 7-.5-4.5-2.5-6.5-7-7 4.5-.5 6.5-2.5 7-7z"/></svg></span>
+<b>等待运行</b>
+<small id="workflow-output-summary">重绘 → AI 超分</small>
+</div>
+                        <label>下载格式<select data-node-field="format">
+<option value="png">PNG</option>
+<option value="webp">WebP</option>
+<option value="jpg">JPG</option>
+</select>
+</label>
+                        <label class="workflow-switch-row">
+<input type="checkbox" data-node-field="save_history" checked /> 保存到个人资产</label>
+                      </article>
+                    </div>
+                  </div>
+                  <div class="workflow-node-picker" id="workflow-node-picker" role="dialog" aria-modal="false" aria-labelledby="workflow-node-picker-title" hidden>
+                    <header>
+<div>
+<span>节点库</span>
+<h3 id="workflow-node-picker-title">添加工作流节点</h3>
+</div>
+<button id="workflow-node-picker-close" type="button" aria-label="关闭节点选择器"><svg class="workflow-svg-icon workflow-svg-icon-close" data-workflow-icon="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+</header>
+                    <nav class="workflow-node-category-tabs" id="workflow-node-category-tabs" aria-label="节点分类" role="tablist">
+</nav>
+                    <div class="workflow-node-groups" id="workflow-node-groups">
+</div>
+                    <p>按 <kbd>Esc</kbd> 关闭 · 节点会加入当前幕布</p>
+                  </div>
+                  <section class="workflow-node-editor" id="workflow-node-editor" role="dialog" aria-modal="false" aria-label="节点提示词与参数" hidden>
+                    <button class="workflow-node-editor-expand" id="workflow-node-editor-expand" type="button" aria-label="全屏编辑" aria-expanded="false" title="全屏编辑">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" /></svg>
+                    </button>
+                    <label class="workflow-node-editor-prompt">
+                      <span id="workflow-node-editor-prompt-label">提示词 / 处理要求</span>
+                      <textarea id="workflow-node-editor-prompt" maxlength="4000" placeholder="描述希望生成或处理的内容"></textarea>
+                    </label>
+                    <footer>
+                      <div class="workflow-node-editor-fields" id="workflow-node-editor-fields"></div>
+                      <span class="workflow-node-editor-credit" id="workflow-node-editor-credit" role="status" aria-live="polite"><span aria-hidden="true"><svg class="workflow-svg-icon workflow-svg-icon-spark" data-workflow-icon="spark" viewBox="0 0 24 24"><path d="M12 3c.5 4.5 2.5 6.5 7 7-4.5.5-6.5 2.5-7 7-.5-4.5-2.5-6.5-7-7 4.5-.5 6.5-2.5 7-7z"/></svg></span><b>0</b></span>
+                      <button id="workflow-node-editor-run" type="button" aria-label="运行此节点" title="运行此节点"><svg class="workflow-svg-icon workflow-svg-icon-run" data-workflow-icon="run" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m-6 6 6-6 6 6"/></svg></button>
+                    </footer>
+                  </section>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+    <dialog class="work-dialog information-dialog" id="information-dialog" aria-labelledby="information-dialog-title">
+      <button class="dialog-close" id="information-dialog-close" type="button" aria-label="关闭内容面板">×</button>
+      <header>
+<p id="information-dialog-eyebrow">说明</p>
+<h2 id="information-dialog-title">创作指南</h2>
+<span id="information-dialog-summary">
+</span>
+</header>
+      <div class="information-dialog-body" id="information-dialog-body">
+</div>
+    </dialog>
+    <dialog class="work-dialog workflow-share-dialog" id="workflow-share-dialog" aria-labelledby="workflow-share-dialog-title">
+      <button class="dialog-close" id="workflow-share-dialog-close" type="button" aria-label="关闭保存与分享">×</button>
+      <div class="workflow-share-copy">
+<p>工作流</p>
+<h2 id="workflow-share-dialog-title">保存与分享工作流</h2>
+<span>保存到本机可以继续编辑；发布后会生成可复制链接，其他人可以直接复用。</span>
+</div>
+      <label>工作流名称<input id="workflow-share-name" maxlength="40" value="我的图像工作流" />
+</label>
+      <label>一句话说明<textarea id="workflow-share-description" maxlength="120" placeholder="例如：适合护肤品白底主图，强调通透材质和自然接触影。">
+</textarea>
+</label>
+      <label>发现标签<input id="workflow-share-tags" maxlength="80" placeholder="例如：电商、人像、批量出图（最多 8 个）" />
+</label>
+      <div class="workflow-share-actions">
+<button id="workflow-save-local" type="button">保存到本机</button>
+<button id="workflow-export" type="button">导出 JSON</button>
+<button class="primary" id="workflow-publish" type="button">发布分享</button>
+</div>
+      <div class="workflow-share-link" id="workflow-share-link" hidden>
+<span>分享链接</span>
+<input id="workflow-share-link-input" readonly />
+<button id="workflow-copy-link" type="button">复制</button>
+</div>
+      <p class="workflow-share-status" id="workflow-share-status" role="status">
+</p>
+    </dialog>
+    <div class="workflow-toast" id="workflow-toast" role="status" aria-live="polite" hidden>
+</div>
+    <dialog class="work-dialog history-dialog" id="history-dialog" aria-labelledby="history-dialog-title">
+      <button class="dialog-close" id="history-dialog-close" type="button" aria-label="关闭作品详情">×</button>
+      <img id="history-dialog-image" alt="已生成图像大图" />
+      <div>
+<p id="history-dialog-time">
+</p>
+<h2 id="history-dialog-title">已生成作品</h2>
+<span>创作提示词</span>
+<blockquote id="history-dialog-prompt">
+</blockquote>
+<div class="history-dialog-actions">
+<button id="history-dialog-save-asset" type="button">加入资产</button>
+<button id="history-dialog-publish" type="button">发布到广场</button>
+<a id="history-dialog-use" href="studio.html">继续创作 ↗</a>
+</div>
+</div>
+    </dialog>
+    <dialog class="work-dialog plaza-publish-dialog" id="plaza-publish-dialog" aria-labelledby="plaza-publish-title">
+      <button class="dialog-close" id="plaza-publish-close" type="button" aria-label="关闭发布作品">×</button>
+      <div class="workflow-share-copy">
+<p>共绘广场</p>
+<h2 id="plaza-publish-title">发布我的作品</h2>
+<span>作品会复制为公开版本，原始私有记录保持不变。</span>
+</div>
+      <label>作品标题<input id="plaza-publish-name" maxlength="40" value="我的作品" /></label>
+      <label>发现标签<input id="plaza-publish-tags" maxlength="80" placeholder="例如：电影、人物、氛围（最多 8 个）" /></label>
+      <div class="workflow-share-actions"><button class="primary" id="plaza-publish-submit" type="button">发布到广场</button></div>
+      <p class="workflow-share-status" id="plaza-publish-status" role="status"></p>
+    </dialog>
+    <dialog class="work-dialog asset-save-dialog" id="asset-save-dialog" aria-labelledby="asset-save-title">
+      <button class="dialog-close" id="asset-save-close" type="button" aria-label="关闭加入资产">×</button>
+      <div class="asset-save-preview">
+<img id="asset-save-preview" alt="准备加入资产的图片" />
+<video id="asset-save-video" controls hidden>
+</video>
+<audio id="asset-save-audio" controls hidden>
+</audio>
+<span id="asset-save-media-label" hidden>
+</span>
+</div>
+      <form id="asset-save-form">
+        <p>加入资产</p>
+<h2 id="asset-save-title">保存到个人资产</h2>
+<span>命名并选择分类；音频还可标记为音色或音乐。</span>
+        <label>资产名称<input id="asset-save-name" name="name" maxlength="40" required placeholder="例如：女主角 · 雨夜造型" />
+</label>
+        <label>资产分类<select id="asset-save-category" name="category_id" required>
+</select>
+</label>
+        <label id="asset-save-type-row" hidden>资产类型<select id="asset-save-type" name="asset_type">
+<option value="audio">普通音频</option>
+<option value="voice">音色参考</option>
+<option value="music">背景音乐</option>
+</select>
+</label>
+        <button class="asset-dialog-category" id="asset-dialog-new-category" type="button">＋ 新建分类</button>
+        <p class="asset-save-status" id="asset-save-status" role="status">
+</p>
+        <div>
+<button type="button" id="asset-save-cancel">取消</button>
+<button class="primary" type="submit">确认加入</button>
+</div>
+      </form>
+    </dialog>
+    <dialog class="work-dialog asset-category-dialog" id="asset-category-dialog" aria-labelledby="asset-category-dialog-title">
+      <button class="dialog-close" id="asset-category-close" type="button" aria-label="关闭新建分类">×</button>
+      <form id="asset-category-form">
+<p>新分类</p>
+<h2 id="asset-category-dialog-title">新建资产分类</h2>
+<label>分类名称<input id="asset-category-name" maxlength="20" required placeholder="例如：世界观设定" />
+</label>
+<p id="asset-category-status" role="status">
+</p>
+<div>
+<button type="button" id="asset-category-cancel">取消</button>
+<button class="primary" type="submit">创建分类</button>
+</div>
+</form>
+    </dialog>
+    <dialog class="plaza-detail-dialog" id="plaza-detail-dialog" aria-labelledby="plaza-detail-title">
+      <button class="dialog-close" id="plaza-detail-close" type="button" aria-label="关闭作品详情">×</button>
+      <div class="plaza-detail-image">
+<img id="plaza-detail-image" alt="共绘广场作品大图" />
+<video id="plaza-detail-video" controls playsinline preload="metadata" hidden></video>
+</div>
+      <div class="plaza-detail-copy">
+        <div class="plaza-author">
+<span class="plaza-author-avatar" id="plaza-author-avatar" aria-hidden="true">绘</span>
+<div>
+<small>发布者</small>
+<b id="plaza-detail-user">神秘画家</b>
+</div>
+</div>
+        <h2 id="plaza-detail-title">共绘作品</h2>
+        <div class="plaza-detail-tags" id="plaza-detail-tags" aria-label="作品标签">
+</div>
+        <div class="plaza-detail-model"><span>使用模型</span><b id="plaza-detail-model"></b></div>
+        <span id="plaza-detail-prompt-label">创作提示词</span>
+<blockquote id="plaza-detail-prompt">
+</blockquote>
+        <div class="plaza-detail-actions">
+<button id="plaza-detail-like" type="button" aria-pressed="false">
+<span aria-hidden="true">♡</span>
+<b id="plaza-detail-likes">0</b>
+</button>
+<button class="primary" id="plaza-detail-use" type="button">用这个灵感创作</button>
+</div>
+      </div>
+    </dialog>
+    <dialog class="workflow-community-dialog" id="workflow-community-dialog" aria-labelledby="workflow-community-title">
+      <button class="dialog-close" id="workflow-community-close" type="button" aria-label="关闭工作流详情">×</button>
+      <div class="workflow-community-preview" id="workflow-community-preview" aria-label="工作流节点预览">
+</div>
+      <div class="workflow-community-copy">
+        <div class="workflow-community-author">
+<span id="workflow-community-avatar" aria-hidden="true">神</span>
+<div>
+<small>分享者</small>
+<b id="workflow-community-author">神秘画家</b>
+</div>
+</div>
+        <h2 id="workflow-community-title">社区工作流</h2>
+        <p id="workflow-community-description">
+</p>
+        <div class="workflow-community-tags" id="workflow-community-tags">
+</div>
+        <div class="workflow-community-stats" aria-label="互动数据">
+<button id="workflow-community-like" type="button" aria-pressed="false">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M20.5 9.5c0 4.7-8.5 9-8.5 9s-8.5-4.3-8.5-9a4.5 4.5 0 0 1 8.5-2.3 4.5 4.5 0 0 1 8.5 2.3Z"/>
+</svg>
+<b id="workflow-community-likes">0</b>
+</button>
+<span>
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M5 5h14v10H9l-4 4z"/>
+</svg>
+<b id="workflow-community-comments-count">0</b>
+</span>
+<span>
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M8 7h10v10H8zM5 10H3v10h10v-2"/>
+</svg>
+<b id="workflow-community-uses">0</b>
+</span>
+</div>
+        <button class="workflow-community-use" id="workflow-community-use" type="button">加入我的工作流</button>
+        <section class="workflow-comments" aria-labelledby="workflow-comments-title">
+<header>
+<h3 id="workflow-comments-title">评论</h3>
+</header>
+<div id="workflow-comments-list" aria-live="polite">
+<p>正在读取评论…</p>
+</div>
+<form id="workflow-comment-form">
+<input id="workflow-comment-input" maxlength="300" required placeholder="说说这个工作流哪里好用…" />
+<button type="submit">发布</button>
+</form>
+<p id="workflow-comment-status" role="status">
+</p>
+</section>
+      </div>
+    </dialog>
+    <dialog class="feedback-dialog" id="feedback-dialog" aria-labelledby="feedback-dialog-title">
+      <button class="dialog-close" id="feedback-dialog-close" type="button" aria-label="关闭留言">×</button>
+      <form id="feedback-form">
+        <div class="feedback-heading">
+<span aria-hidden="true">✎</span>
+<div>
+<h2 id="feedback-dialog-title">告诉我们你的想法</h2>
+<p>问题、建议和想要的能力都会进入产品改进清单。</p>
+</div>
+</div>
+        <label>留言分类<select id="feedback-category" name="category" required>
+<option value="product">产品建议</option>
+<option value="generation">生成效果</option>
+<option value="function">功能问题</option>
+<option value="billing">额度与会员</option>
+<option value="bug">故障反馈</option>
+<option value="other">其他</option>
+</select>
+</label>
+        <label>具体内容<textarea id="feedback-message" name="message" rows="7" maxlength="1000" required placeholder="请描述你遇到的情况、期望结果，以及复现步骤。">
+</textarea>
+<small>
+<span id="feedback-count">0</span> / 1000</small>
+</label>
+        <label class="feedback-screenshot" for="feedback-screenshot">
+<input id="feedback-screenshot" type="file" accept="image/png,image/jpeg,image/webp" />
+<span aria-hidden="true">＋</span>
+<div>
+<b id="feedback-screenshot-label">上传截图</b>
+<small>可选，PNG、JPG 或 WebP，最大 5MB</small>
+</div>
+<img id="feedback-screenshot-preview" alt="留言截图预览" hidden />
+</label>
+        <p id="feedback-status" role="status" aria-live="polite">
+</p>
+        <div class="feedback-actions">
+<button id="feedback-cancel" type="button">取消</button>
+<button class="primary" id="feedback-submit" type="submit">提交留言</button>
+</div>
+      </form>
+    </dialog>
+    <script src="js/catalog.js?v=20260908-member-access-v41" defer>
+</script>
+    <script type="module" src="js/app.js?v=20260909-workflow-svg-v43">
+</script>
+    <script src="js/onboarding-main.js?v=20260908-member-access-v41">
+</script>
+    <script src="js/onboarding-workflow.js?v=20260908-member-access-v41">
+</script>
+    <script src="js/onboarding.js?v=20260908-member-access-v41">
+</script>
+  </body>
+</html>
+
+

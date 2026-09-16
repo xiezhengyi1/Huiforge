@@ -1,0 +1,261 @@
+/* v50 — Quiet surfaces, flat creation inputs and a unified SVG workflow language. */
+
+:root {
+  --dr-line: color-mix(in srgb, var(--tv-border) 88%, #a8c1ae);
+  --dr-shadow: 0 14px 38px color-mix(in srgb, var(--tv-shadow) 44%, transparent);
+}
+
+html[data-studio-theme] {
+  --tv-radius-control: 10px;
+  --tv-radius-card: 14px;
+  --tv-radius-panel: 18px;
+  --tv-radius-shell: 22px;
+}
+
+/* 工作流节点：所有语义图标共用同一套 24px 线性 SVG 语言。 */
+.studio-page .workflow-svg-icon { display:block; width:16px; height:16px; overflow:visible; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.studio-page .workflow-svg-icon * { vector-effect:non-scaling-stroke; }
+.studio-page .workflow-svg-icon-drag circle { fill:currentColor; stroke:none; }
+.studio-page .workflow-node-picker > header button .workflow-svg-icon { width:15px; height:15px; }
+.studio-page .workflow-node-option > span:first-child .workflow-svg-icon { width:18px; height:18px; }
+.studio-page .workflow-node-result-empty > span .workflow-svg-icon { width:21px; height:21px; }
+.studio-page .workflow-node-run-button .workflow-svg-icon { width:15px; height:15px; }
+.studio-page .workflow-node-editor-credit .workflow-svg-icon { width:13px; height:13px; }
+.studio-page .workflow-node-editor > footer > button .workflow-svg-icon { width:16px; height:16px; }
+.studio-page .workflow-model-credit .workflow-svg-icon { width:12px; height:12px; color:#c58d3d; }
+.studio-page .workflow-credit-summary > span:first-child .workflow-svg-icon { width:15px; height:15px; }
+.studio-page .workflow-node > header > span .workflow-svg-icon { width:15px; height:15px; }
+.studio-page .workflow-node > header > i .workflow-svg-icon { width:14px; height:14px; }
+.studio-page .workflow-node-remove .workflow-svg-icon,.studio-page .workflow-camera-focus-close .workflow-svg-icon { width:14px; height:14px; }
+.studio-page .workflow-output-preview > span .workflow-svg-icon { width:17px; height:17px; }
+
+html[data-studio-theme] body.home-page {
+  background-image: radial-gradient(circle at 84% 4%, color-mix(in srgb, var(--tv-primary-soft) 70%, transparent), transparent 29%), linear-gradient(180deg, var(--tv-canvas) 0 64%, color-mix(in srgb, var(--tv-canvas) 94%, var(--tv-primary-soft)) 100%);
+}
+
+/* 首页：用一个清晰的 Agent 输入台替代分散入口。 */
+.home-page .landing-header { position: sticky; z-index: 40; top: 0; width: min(100% - 32px, 1440px); margin: 12px auto 0; border: 1px solid color-mix(in srgb, var(--tv-border) 72%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--tv-surface-raised) 86%, transparent); box-shadow: 0 6px 22px color-mix(in srgb, var(--tv-shadow) 26%, transparent); backdrop-filter: blur(18px); }
+.home-page .home-workbench-hero { width: min(100% - 48px, 1380px); padding: clamp(72px, 10vw, 144px) 0 100px; }
+.home-page .home-workbench-heading { display: grid; grid-template-columns: minmax(0, 730px) 1fr; column-gap: 34px; align-items: end; max-width: none; margin-bottom: 34px; }
+.home-page .home-workbench-heading > p { grid-column: 1; margin-bottom: 12px; letter-spacing: .16em; }
+.home-page .home-workbench-heading h1 { grid-column: 1; margin: 0; font-size: clamp(44px, 5.7vw, 82px); letter-spacing: -.065em; line-height: .98; }
+.home-page .home-workbench-heading > span { grid-column: 2; max-width: 330px; margin: 0 0 8px; line-height: 1.8; }
+.home-page .home-agent-switch { grid-column: 2; display: inline-flex; justify-self: start; gap: 4px; margin: 0 0 12px; padding: 4px; border: 1px solid var(--dr-line); border-radius: 999px; background: color-mix(in srgb, var(--tv-surface-raised) 84%, transparent); box-shadow: none; }
+.home-page .home-agent-switch span { padding: 7px 11px; border-radius: 999px; color: var(--tv-text-muted); font-size: 11px; font-weight: 760; white-space: nowrap; }
+.home-page .home-agent-switch .active { background: var(--tv-primary); color: var(--tv-on-primary); }
+.home-page .home-workbench-grid { gap: 18px; align-items: stretch; }
+.home-page .home-console { position: relative; overflow: hidden; min-height: 430px; padding: 20px; border-radius: 18px; border-color: color-mix(in srgb, var(--tv-border) 88%, #fff); box-shadow: var(--dr-shadow); }
+.home-page .home-console::before { position: absolute; top: 0; right: 0; width: 210px; height: 150px; content: ""; pointer-events: none; background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--tv-primary-soft) 80%, transparent), transparent 67%); }
+.home-page .home-console nav { position: relative; z-index: 1; width: fit-content; padding: 4px; border: 1px solid var(--dr-line); border-radius: 12px; background: var(--tv-surface-muted); }
+.home-page .home-console nav a { padding: 8px 12px; font-size: 12px; }
+.home-page .home-prompt-box { position: relative; z-index: 1; min-height: 200px; margin-top: 18px; padding: 24px 4px 22px; border-block: 1px solid var(--dr-line); border-radius: 0; background: transparent; }
+.home-page .home-prompt-box > span { font-size: 17px; font-weight: 760; }
+.home-page .home-prompt-box > p { max-width: 680px; margin: 15px 0 24px; line-height: 1.75; }
+.home-page .home-prompt-box b { min-width: 106px; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 12px 20px var(--tv-primary-shadow); }
+.home-page .home-launchers { position: relative; z-index: 1; gap: 8px; margin-top: 12px; }
+.home-page .home-launchers a { min-height: 76px; padding: 13px; background: color-mix(in srgb, var(--tv-surface-raised) 84%, transparent) !important; transition: transform .18s ease, border-color .18s ease; }
+.home-page .home-launchers a:hover { transform: translateY(-2px); border-color: var(--tv-primary); }
+.home-page .home-console footer { position: relative; z-index: 1; margin-top: 17px; }
+.home-page .home-visual-board { min-height: 430px; padding: 10px; border: 1px solid var(--dr-line); border-radius: 18px; background: color-mix(in srgb, var(--tv-surface-raised) 70%, transparent); box-shadow: var(--dr-shadow); }
+.home-page .home-visual-board figure { border-radius: 12px; overflow: hidden; }
+.home-page .home-visual-board a { border-radius: 10px; background: #0d2c24; box-shadow: 0 10px 22px color-mix(in srgb, var(--tv-shadow) 45%, transparent); }
+.home-page .home-capability-map { width: min(100% - 48px, 1380px); padding: 82px 0; }
+.home-page .home-capability-map > div { gap: 10px; }
+.home-page .home-capability-map > div > a { min-height: 138px; border-radius: 14px; border-color: var(--dr-line); background: color-mix(in srgb, var(--tv-surface-raised) 78%, transparent); box-shadow: 0 6px 18px color-mix(in srgb, var(--tv-shadow) 24%, transparent); transition: transform .18s ease, box-shadow .18s ease; }
+.home-page .home-capability-map > div > a:hover { transform: translateY(-2px); box-shadow: 0 12px 26px color-mix(in srgb, var(--tv-shadow) 38%, transparent); }
+
+/* 工作台：弱化框线，集中创作输入与会话结果。 */
+html[data-studio-theme] body.studio-page { background: var(--tv-canvas) !important; }
+html[data-studio-theme] .studio-page .studio-section { background: transparent !important; }
+.studio-page .studio-sidebar { border-right-color: color-mix(in srgb, var(--tv-sidebar-border) 66%, transparent); box-shadow: 8px 0 24px color-mix(in srgb, var(--tv-shadow) 24%, transparent); }
+.studio-page .studio-topbar { min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.studio-page .studio-topbar .topbar-actions { background: transparent; box-shadow: none; }
+.studio-page .studio-topbar :is(.theme-picker-trigger,.credits-button) { border-color: color-mix(in srgb, var(--tv-border-strong) 62%, transparent); background: transparent !important; box-shadow: none !important; backdrop-filter: none; }
+.studio-page .studio-topbar :is(.theme-picker-trigger,.credits-button):hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover) !important; }
+.studio-page .studio-content { padding-top: 30px; }
+.studio-page .studio-grid { max-width: 1260px; }
+.studio-page:not(.studio-has-output) .studio-grid { max-width: 1120px; min-height: min(620px, 76vh); }
+.studio-page:not(.studio-has-output) .creation-intro { max-width: 780px; }
+.studio-page:not(.studio-has-output) .creation-intro :is(h1, h2) { letter-spacing: -.055em; }
+.studio-page:not(.studio-has-output) .controls-panel { padding: 12px; border: 1px solid var(--dr-line); border-radius: 18px; background: color-mix(in srgb, var(--tv-surface-raised) 92%, transparent); box-shadow: var(--dr-shadow); }
+.studio-page:not(.studio-has-output) .controls-panel .prompt-group { margin: 0; padding: 0; border: 0; border-radius: 18px; background: transparent; }
+.studio-page:not(.studio-has-output) #prompt { min-height: 174px; padding: 32px 28px 58px; font-size: 16px; line-height: 1.75; }
+.studio-page:not(.studio-has-output) .prompt-actions { left: 24px; right: 24px; bottom: 16px; }
+.studio-page .results-panel { border-color: var(--dr-line); border-radius: 18px; background: color-mix(in srgb, var(--tv-surface-raised) 88%, transparent); box-shadow: 0 10px 28px color-mix(in srgb, var(--tv-shadow) 24%, transparent); }
+.studio-page .history-panel { border-color: var(--dr-line); border-radius: 18px; background: color-mix(in srgb, var(--tv-surface-raised) 90%, transparent); }
+.studio-page .result-card { border-radius: 14px; overflow: hidden; }
+
+/* unified_image 的真实主输入在工具命令区，不使用被隐藏的 #prompt。 */
+.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .image-tool-grid { gap: 14px; }
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel {
+  min-height: 168px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-prompt-field { min-height: 128px; }
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt {
+  min-height: 128px !important;
+  padding: 10px 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--tv-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] #tool-prompt::placeholder { color: var(--tv-text-muted); }
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus,
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .upload-drop {
+  align-self: stretch;
+  min-height: 132px;
+  padding: 14px;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--tv-border) 88%, transparent);
+  background: color-mix(in srgb, var(--tv-surface-raised) 52%, transparent);
+}
+.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .upload-drop :is(b, small) { font-size: 11px; }
+
+/* 社区：将发布动作放到广场首屏，成功后沿用现有刷新链路立即显示。 */
+.studio-page .studio-discovery { margin-top: 34px; }
+.studio-page .discovery-switch { padding: 8px clamp(18px, 3vw, 38px); border-block: 1px solid var(--dr-line); background: color-mix(in srgb, var(--tv-surface-raised) 65%, transparent); backdrop-filter: blur(14px); }
+.studio-page .discovery-panel[data-discovery-panel="plaza"], .studio-page .workflow-discovery { padding-top: 22px; }
+.studio-page .plaza-search-tools, .studio-page .workflow-discovery-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 auto 20px; width: min(100% - 48px, 1260px); }
+.studio-page .plaza-community-actions { display: flex; align-items: center; gap: 12px; }
+.studio-page .plaza-community-actions p { margin: 0; }
+.studio-page #plaza-open-history, .studio-page #workflow-discovery-publish { min-height: 38px; padding: 0 15px; border: 0; border-radius: 999px; background: var(--tv-primary); color: var(--tv-on-primary); font-size: 12px; font-weight: 760; box-shadow: 0 10px 20px var(--tv-primary-shadow); }
+.studio-page .plaza-preview-grid { width: min(100% - 30px, 1320px); margin: 0 auto; gap: 8px; }
+.studio-page .plaza-preview-card { border-radius: 14px; background: var(--tv-surface-muted); box-shadow: 0 6px 16px color-mix(in srgb, var(--tv-shadow) 20%, transparent); transition: transform .2s ease, box-shadow .2s ease; }
+.studio-page .plaza-preview-card:hover { z-index: 2; transform: translateY(-2px); box-shadow: 0 12px 28px color-mix(in srgb, var(--tv-shadow) 36%, transparent); }
+.studio-page .workflow-discovery-grid { width: min(100% - 48px, 1260px); margin: 0 auto; }
+.studio-page .workflow-discovery-card { border-radius: 14px; border-color: var(--dr-line); background: color-mix(in srgb, var(--tv-surface-raised) 86%, transparent); box-shadow: 0 7px 20px color-mix(in srgb, var(--tv-shadow) 22%, transparent); }
+.studio-page .workflow-discovery-empty { width: min(100%, 520px); margin: 58px auto; padding: 28px 20px; border-block: 1px solid var(--dr-line); color: var(--tv-text-muted); font-size: 13px; line-height: 1.8; }
+
+/* 画布：外围控件、居中节点、左下资源入口。 */
+.studio-page.workflow-active .studio-content { padding: 0; }
+.studio-page.workflow-active .workflow-workspace { min-height: calc(100dvh - 66px); }
+.studio-page .workflow-canvas-shell { background-color: color-mix(in srgb, var(--tv-workspace) 78%, #edf5ef) !important; background-image: radial-gradient(circle, color-mix(in srgb, var(--tv-primary) 28%, transparent) 1px, transparent 1.2px) !important; background-size: 22px 22px !important; }
+.studio-page .workflow-canvas-context { position: absolute; z-index: 24; top: 62px; left: 16px; display: grid; gap: 2px; pointer-events: none; }
+.studio-page .workflow-canvas-context b { color: var(--tv-primary-ink); font-size: 13px; }
+.studio-page .workflow-canvas-context span { color: var(--tv-text-muted); font-size: 10px; }
+.studio-page .workflow-floating-actions { top: 14px; left: 50%; right: auto; max-width: calc(100% - 220px); padding: 5px; border-color: var(--dr-line); border-radius: 12px; background: color-mix(in srgb, var(--tv-surface-raised) 88%, transparent); box-shadow: 0 8px 24px color-mix(in srgb, var(--tv-shadow) 28%, transparent); transform: translateX(-50%); }
+.studio-page .workflow-floating-actions button { min-height: 34px; border-radius: 10px; font-size: 11px; }
+.studio-page .workflow-floating-actions #workflow-share { color: var(--tv-primary-ink); background: var(--tv-primary-soft); }
+.studio-page .workflow-floating-actions .workflow-run { padding-inline: 15px; border-radius: 10px; box-shadow: 0 8px 16px var(--tv-primary-shadow); }
+.studio-page .workflow-canvas-toolbar { top: 16px; left: 16px; border-color: var(--dr-line); border-radius: 12px; background: color-mix(in srgb, var(--tv-surface-raised) 86%, transparent); box-shadow: 0 6px 20px color-mix(in srgb, var(--tv-shadow) 24%, transparent); }
+.studio-page .workflow-canvas-toolbar > span { display: none; }
+.studio-page .workflow-resource-dock { bottom: 18px; left: 18px; padding: 5px; border-color: var(--dr-line); border-radius: 15px; background: color-mix(in srgb, var(--tv-surface-raised) 90%, transparent); }
+.studio-page .workflow-resource-dock button { min-height: 40px; padding-inline: 12px; border-radius: 10px; }
+.studio-page .workflow-resource-drawer { bottom: 79px; left: 18px; width: 328px; border-color: var(--dr-line); border-radius: 19px; background: color-mix(in srgb, var(--tv-surface-raised) 94%, transparent); box-shadow: 0 22px 54px color-mix(in srgb, var(--tv-shadow) 58%, transparent); }
+.studio-page .workflow-node { border-radius: 14px; border-color: color-mix(in srgb, var(--tv-border-strong) 72%, var(--tv-primary)); box-shadow: 0 8px 22px color-mix(in srgb, var(--tv-shadow) 26%, transparent); }
+.studio-page .workflow-node > header { border-radius: 13px 13px 0 0; }
+.studio-page .workflow-node:hover { box-shadow: 0 14px 30px color-mix(in srgb, var(--tv-shadow) 38%, transparent); }
+.studio-page .workflow-port { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tv-surface-raised) 80%, transparent); }
+.studio-page .workflow-output-preview.is-running { border-color: var(--tv-primary); box-shadow: inset 0 0 0 1px var(--tv-primary-soft); }
+.studio-page :is(.workflow-share-dialog, .plaza-publish-dialog) { border: 1px solid var(--dr-line); border-radius: 24px; box-shadow: 0 28px 72px var(--tv-dialog-shadow); }
+
+@media (min-width: 981px) {
+  .studio-page .studio-discovery .discovery-switch { padding-right: calc(var(--discovery-gutter) + 210px); }
+  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions { left: auto; right: 210px !important; width: max-content; max-width: calc(100% - 230px); transform: none; }
+  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) { flex-shrink: 0; white-space: nowrap; }
+}
+
+@media (max-width: 980px) {
+  .home-page .home-workbench-heading { grid-template-columns: 1fr; gap: 12px; }
+  .home-page .home-workbench-heading > :is(h1, p, span, .home-agent-switch) { grid-column: 1; }
+  .home-page .home-workbench-heading > span { max-width: 600px; }
+  .home-page .home-agent-switch { justify-self: start; order: -1; }
+  .studio-page .workflow-canvas-context { display: none; }
+  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions { left: 50%; right: auto !important; max-width: calc(100% - 132px); overflow-x: auto; transform: translateX(-50%); }
+  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) { flex-shrink: 0; white-space: nowrap; }
+}
+
+@media (max-width: 680px) {
+  .home-page .landing-header { width: calc(100% - 20px); margin-top: 8px; border-radius: 14px; }
+  .home-page .landing-header nav { display: none; }
+  .home-page .home-workbench-hero, .home-page .home-capability-map { width: calc(100% - 28px); }
+  .home-page .home-workbench-hero { padding-top: 72px; }
+  .home-page .home-agent-switch span:not(.active) { display: none; }
+  .home-page .home-console { padding: 12px; border-radius: 20px; }
+  .home-page .home-prompt-box { padding: 20px; }
+  .studio-page .studio-content { padding-inline: 14px; }
+  .studio-page .plaza-search-tools, .studio-page .workflow-discovery-toolbar { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; }
+  .studio-page .plaza-community-actions { width: 100%; justify-content: space-between; }
+  .studio-page .plaza-community-actions p { max-width: 52%; }
+  .studio-page .workflow-floating-actions { top: 10px; }
+  .studio-page .workflow-floating-actions :is(#workflow-import, #workflow-reset, .workflow-edge-style-control) { display: none; }
+  .studio-page .workflow-canvas-toolbar { top: 10px; left: 10px; }
+  .studio-page .workflow-resource-dock { left: 10px; bottom: 10px; }
+  .studio-page .workflow-resource-dock button b { display: none; }
+  .studio-page .workflow-resource-drawer { left: 10px; bottom: 66px; width: min(328px, calc(100% - 20px)); }
+}
+
+/* theme-audit is in the later theme layer. Important declarations in base
+   intentionally take precedence for these narrow compatibility overrides. */
+@layer base {
+  html[data-studio-theme] body.studio-page :is(#plaza-open-history,#workflow-discovery-publish) {
+    min-height: 38px !important;
+    padding: 0 15px !important;
+    border: 0 !important;
+    border-radius: var(--tv-radius-control) !important;
+    background: var(--tv-primary) !important;
+    color: var(--tv-on-primary) !important;
+    box-shadow: 0 7px 16px var(--tv-primary-shadow) !important;
+  }
+  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel {
+    min-height: 168px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt {
+    min-height: 128px !important;
+    padding: 10px 2px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus,
+  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus-visible {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+  @media (min-width: 981px) {
+    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
+      top: 14px !important;
+      left: auto !important;
+      right: 210px !important;
+      width: max-content !important;
+      max-width: calc(100% - 230px) !important;
+      transform: none !important;
+    }
+    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) {
+      flex-shrink: 0 !important;
+      white-space: nowrap !important;
+    }
+  }
+  @media (max-width: 980px) {
+    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
+      left: 50% !important;
+      right: auto !important;
+      max-width: calc(100% - 132px) !important;
+      overflow-x: auto !important;
+      transform: translateX(-50%) !important;
+    }
+    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) {
+      flex-shrink: 0 !important;
+      white-space: nowrap !important;
+    }
+  }
+}

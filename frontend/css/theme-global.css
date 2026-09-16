@@ -1,0 +1,1034 @@
+/* V141 global semantic color contract.
+   This sheet intentionally loads last. Every product surface consumes the same
+   roles so individual pages cannot fall back to the legacy jade/red literals. */
+
+:where(.studio-page, .home-page, .pricing-page, .profile-page) {
+  background-color: var(--tv-canvas);
+  color: var(--tv-text);
+  accent-color: var(--tv-primary);
+  caret-color: var(--tv-primary);
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) ::selection {
+  background: var(--tv-selection);
+  color: var(--tv-selection-text);
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) * {
+  scrollbar-color: var(--tv-scrollbar) transparent;
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) *::-webkit-scrollbar-thumb {
+  background-color: var(--tv-scrollbar);
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) *::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) :is(a, button, input, select, textarea:not(#prompt):not(#workflow-node-editor-prompt)):focus-visible {
+  outline-color: var(--tv-primary);
+  box-shadow: 0 0 0 3px var(--tv-focus);
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) :is(input, select, textarea)::placeholder {
+  color: var(--tv-text-muted);
+  opacity: 1;
+}
+:where(.studio-page, .home-page, .pricing-page, .profile-page) :is(button, input, select, textarea):disabled {
+  border-color: var(--tv-border);
+  background: var(--tv-disabled-soft);
+  color: var(--tv-disabled);
+  opacity: 1;
+}
+
+/* Studio shell, navigation and common typography. */
+.studio-page .studio-section,
+.studio-page .studio-content {
+  background-color: var(--tv-canvas);
+  color: var(--tv-text);
+}
+.studio-page .studio-section { background-image: var(--tv-canvas-art); }
+.studio-page .studio-sidebar {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar);
+  color: var(--tv-sidebar-text);
+}
+.studio-page :is(.sidebar-brand, .sidebar-head, .sidebar-user-card, .sidebar-profile) { color: var(--tv-sidebar-strong); }
+.studio-page :is(.sidebar-label, .sidebar-user-card small, .sidebar-profile small, .quick-access-empty) { color: var(--tv-sidebar-muted); }
+.studio-page :is(.quick-access-nav, .capability-nav, .discover-nav, .sidebar-bottom) :is(button, a) { color: var(--tv-sidebar-text); }
+.studio-page :is(.quick-access-nav, .capability-nav, .discover-nav, .sidebar-bottom) :is(button, a) :is(b, strong) { color: inherit; }
+.studio-page :is(.quick-access-nav, .capability-nav, .discover-nav) :is(button, a) > :is(span, .capability-item-icon) { color: var(--tv-sidebar-icon); }
+.studio-page :is(.quick-access-nav, .capability-nav, .discover-nav) :is(button, a):hover {
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+.studio-page :is(.quick-access-nav, .capability-nav) :is(button, a).active,
+.studio-page .capability-nav button[aria-expanded="true"],
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger {
+  background: var(--tv-sidebar-active);
+  color: var(--tv-sidebar-active-text);
+}
+.studio-page :is(.quick-access-nav, .capability-nav) :is(button, a).active > :is(span, .capability-item-icon),
+.studio-page .capability-nav button[aria-expanded="true"] > span,
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger > span { color: var(--tv-sidebar-active-icon); }
+.studio-page :is(.capability-subnav, .sidebar-section-toggle, .sidebar-bottom, .sidebar-scroll) { border-color: var(--tv-sidebar-border); }
+.studio-page .sidebar-collapse {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar-control);
+  color: var(--tv-sidebar-text);
+}
+.studio-page .sidebar-collapse:hover { border-color: var(--tv-sidebar-accent); background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .brand-mark,
+.studio-page .sidebar-user-avatar { background: var(--tv-sidebar-accent); color: var(--tv-on-sidebar-accent); }
+
+/* Shared light surfaces, headings and secondary copy. */
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .results-panel, .history-panel,
+  .capability-center, .capability-tool-workspace,
+  .workflow-library-panel, .workflow-assets-panel, .shared-workflow-panel,
+  .workflow-node-picker, .model-select-menu, .output-settings-menu
+) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface);
+  color: var(--tv-text);
+}
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .results-panel, .history-panel,
+  .capability-center, .capability-tool-workspace, .asset-workspace,
+  .workflow-library-panel, .workflow-assets-panel, .shared-workflow-panel,
+  .workflow-node-picker, .model-select-menu, .output-settings-menu
+) :is(h1, h2, h3, h4, b, strong, legend) { color: var(--tv-text); }
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .results-panel, .history-panel,
+  .capability-center, .capability-tool-workspace, .asset-workspace,
+  .workflow-library-panel, .workflow-assets-panel, .shared-workflow-panel,
+  .workflow-node-picker, .model-select-menu, .output-settings-menu
+) :is(p, small, time, .meta, .hint) { color: var(--tv-text-muted); }
+.studio-page :is(.active-capability-chip, .capability-notice, .results-bar, .analysis-status, .tool-status) {
+  border-color: var(--tv-border);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page :is(.active-capability-chip, .capability-notice, .results-bar, .analysis-status, .tool-status) :is(b, strong) { color: var(--tv-primary-ink); }
+
+/* Forms, upload targets, buttons and interactive states. */
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .analysis-layout, .capability-tool-workspace,
+  .asset-workspace, .workflow-node, .workflow-node-picker, dialog,
+  .image-editor-dialog, .model-select-menu, .output-settings-menu
+) :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea:not(#prompt):not(#workflow-node-editor-prompt)) {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .analysis-layout, .capability-tool-workspace,
+  .asset-workspace, .workflow-node, .workflow-node-picker, dialog,
+  .image-editor-dialog, .model-select-menu, .output-settings-menu
+) :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea:not(#prompt):not(#workflow-node-editor-prompt)):hover {
+  border-color: var(--tv-border-strong);
+}
+.studio-page :is(
+  .controls-panel, .tool-command-panel, .analysis-layout, .capability-tool-workspace,
+  .asset-workspace, .workflow-node, .workflow-node-picker, dialog,
+  .image-editor-dialog, .model-select-menu, .output-settings-menu
+) :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea:not(#prompt):not(#workflow-node-editor-prompt)):focus {
+  border-color: var(--tv-primary);
+  box-shadow: 0 0 0 3px var(--tv-focus);
+}
+.studio-page :is(.upload-drop, .analysis-upload, .source-preview-shell, .asset-upload, .workflow-node-upload, .workflow-mask-stage, .workflow-output-preview, .result-placeholder) {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text-secondary);
+}
+.studio-page :is(.upload-drop, .analysis-upload, .source-preview-shell, .asset-upload, .workflow-node-upload, .workflow-mask-stage, .workflow-output-preview, .result-placeholder):hover {
+  border-color: var(--tv-primary);
+  background: var(--tv-control-hover);
+}
+.studio-page :is(.upload-drop, .analysis-upload, .source-preview-shell, .asset-upload, .workflow-node-upload, .workflow-mask-stage, .workflow-output-preview, .result-placeholder) :is(b, strong) { color: var(--tv-text); }
+.studio-page :is(.upload-drop, .analysis-upload, .source-preview-shell, .asset-upload, .workflow-node-upload, .workflow-mask-stage, .workflow-output-preview, .result-placeholder) :is(p, small, span) { color: var(--tv-text-secondary); }
+.studio-page :is(.upload-drop, .analysis-upload, .asset-upload, .workflow-node-upload) > span:first-child,
+.studio-page .result-placeholder > span:first-child { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.button-primary, .generate-button, .analysis-input-panel button[type="submit"], .analysis-input-panel > button, .capability-tool-workspace button.primary, .asset-workspace button.primary, dialog button.primary, .workflow-run, .workflow-community-use) {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+  box-shadow: 0 10px 24px var(--tv-primary-shadow);
+}
+.studio-page :is(.button-primary, .generate-button, .analysis-input-panel button[type="submit"], .analysis-input-panel > button, .capability-tool-workspace button.primary, .asset-workspace button.primary, dialog button.primary, .workflow-run, .workflow-community-use):hover {
+  border-color: var(--tv-primary-hover);
+  background: var(--tv-primary-hover);
+  color: var(--tv-on-primary);
+}
+.studio-page :is(.model-select-trigger, .output-settings-trigger, .toolbar-history-button, .history-actions button, .dialog-close, .credits-button, .credits-link) {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page :is(.model-select-trigger, .output-settings-trigger, .toolbar-history-button, .history-actions button, .dialog-close, .credits-button, .credits-link):hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+
+/* Analysis, output and history surfaces. */
+.studio-page .analysis-layout {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 18px 46px var(--tv-shadow);
+}
+.studio-page :is(.analysis-input-panel, .analysis-result-panel) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page :is(.analysis-input-panel, .analysis-result-panel) :is(h2, h3, b, strong, label) { color: var(--tv-text); }
+.studio-page :is(.analysis-input-panel, .analysis-result-panel) :is(p, small, span) { color: var(--tv-text-muted); }
+.studio-page .analysis-result-panel > span:first-child { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .result-stage { background: var(--tv-surface-muted); color: var(--tv-text); }
+.studio-page .result-tip { color: var(--tv-text-muted); }
+.studio-page .result-card { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page .result-card footer { background: var(--tv-surface-raised); color: var(--tv-text-secondary); }
+.studio-page .history-panel { box-shadow: 0 24px 70px var(--tv-dialog-shadow); }
+.studio-page .history-heading { border-color: var(--tv-border); background: var(--tv-surface-raised); }
+.studio-page .history-heading h2 { color: var(--tv-text); }
+.studio-page :is(.history-privacy, .history-item time) { color: var(--tv-text-muted); }
+.studio-page .history-item { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page .history-item img { border-color: var(--tv-border); background: var(--tv-image-placeholder); }
+.studio-page .history-item :is(a, button) { color: var(--tv-primary-ink); }
+.studio-page .history-item button:hover { color: var(--tv-danger); }
+.studio-page .history-empty { color: var(--tv-text-muted); }
+.studio-page .history-empty span { color: var(--tv-primary); }
+.studio-page .history-empty strong { color: var(--tv-text); }
+
+/* Model menus and all status badges. */
+.studio-page .model-select-menu { box-shadow: 0 22px 55px var(--tv-dialog-shadow); }
+.studio-page .model-select-item { border-color: transparent; background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page .model-select-item:hover,
+.studio-page .model-select-item[aria-selected="true"] { border-color: var(--tv-border); background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .model-select-item.disabled { background: var(--tv-disabled-soft); color: var(--tv-disabled); }
+.studio-page .model-option-name,
+.studio-page .model-option-heading > b { color: var(--tv-text); }
+.studio-page :is(.model-badge, .model-status-tag, .model-availability) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text-secondary);
+}
+.studio-page :is(.model-badge, .model-status-tag).available,
+.studio-page .model-availability.available { border-color: color-mix(in srgb, var(--tv-success) 35%, var(--tv-border)); background: var(--tv-success-soft); color: var(--tv-success); }
+.studio-page :is(.model-status-tag.vip, .model-status-tag.recommend, .model-status-tag.hot) { border-color: color-mix(in srgb, var(--tv-warning) 35%, var(--tv-border)); background: var(--tv-warning-soft); color: var(--tv-warning); }
+.studio-page .model-credit-cost { color: var(--tv-accent-ink); }
+.studio-page .model-credit-cost > span { color: var(--tv-accent); }
+.studio-page .model-favorite { color: var(--tv-text-muted); }
+.studio-page .model-favorite:hover,
+.studio-page .model-favorite[aria-pressed="true"] { color: var(--tv-primary); }
+
+/* Discovery, capability center, asset library and dialogs. */
+.studio-page :is(.discovery-switch, .capability-tabs, .capability-toolbar, .capability-workspace-head, .asset-workspace-head, .asset-library-toolbar) { border-color: var(--tv-border); }
+.studio-page :is(.discovery-switch, .capability-tabs, .model-family-nav, .plaza-tag-bar, .workflow-sort-tabs) button { color: var(--tv-text-secondary); }
+.studio-page :is(.discovery-switch, .capability-tabs, .model-family-nav, .plaza-tag-bar, .workflow-sort-tabs) button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page :is(.discovery-switch, .capability-tabs, .model-family-nav, .plaza-tag-bar, .workflow-sort-tabs) button.active { color: var(--tv-primary-ink); }
+.studio-page :is(.discovery-switch, .capability-tabs, .model-family-nav, .plaza-tag-bar, .workflow-sort-tabs) button.active::after { background: var(--tv-accent); }
+.studio-page :is(.capability-card, .capability-center-card, .asset-page-card, .workflow-discovery-card, .plaza-teaser) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 10px 30px var(--tv-shadow-soft);
+}
+.studio-page :is(.capability-card, .capability-center-card, .asset-page-card, .workflow-discovery-card, .plaza-teaser):hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  box-shadow: 0 16px 38px var(--tv-shadow);
+}
+.studio-page :is(.capability-card, .capability-center-card, .asset-page-card, .workflow-discovery-card, .plaza-teaser) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.capability-card, .capability-center-card, .asset-page-card, .workflow-discovery-card, .plaza-teaser) :is(p, small, em) { color: var(--tv-text-muted); }
+.studio-page .asset-category-rail { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.studio-page .asset-category-rail button { color: var(--tv-text-secondary); }
+.studio-page .asset-category-rail button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .asset-category-rail button.active { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.asset-save-dialog, .asset-category-dialog, .feedback-dialog, .workflow-share-dialog, .workflow-community-dialog, .history-dialog, .plaza-detail-dialog) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 30px 86px var(--tv-dialog-shadow);
+}
+.studio-page :is(.asset-save-dialog, .asset-category-dialog, .feedback-dialog, .workflow-share-dialog, .workflow-community-dialog, .history-dialog, .plaza-detail-dialog)::backdrop { background: var(--tv-backdrop); }
+.studio-page :is(.asset-save-dialog, .asset-category-dialog, .feedback-dialog, .workflow-share-dialog, .workflow-community-dialog, .history-dialog, .plaza-detail-dialog) :is(h1, h2, h3, b, strong, label) { color: var(--tv-text); }
+.studio-page :is(.asset-save-dialog, .asset-category-dialog, .feedback-dialog, .workflow-share-dialog, .workflow-community-dialog, .history-dialog, .plaza-detail-dialog) :is(p, small, time) { color: var(--tv-text-muted); }
+.studio-page :is(.history-dialog, .plaza-detail-dialog) blockquote { color: var(--tv-text-secondary); }
+.studio-page :is(.history-dialog, .plaza-detail-dialog) > button:first-child { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page .plaza-detail-copy { background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page .plaza-author-avatar { background: var(--tv-primary-ink); color: var(--tv-on-primary); }
+.studio-page .plaza-detail-tags span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .plaza-detail-actions button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page .plaza-detail-actions button:last-child { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page .feedback-screenshot { border-color: var(--tv-border-strong); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page .feedback-screenshot > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.feedback-status, .asset-save-status, #asset-category-status, .workflow-share-status) { color: var(--tv-danger); }
+
+/* Workflow canvas: every node detail, port, mask and toolbar uses theme roles. */
+.studio-page :is(.workflow-workspace, .workflow-canvas-shell, .workflow-viewport, .workflow-stage) { background-color: var(--tv-workspace); color: var(--tv-text); }
+.studio-page .workflow-viewport { background-image: radial-gradient(circle, color-mix(in srgb, var(--tv-border-strong) 72%, transparent) 1px, transparent 1px); }
+.studio-page :is(.workflow-canvas-toolbar, .workflow-floating-actions, .workflow-resource-dock) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text-secondary);
+  box-shadow: 0 8px 24px var(--tv-shadow-soft);
+}
+.studio-page :is(.workflow-canvas-toolbar, .workflow-floating-actions, .workflow-resource-dock) button { color: var(--tv-primary-ink); }
+.studio-page :is(.workflow-canvas-toolbar, .workflow-floating-actions, .workflow-resource-dock) button:hover { background: var(--tv-control-hover); color: var(--tv-primary); }
+.studio-page :is(.workflow-node, .workflow-node-dynamic) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 14px 34px var(--tv-shadow);
+}
+.studio-page :is(.workflow-node, .workflow-node-dynamic) :is(h3, b, strong, label) { color: var(--tv-text); }
+.studio-page :is(.workflow-node, .workflow-node-dynamic) :is(p, small, i, .workflow-port-caption) { color: var(--tv-text-muted); }
+.studio-page .workflow-node > header > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-node > header > button { color: var(--tv-text-muted); }
+.studio-page .workflow-node > header > button:hover { background: var(--tv-danger-soft); color: var(--tv-danger); }
+.studio-page .workflow-lines path:not(.workflow-link-hit) { stroke: var(--tv-border-strong); }
+.studio-page .workflow-lines path:not(.workflow-link-hit):is(:hover, :focus, .is-selected) { stroke: var(--tv-primary); }
+.studio-page .workflow-lines path.workflow-link-hit { stroke: transparent !important; opacity: 0 !important; }
+.studio-page .workflow-port,
+.studio-page .workflow-port.is-source,
+.studio-page .workflow-port.is-compatible {
+  border-color: var(--tv-surface-raised) !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 1px var(--tv-border-strong) !important;
+}
+.studio-page .workflow-port.is-snap-target { background: var(--tv-accent) !important; box-shadow: 0 0 0 3px var(--tv-focus) !important; }
+.studio-page .workflow-mask-stage canvas { background: var(--tv-surface-muted); }
+.studio-page .workflow-mask-stage > span { color: var(--tv-text-secondary); }
+.studio-page .workflow-mask-controls { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page .workflow-mask-controls button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page .workflow-node-run-button { border-color: var(--tv-primary); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-node-run-button:hover { background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page .workflow-camera-summary { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-credit-summary { border-color: var(--tv-border); background: var(--tv-warning-soft); color: var(--tv-text); }
+.studio-page .workflow-credit-summary b,
+.studio-page .workflow-model-credit { color: var(--tv-warning); }
+.studio-page .workflow-toast { border-color: var(--tv-border); background: var(--tv-inverse); color: var(--tv-on-inverse); box-shadow: 0 18px 44px var(--tv-dialog-shadow); }
+.studio-page .workflow-resource-drawer { background: var(--tv-surface); color: var(--tv-text); box-shadow: 0 0 52px var(--tv-dialog-shadow); }
+
+/* Local image editor, including command bar, canvas, empty state and inspector. */
+.studio-page .image-editor-dialog { border-color: var(--tv-border); background: var(--tv-editor-shell); color: var(--tv-text); }
+.studio-page .image-editor-commandbar { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page :is(.image-editor-history, .image-editor-tabs) button { color: var(--tv-text-secondary); }
+.studio-page :is(.image-editor-history, .image-editor-tabs) button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .image-editor-tabs button.active { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .image-editor-stage { background: var(--tv-editor-canvas); }
+.studio-page .image-editor-canvas-shell { border-color: var(--tv-border); background: var(--tv-surface-muted); box-shadow: 0 18px 46px var(--tv-shadow); }
+.studio-page .image-editor-stage #local-tool-empty { border-color: var(--tv-border-strong); background: var(--tv-surface-raised); color: var(--tv-text-secondary); box-shadow: 0 18px 44px var(--tv-shadow); }
+.studio-page .image-editor-stage #local-tool-empty:hover { border-color: var(--tv-primary); background: var(--tv-control-hover); }
+.studio-page .image-editor-stage #local-tool-empty > span { border-color: var(--tv-border); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .image-editor-stage #local-tool-empty b { color: var(--tv-text); }
+.studio-page .image-editor-open { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page .image-editor-inspector { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); box-shadow: -16px 0 38px var(--tv-shadow); }
+.studio-page .image-editor-inspector :is(h2, h3, b, strong, label) { color: var(--tv-text); }
+.studio-page .image-editor-inspector :is(p, small) { color: var(--tv-text-muted); }
+.studio-page .image-editor-inspector #local-tool-run { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page .image-editor-inspector #local-tool-error { background: var(--tv-danger-soft); color: var(--tv-danger); }
+.studio-page .image-editor-crop-frame { border-color: var(--tv-primary); box-shadow: 0 0 0 9999px var(--tv-backdrop); }
+.studio-page .image-editor-crop-frame [data-crop-handle] { border-color: var(--tv-surface-raised); background: var(--tv-primary); }
+
+/* Homepage colour ownership moved to home-surface.css. */
+
+/* Pricing page. */
+.pricing-page { background: var(--tv-canvas); color: var(--tv-text); }
+.pricing-page .pricing-nav { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.pricing-page :is(.pricing-back, .pricing-brand) { color: var(--tv-text); }
+.pricing-page .pricing-brand span { background: var(--tv-primary); color: var(--tv-on-primary); }
+.pricing-page .balance-chip { border-color: var(--tv-border); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.pricing-page .pricing-main { color: var(--tv-text); }
+.pricing-page :is(.pricing-hero, .section-heading) :is(h1, h2, h3, b, strong) { color: var(--tv-text); }
+.pricing-page :is(.pricing-hero, .section-heading) :is(p, span) { color: var(--tv-text-secondary); }
+.pricing-page :is(.pricing-hero .eyebrow, .section-heading p, .price-advantage > div > p, .usage-table > div > p) { color: var(--tv-accent-ink); }
+.pricing-page .membership-status { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text-secondary); }
+.pricing-page .membership-status b { color: var(--tv-primary-ink); }
+.pricing-page .price-advantage { background: var(--tv-inverse); color: var(--tv-on-inverse); }
+.pricing-page .price-advantage :is(h2, b, strong) { color: var(--tv-on-inverse); }
+.pricing-page .price-advantage :is(p, span, small) { color: color-mix(in srgb, var(--tv-on-inverse) 72%, transparent); }
+.pricing-page .advantage-metrics article { border-color: color-mix(in srgb, var(--tv-on-inverse) 20%, transparent); background: color-mix(in srgb, var(--tv-on-inverse) 7%, transparent); }
+.pricing-page :is(.wallets article, .membership-cards article, .topup-grid button, .usage-table, .all-pricing) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 12px 34px var(--tv-shadow-soft);
+}
+.pricing-page :is(.wallets article, .membership-cards article, .topup-grid button, .usage-table, .all-pricing) :is(h2, h3, b, strong, dt) { color: var(--tv-text); }
+.pricing-page :is(.wallets article, .membership-cards article, .topup-grid button, .usage-table, .all-pricing) :is(p, span, small, li, dd) { color: var(--tv-text-secondary); }
+.pricing-page .membership-cards article.featured { border-color: var(--tv-primary); background: var(--tv-primary-soft); }
+.pricing-page .recommend { background: var(--tv-primary); color: var(--tv-on-primary); }
+.pricing-page .plan-models { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.pricing-page .plan-models i { background: var(--tv-warning-soft); color: var(--tv-warning); }
+.pricing-page .membership-cards button { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.pricing-page .membership-cards button:hover { background: var(--tv-primary-hover); }
+.pricing-page .topup-grid button:hover { border-color: var(--tv-primary); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.pricing-page .tariff-tabs { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.pricing-page .tariff-tabs button { color: var(--tv-text-secondary); }
+.pricing-page .tariff-tabs button.active { background: var(--tv-surface-raised); color: var(--tv-primary-ink); }
+.pricing-page .tariff-table :is(div, dl) { border-color: var(--tv-border); }
+.pricing-page .purchase-note { color: var(--tv-danger); }
+
+/* Profile, account and authentication page. */
+.profile-page { background: var(--tv-canvas); color: var(--tv-text); }
+.profile-page .profile-nav { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.profile-page :is(.profile-nav a, .profile-brand) { color: var(--tv-text); }
+.profile-page .profile-brand span { background: var(--tv-primary); color: var(--tv-on-primary); }
+.profile-page .profile-balance { border-color: var(--tv-border); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.profile-page .profile-main { color: var(--tv-text); }
+.profile-page .auth-panel { border-color: var(--tv-border); background: var(--tv-surface); box-shadow: 0 24px 70px var(--tv-shadow); }
+.profile-page .auth-showcase { background: var(--tv-inverse); color: var(--tv-on-inverse); }
+.profile-page .auth-back { border-color: color-mix(in srgb, var(--tv-on-inverse) 24%, transparent); background: transparent; color: var(--tv-on-inverse); }
+.profile-page .auth-showcase :is(h1, h2, b, strong) { color: var(--tv-on-inverse); }
+.profile-page .auth-showcase :is(p, span, small) { color: color-mix(in srgb, var(--tv-on-inverse) 78%, transparent); }
+.profile-page .auth-showcase-copy > span { color: color-mix(in srgb, var(--tv-on-inverse) 72%, var(--tv-accent)); }
+.profile-page .auth-models article { border-color: color-mix(in srgb, var(--tv-on-inverse) 18%, transparent); background: color-mix(in srgb, var(--tv-on-inverse) 7%, transparent); }
+.profile-page .auth-models article em { background: color-mix(in srgb, var(--tv-on-inverse) 10%, transparent); color: var(--tv-on-inverse); }
+.profile-page .auth-benefits { border-color: color-mix(in srgb, var(--tv-on-inverse) 18%, transparent); }
+.profile-page .auth-card { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); box-shadow: 0 18px 50px var(--tv-shadow); }
+.profile-page .auth-tabs { border-color: var(--tv-border); }
+.profile-page .auth-tabs button { color: var(--tv-text-secondary); }
+.profile-page .auth-tabs button.active { color: var(--primary-ink, var(--tv-primary-ink)); }
+.profile-page .auth-tabs button.active::after { background: var(--tv-primary); }
+.profile-page .auth-card label { color: var(--tv-text); }
+.profile-page .auth-card input { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.profile-page .auth-card input:focus { border-color: var(--tv-primary); box-shadow: 0 0 0 3px var(--tv-focus); }
+.profile-page .auth-card form > button { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.profile-page .auth-card form > button:hover { background: var(--tv-primary-hover); }
+.profile-page .sms-code-field button { border-color: var(--tv-border); background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.profile-page :is(.auth-message, .sms-availability, #profile-message) { color: var(--tv-danger); }
+.profile-page .account-shell { color: var(--tv-text); }
+.profile-page :is(.identity-card, .profile-edit, .credit-details, .account-history, .ledger) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 14px 38px var(--tv-shadow-soft);
+}
+.profile-page :is(.identity-card, .profile-edit, .credit-details, .account-history, .ledger) :is(h1, h2, h3, b, strong) { color: var(--tv-text); }
+.profile-page :is(.identity-card, .profile-edit, .credit-details, .account-history, .ledger) :is(p, span, small) { color: var(--tv-text-secondary); }
+.profile-page .avatar-control > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.profile-page .identity-card nav a { border-color: var(--tv-border); color: var(--tv-primary-ink); }
+.profile-page .identity-card nav a:hover { background: var(--tv-control-hover); }
+.profile-page #logout-button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-danger); }
+.profile-page .section-title { border-color: var(--tv-border); }
+.profile-page .section-title p { color: var(--tv-accent-ink); }
+.profile-page :is(.profile-edit input, .profile-edit textarea) { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.profile-page .profile-edit button { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.profile-page .credit-cards article { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.profile-page .credit-cards article b { color: var(--tv-primary-ink); }
+.profile-page .account-history-grid article { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.profile-page .account-history-empty span { color: var(--tv-primary); }
+.profile-page .profile-history-dialog { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); box-shadow: 0 30px 90px var(--tv-dialog-shadow); }
+.profile-page .profile-history-dialog::backdrop { background: var(--tv-backdrop); }
+.profile-page .profile-history-dialog > div { background: var(--tv-surface-raised); color: var(--tv-text); }
+.profile-page .profile-history-dialog :is(h2, b, strong) { color: var(--tv-text); }
+.profile-page .profile-history-dialog :is(span, blockquote) { color: var(--tv-text-secondary); }
+.profile-page .profile-history-dialog > button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.profile-page .profile-history-dialog a { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+
+/* Complete studio component inventory: controls, nested menus and capability pages. */
+.studio-page :is(.field-group, .prompt-group, .settings-heading, .image-tool-heading, .capability-center-head, .discovery-heading) { border-color: var(--tv-border); }
+.studio-page :is(.field-group, .prompt-group, .settings-heading, .image-tool-heading, .capability-center-head, .discovery-heading) :is(label, legend, h1, h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.field-meta, .privacy-note, .source-meta, .capability-state, .discovery-heading p, .settings-heading p, .image-tool-heading p) { color: var(--tv-text-muted); }
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option, .provider-chip) {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option, .provider-chip):hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option).selected,
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option).is-active {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option) :is(b, strong) { color: inherit; }
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option) small { color: var(--tv-text-muted); }
+.studio-page :is(.preset-option, .ratio-option, .choice-option, .style-option, .scenario-card, .model-option).selected small { color: var(--tv-primary-ink); }
+.studio-page :is(.prompt-toolbar, .settings-selects, .output-settings-section, .video-duration-section, .audio-speed-section, .crop-angle-control, .crop-ratio-field) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text-secondary); }
+.studio-page :is(.cancel-button, .source-replace-button, .source-save-voice-button, .result-asset-action, .local-resize-undo, .crop-inline-actions button, .local-editor-source-actions button, .feedback-actions button, .history-dialog-actions button) {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-primary-ink);
+}
+.studio-page :is(.cancel-button, .source-replace-button, .source-save-voice-button, .result-asset-action, .local-resize-undo, .crop-inline-actions button, .local-editor-source-actions button, .feedback-actions button, .history-dialog-actions button):hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+}
+.studio-page :is(.feedback-actions button.primary, .history-dialog-actions button.primary, .history-dialog-actions a.primary) { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+
+/* Sidebar pins, model chooser and transient menus. */
+.studio-page :is(.quick-access-pin, .sidebar-model-entry, .sidebar-select-trigger, .sidebar-select-option, .sidebar-history-button, .mobile-workspace-toggle, .sidebar-pin-menu) {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar-control);
+  color: var(--tv-sidebar-text);
+}
+.studio-page :is(.quick-access-pin, .sidebar-model-entry, .sidebar-select-trigger, .sidebar-select-option, .sidebar-history-button, .mobile-workspace-toggle):hover {
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+.studio-page :is(.quick-access-pin, .sidebar-model-entry, .sidebar-select-trigger, .sidebar-select-option, .sidebar-history-button) :is(b, strong) { color: inherit; }
+.studio-page :is(.sidebar-model-meta, .sidebar-select-empty, .sidebar-model-entry small) { color: var(--tv-sidebar-muted); }
+.studio-page :is(.sidebar-select-menu, .sidebar-pin-menu) { border-color: var(--tv-sidebar-border); background: var(--tv-sidebar); color: var(--tv-sidebar-text); box-shadow: 0 20px 52px var(--tv-dialog-shadow); }
+.studio-page .sidebar-select-option[aria-selected="true"] { background: var(--tv-sidebar-active); color: var(--tv-sidebar-active-text); }
+.studio-page .sidebar-pin-toast { border-color: var(--tv-sidebar-border); background: var(--tv-inverse); color: var(--tv-on-inverse); box-shadow: 0 16px 40px var(--tv-dialog-shadow); }
+.studio-page .sidebar-credits { color: var(--tv-accent-ink); }
+
+/* Information, pricing and credits dialogs rendered inside Studio. */
+.studio-page :is(.analysis-dialog, .information-dialog, .credits-dialog, .local-tool-dialog, .local-editor-asset-dialog) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 30px 86px var(--tv-dialog-shadow);
+}
+.studio-page :is(.analysis-dialog, .information-dialog, .credits-dialog, .local-tool-dialog, .local-editor-asset-dialog)::backdrop { background: var(--tv-backdrop); }
+.studio-page :is(.analysis-dialog, .information-dialog, .credits-dialog, .local-tool-dialog, .local-editor-asset-dialog) :is(h1, h2, h3, b, strong, label) { color: var(--tv-text); }
+.studio-page :is(.analysis-dialog, .information-dialog, .credits-dialog, .local-tool-dialog, .local-editor-asset-dialog) :is(p, small, span) { color: var(--tv-text-muted); }
+.studio-page :is(.info-card-grid article, .info-metrics article, .pricing-cards article, .topup-cards button, .change-log-entry, .api-endpoint) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text);
+}
+.studio-page :is(.info-card-grid article, .info-metrics article, .pricing-cards article, .topup-cards button, .change-log-entry, .api-endpoint) :is(b, strong, h3) { color: var(--tv-text); }
+.studio-page :is(.info-card-grid article, .info-metrics article, .pricing-cards article, .topup-cards button, .change-log-entry, .api-endpoint) :is(p, small, span) { color: var(--tv-text-secondary); }
+.studio-page :is(.pricing-tabs, .model-guide-nav, .scenario-filters) { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.studio-page :is(.pricing-tabs, .model-guide-nav, .scenario-filters) button { color: var(--tv-text-secondary); }
+.studio-page :is(.pricing-tabs, .model-guide-nav, .scenario-filters) button.active { background: var(--tv-surface-raised); color: var(--tv-primary-ink); }
+.studio-page .credits-balance { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+
+/* Image capability sub-workbenches and editor layers. */
+.studio-page :is(.image-tool-workspace, .interactive-editor, .layer-result-workbench, .local-tool-shell, .capability-tool-view) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+}
+.studio-page :is(.interactive-toolbar, .source-thumbnail-tray, .local-tool-controls, .image-editor-file-actions) { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page :is(.local-tool-upload, .source-upload-surface, .collage-add-images, .layer-composite-stage, .local-tool-preview) {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text-secondary);
+}
+.studio-page :is(.local-tool-upload, .source-upload-surface, .collage-add-images):hover { border-color: var(--tv-primary); background: var(--tv-control-hover); }
+.studio-page :is(.local-tool-upload, .source-upload-surface, .collage-add-images) :is(b, strong) { color: var(--tv-text); }
+.studio-page :is(.local-tool-upload, .source-upload-surface, .collage-add-images) > span:first-child { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .layer-stack-item { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page .layer-stack-item.is-active { border-color: var(--tv-primary); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.annotation-overlay, .annotation-summary) { border-color: var(--tv-border); background: var(--tv-card-badge); color: var(--tv-text); }
+.studio-page .collage-image-status { background: var(--tv-media-overlay); color: var(--tv-media-text); }
+.studio-page .crop-grid-line { background: color-mix(in srgb, var(--tv-media-text) 70%, transparent); }
+.studio-page .local-editor-asset-search input { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page .local-editor-asset-grid button { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.studio-page .local-editor-asset-grid button:hover { border-color: var(--tv-primary); background: var(--tv-control-hover); }
+.studio-page .local-editor-asset-empty { color: var(--tv-text-muted); }
+
+/* Creation sessions and generated media. */
+.studio-page :is(.creation-intro, .session-turn, .session-image-loader, .gallery-empty) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page :is(.creation-intro, .session-turn, .session-image-loader, .gallery-empty) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.creation-intro, .session-turn, .session-image-loader, .gallery-empty) :is(p, span, small) { color: var(--tv-text-muted); }
+.studio-page .session-turn-prompt { border-color: var(--tv-border); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .session-turn-state { background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page .session-turn-state.is-ready { background: var(--tv-success-soft); color: var(--tv-success); }
+.studio-page .session-turn-state.is-pending { background: var(--tv-warning-soft); color: var(--tv-warning); }
+.studio-page :is(.session-turn-error, .form-error, .analysis-status.is-error, .session-turn.is-error .session-turn-state) { background: var(--tv-danger-soft); color: var(--tv-danger); }
+.studio-page :is(.session-image-preview, .media-result-card) { border-color: var(--tv-border); background: var(--tv-image-placeholder); color: var(--tv-media-text); }
+.studio-page :is(.session-image-preview, .media-result-card) footer { background: var(--tv-media-overlay); color: var(--tv-media-text); }
+
+/* Model guide, scenario library and states. */
+.studio-page :is(.model-family-page, .model-guide, .scenario-library, .scenario-list) { color: var(--tv-text); }
+.studio-page :is(.model-family-feature, .model-guide-card, .model-detail-grid article, .model-compare article, .model-workflow-grid article, .model-advice-list article) {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+}
+.studio-page :is(.model-family-feature, .model-guide-card, .model-detail-grid article, .model-compare article, .model-workflow-grid article, .model-advice-list article) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.model-family-feature, .model-guide-card, .model-detail-grid article, .model-compare article, .model-workflow-grid article, .model-advice-list article) :is(p, span, small) { color: var(--tv-text-secondary); }
+.studio-page .model-guide-tagline { color: var(--tv-accent-ink); }
+.studio-page :is(.status-pill, .model-state, .capability-state, .workflow-method) { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page :is(.status-pill.is-available, .model-state.is-available, .capability-state.is-available, .model-availability.available, .collage-image-status.is-ready) { background: var(--tv-success-soft); color: var(--tv-success); }
+.studio-page :is(.status-pill.is-unavailable, .model-state.is-unavailable, .capability-state.is-unavailable, .model-option.unavailable .model-state, .capability-card.is-unavailable .capability-state) { background: var(--tv-disabled-soft); color: var(--tv-disabled); }
+.studio-page .capability-card.is-route-needed .capability-state { background: var(--tv-warning-soft); color: var(--tv-warning); }
+.studio-page :is(.status-pill.is-pending, .model-state.is-pending, .capability-state.is-pending) { background: var(--tv-warning-soft); color: var(--tv-warning); }
+.studio-page .model-status-new { border-color: var(--tv-border); background: var(--tv-info-soft); color: var(--tv-info); }
+.studio-page .model-status-vip { border-color: var(--tv-border-strong); background: var(--tv-inverse); color: var(--tv-warning-soft); }
+.studio-page .model-status-free { border-color: var(--tv-border); background: var(--tv-success-soft); color: var(--tv-success); }
+.studio-page :is(.model-status-recommend, .model-status-hot, .model-status-热门, .model-status-推荐) { border-color: var(--tv-border); background: var(--tv-warning-soft); color: var(--tv-warning); }
+
+/* Discovery cards and image placeholders must not retain the legacy green gradient. */
+.studio-page :is(.skill-card, .cover-fallback, .asset-page-preview, .plaza-preview-card, .workflow-community-preview, .workflow-card-preview, .workflow-asset-node-image) {
+  border-color: var(--tv-border);
+  background-color: var(--tv-image-placeholder);
+  background-image: linear-gradient(180deg,
+    color-mix(in srgb, var(--tv-primary) 14%, var(--tv-surface-muted)),
+    color-mix(in srgb, var(--tv-inverse) 64%, var(--tv-image-placeholder)));
+}
+.studio-page :is(.skill-card, .plaza-preview-card) > :is(span, i) { background: var(--tv-card-badge); color: var(--tv-primary-ink); }
+.studio-page .plaza-preview-card::after { background: linear-gradient(180deg, transparent 45%, var(--tv-media-overlay)); }
+.studio-page .plaza-card-meta,
+.studio-page .plaza-card-meta :is(b, small, span) { color: var(--tv-media-text); }
+.studio-page .plaza-author { color: var(--tv-text-secondary); }
+
+/* Remaining workflow subcomponents. */
+.studio-page :is(.workflow-header, .workflow-discovery-toolbar, .workflow-library-tabs, .workflow-asset-filters, .workflow-node-category-tabs) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page :is(.workflow-header, .workflow-discovery-toolbar) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.workflow-header, .workflow-discovery-toolbar) :is(p, span, small) { color: var(--tv-text-muted); }
+.studio-page :is(.workflow-library-tabs, .workflow-asset-filters, .workflow-node-category-tabs) button { color: var(--tv-text-secondary); }
+.studio-page :is(.workflow-library-tabs, .workflow-asset-filters, .workflow-node-category-tabs) button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page :is(.workflow-library-tabs, .workflow-asset-filters, .workflow-node-category-tabs) button.active,
+.studio-page .workflow-node-category-tabs button[aria-selected="true"] { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.shared-workflow-card, .workflow-asset-card, .workflow-node-option, .workflow-comment, .workflow-detail-node) { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.studio-page :is(.shared-workflow-card, .workflow-asset-card, .workflow-node-option, .workflow-comment, .workflow-detail-node):hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.studio-page :is(.shared-workflow-card, .workflow-asset-card, .workflow-node-option, .workflow-comment, .workflow-detail-node) :is(b, strong) { color: var(--tv-text); }
+.studio-page :is(.shared-workflow-card, .workflow-asset-card, .workflow-node-option, .workflow-comment, .workflow-detail-node) :is(p, span, small, em) { color: var(--tv-text-muted); }
+.studio-page :is(.workflow-node-prompt, .workflow-node-style, .workflow-media-source, .workflow-model-field, .workflow-switch-row, .workflow-input-meta, .workflow-node-output, .workflow-node-run-result) { border-color: var(--tv-border); color: var(--tv-text-secondary); }
+.studio-page :is(.workflow-node-prompt, .workflow-node-style, .workflow-media-source, .workflow-model-field) :is(input, select, textarea, button) { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page .workflow-node-remove { color: var(--tv-text-muted); }
+.studio-page .workflow-node-remove:hover { background: var(--tv-danger-soft); color: var(--tv-danger); }
+.studio-page .workflow-output-gallery { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.studio-page .workflow-prompt-image-placeholder { border-color: var(--tv-border); background: var(--tv-image-placeholder); color: var(--tv-text-muted); }
+.studio-page :is(.prompt-mention-picker, .workflow-prompt-mention-picker) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); box-shadow: 0 16px 42px var(--tv-shadow); }
+.studio-page :is(.prompt-mention-picker, .workflow-prompt-mention-picker) button { color: var(--tv-text-secondary); }
+.studio-page :is(.prompt-mention-picker, .workflow-prompt-mention-picker) button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+
+/* Camera workbench. */
+.studio-page .camera-editor { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.studio-page :is(.camera-quickbar, .camera-controls label) { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text-secondary); }
+.studio-page :is(.camera-stage-heading, .camera-quickbar-heading) b { color: var(--tv-text); }
+.studio-page :is(.camera-stage-heading, .camera-quickbar-heading) :is(span, output) { color: var(--tv-primary-ink); }
+.studio-page .camera-preset-grid button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page .camera-preset-grid button:hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.studio-page .camera-preset-grid button[aria-pressed="true"] { border-color: var(--tv-primary); background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+
+/* Final legacy-selector closure. These selectors had direct palette literals in
+   the incumbent sheet; declaring their semantic role here prevents cascade leaks. */
+.studio-page :is(.studio-grid, .studio-topbar, .studio-has-output, .image-editor, .info-section, .preset-group, .preset-list, .toolbar-select-wrap, .reference-strip, .prompt-mention-strip, .session-image-grid, .workflow-comments) { border-color: var(--tv-border); color: var(--tv-text); }
+.studio-page :is(.new-session, .history-toggle, .history-drawer-close, .workflow-resource-close, .prompt-reference-trigger) { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page :is(.new-session, .history-toggle, .history-drawer-close, .workflow-resource-close, .prompt-reference-trigger):hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.studio-page :is(.discovery-search, .sidebar-select) :is(input, select) { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page :is(.discovery-subnav, .plaza-search-tools, .shared-workflow-scopes, .skill-filters) { border-color: var(--tv-border); color: var(--tv-text-secondary); }
+.studio-page :is(.discovery-subnav, .shared-workflow-scopes, .skill-filters) button { color: var(--tv-text-secondary); }
+.studio-page :is(.discovery-subnav, .shared-workflow-scopes, .skill-filters) button:hover { color: var(--tv-primary-ink); }
+.studio-page :is(.discovery-subnav, .shared-workflow-scopes, .skill-filters) button.active { color: var(--tv-primary-ink); }
+.studio-page :is(.discovery-subnav, .shared-workflow-scopes, .skill-filters) button.active::after { background: var(--tv-accent); }
+.studio-page :is(.analysis-focus-field, .layer-mode-note, .prompt-mention-empty, .prompt-mention-heading, .workflow-list-status, .workflow-discovery-empty, .asset-page-empty, .capability-model-empty) { color: var(--tv-text-muted); }
+.studio-page :is(.asset-dialog-category, .asset-new-category, .workflow-share-link) { color: var(--tv-primary-ink); }
+.studio-page :is(.asset-save-preview, .history-preview, .plaza-detail-image, .asset-audio-art) { border-color: var(--tv-border); background: var(--tv-image-placeholder); }
+.studio-page .asset-audio-art { color: var(--tv-primary-ink); }
+.studio-page :is(.capability-card-icon, .sidebar-tool-icon) { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.capability-model-item, .capability-model-nested) { border-color: var(--tv-sidebar-border); background: var(--tv-sidebar-control); color: var(--tv-sidebar-text); }
+.studio-page :is(.capability-model-item, .capability-model-nested):hover { background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .capability-model-copy :is(b, strong) { color: inherit; }
+.studio-page .capability-model-copy :is(small, span) { color: var(--tv-sidebar-muted); }
+.studio-page .capability-models-toggle { color: var(--tv-sidebar-text); }
+.studio-page .capability-subitem { color: var(--tv-sidebar-text); }
+.studio-page .capability-subitem:hover { background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .generate-credit-cost { color: var(--tv-on-primary); }
+.studio-page .generate-credit-cost > span { color: var(--tv-warning-soft); }
+.studio-page :is(.feedback-heading, .image-editor-inspector-head, .model-guide-heading, .plaza-preview-heading, .output-settings-title) { border-color: var(--tv-border); color: var(--tv-text); }
+.studio-page :is(.feedback-heading, .image-editor-inspector-head, .model-guide-heading, .plaza-preview-heading, .output-settings-title) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.feedback-heading, .image-editor-inspector-head, .model-guide-heading, .plaza-preview-heading, .output-settings-title) :is(p, span, small) { color: var(--tv-text-muted); }
+.studio-page :is(.model-guide-hero, .model-guide-heading) { background: var(--tv-surface-muted); }
+.studio-page .model-select-chevron { color: var(--tv-text-muted); }
+.studio-page .model-favorite-static { color: var(--tv-primary); }
+.studio-page .mask-editor { border-color: var(--tv-border-strong); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.studio-page :is(.plaza-preview-wide, .plaza-preview-tall, .skill-card-featured) { border-color: var(--tv-border); background-color: var(--tv-image-placeholder); }
+.studio-page .plaza-teaser-copy :is(h3, b, strong) { color: var(--tv-text); }
+.studio-page .plaza-teaser-copy :is(p, span, small) { color: var(--tv-text-secondary); }
+.studio-page :is(.quick-access-pins, .workspace-nav, .tool-nav) { border-color: var(--tv-sidebar-border); color: var(--tv-sidebar-text); }
+.studio-page .tool-item { color: var(--tv-sidebar-text); }
+.studio-page .tool-item:hover { background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .tool-item.active { background: var(--tv-sidebar-active); color: var(--tv-sidebar-active-text); }
+.studio-page .sidebar-collapsed { background: var(--tv-sidebar); }
+.studio-page .skill-card-featured { box-shadow: 0 14px 34px var(--tv-shadow); }
+.studio-page .skip-link { background: var(--tv-inverse); color: var(--tv-on-inverse); }
+.studio-page .spark { color: var(--tv-accent); }
+.studio-page :is(.collage-image-status.is-ready, .model-availability.available, .capability-state.is-available) { color: var(--tv-success); }
+.studio-page .workflow-port.is-over-limit { background: var(--tv-danger) !important; color: var(--tv-on-primary); }
+.studio-page :is(.workflow-node.is-dragging, .image-editor-stage.is-dragging-file, .upload-drop.is-dragging-file) { border-color: var(--tv-primary); background: var(--tv-control-hover); }
+.studio-page :is(.image-editor-inspector.is-embedded, .capability-tool-workspace.is-local-editor) { border-color: var(--tv-border); background: var(--tv-surface-raised); }
+.studio-page :is(.workflow-actions, .workflow-share-actions, .workflow-card-actions) button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page :is(.workflow-actions, .workflow-share-actions, .workflow-card-actions) button:hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.studio-page :is(.workflow-actions, .workflow-share-actions, .workflow-card-actions) button.primary,
+.studio-page .workflow-card-actions button[data-community-use] { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page :is(.workflow-card-body, .workflow-community-copy, .workflow-share-copy) { color: var(--tv-text); }
+.studio-page :is(.workflow-card-heading, .workflow-community-copy, .workflow-share-copy) :is(h2, h3, b, strong) { color: var(--tv-text); }
+.studio-page :is(.workflow-card-body, .workflow-community-copy, .workflow-share-copy) :is(p, span, small) { color: var(--tv-text-muted); }
+.studio-page :is(.workflow-card-footer, .workflow-card-tags, .workflow-card-stats, .workflow-community-stats, .workflow-community-tags) { border-color: var(--tv-border); color: var(--tv-text-secondary); }
+.studio-page :is(.workflow-card-tags, .workflow-community-tags) span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page :is(.workflow-card-author, .workflow-community-author) { color: var(--tv-text-secondary); }
+.studio-page :is(.workflow-card-author, .workflow-community-author) i { background: var(--tv-primary); color: var(--tv-on-primary); }
+.studio-page :is(.workflow-node-group, .workflow-node-scene, .workflow-node-asset_image) { border-color: var(--tv-border); color: var(--tv-text); }
+.studio-page .workflow-asset-node-prompt { background: var(--tv-media-overlay); color: var(--tv-media-text); }
+.studio-page :is(.history-list, .history-collapsed) { border-color: var(--tv-border); background: var(--tv-surface); color: var(--tv-text); }
+.studio-page .asset-page-preview.is-audio { background: var(--tv-info-soft); color: var(--tv-info); }
+.studio-page .visually-hidden { color: inherit; }
+
+/* Legacy landing selectors still used at responsive breakpoints. */
+
+.pricing-page .tariff-head { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+.profile-page :is(.account-history-card, .ledger-row) { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text); }
+.profile-page :is(.account-history-card, .ledger-row) :is(p, span, small, time) { color: var(--tv-text-secondary); }
+.profile-page .negative { color: var(--tv-danger); }
+
+/* High-specificity closures for incumbent ID/element-qualified rules. */
+body.profile-page,
+body.pricing-page {
+  background-color: var(--tv-canvas);
+  background-image: var(--tv-canvas-art);
+  color: var(--tv-text);
+}
+.studio-page .source-image-group .upload-drop {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text-secondary);
+}
+.studio-page .source-image-group .upload-drop:hover {
+  border-color: var(--tv-primary);
+  background: var(--tv-control-hover);
+}
+.studio-page .source-image-group .upload-drop > span {
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .source-image-group .upload-drop :is(b, strong) { color: var(--tv-text); }
+.studio-page .source-image-group .upload-drop :is(p, small) { color: var(--tv-text-secondary); }
+.studio-page #local-tool-stage.image-editor-stage,
+.studio-page #local-tool-stage.local-tool-preview {
+  background-color: var(--tv-editor-canvas);
+  color: var(--tv-text);
+}
+
+/* V141 detail closure: sidebar states and canvas miniatures must stay inside
+   their own theme context instead of inheriting light-content or legacy jade. */
+.studio-page .studio-sidebar { box-shadow: 12px 0 38px var(--tv-shadow-soft); }
+.studio-page .sidebar-section-toggle {
+  border-color: var(--tv-sidebar-border);
+  background: transparent;
+  color: var(--tv-sidebar-text);
+}
+.studio-page .sidebar-section-toggle:hover { background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .sidebar-section-toggle > span,
+.studio-page .capability-menu-trigger > i { color: var(--tv-sidebar-muted); }
+.studio-page .sidebar-bottom .feedback-button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tv-sidebar-text);
+  box-shadow: none;
+}
+.studio-page .sidebar-bottom .feedback-button:hover {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+.studio-page .sidebar-bottom .feedback-button > span { color: var(--tv-sidebar-icon); }
+.studio-page .capability-menu-trigger { background: transparent; color: var(--tv-sidebar-text); }
+.studio-page .capability-menu-trigger > b { color: inherit; }
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger {
+  background: var(--tv-sidebar-active);
+  color: var(--tv-sidebar-active-text);
+}
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger > :is(span, i) { color: var(--tv-sidebar-active-icon); }
+.studio-page .capability-subnav { border-color: var(--tv-sidebar-border); }
+.studio-page .capability-subnav .capability-subitem {
+  border-color: transparent;
+  background: transparent;
+  color: var(--tv-sidebar-text);
+}
+.studio-page .capability-subnav .capability-subitem:not(.capability-model-item).is-ready {
+  border-color: transparent;
+  background: transparent;
+  color: var(--tv-sidebar-text);
+}
+.studio-page .capability-subnav .capability-subitem:hover,
+.studio-page .capability-subnav .capability-subitem:focus-visible,
+.studio-page .capability-subnav .capability-subitem:not(.capability-model-item).is-ready:hover,
+.studio-page .capability-subnav .capability-subitem:not(.capability-model-item).is-ready:focus-visible {
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+.studio-page .capability-subnav .capability-subitem > b { color: inherit; }
+.studio-page .capability-subnav .capability-subitem > small { color: var(--tv-sidebar-muted); }
+.studio-page .capability-subitem > .capability-item-icon,
+.studio-page .capability-subitem.is-ready > .capability-item-icon {
+  background: transparent;
+  color: var(--tv-sidebar-icon);
+}
+
+/* Real workflow canvas states. */
+.studio-page .workflow-node.is-dragging {
+  border-color: var(--tv-primary);
+  background: var(--tv-surface-raised);
+  box-shadow: 0 20px 50px var(--tv-dialog-shadow);
+}
+.studio-page .workflow-port::after { background: var(--tv-inverse); color: var(--tv-on-inverse); }
+.studio-page .workflow-port[data-progressive-reference].is-connected {
+  background: var(--tv-accent) !important;
+  box-shadow: 0 0 0 2px var(--tv-focus) !important;
+}
+.studio-page .workflow-port[data-progressive-reference].is-over-limit {
+  background: var(--tv-danger) !important;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--tv-danger) 22%, transparent) !important;
+}
+.studio-page .workflow-lines path[data-preview-link] { stroke: var(--tv-primary); }
+.studio-page .workflow-lines path[data-dynamic-link] { stroke: var(--tv-border-strong); }
+
+/* Shared workflow cards and their detail dialog are small canvases, not media
+   covers; keep the grid, nodes, ports and paths semantic in every theme. */
+.studio-page .workflow-discovery-card {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 10px 30px var(--tv-shadow-soft);
+}
+.studio-page .workflow-discovery-card:hover {
+  border-color: var(--tv-border-strong);
+  box-shadow: 0 16px 38px var(--tv-shadow);
+}
+.studio-page .workflow-card-preview,
+.studio-page .workflow-community-preview {
+  border-color: var(--tv-border);
+  background-color: var(--tv-workspace);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--tv-border-strong) 72%, transparent) 1px, transparent 1px);
+  color: var(--tv-text);
+}
+.studio-page .workflow-card-preview { background-size: 17px 17px; }
+.studio-page .workflow-community-preview { background-size: 22px 22px; }
+.studio-page .workflow-card-preview::before,
+.studio-page .workflow-card-preview::after,
+.studio-page .workflow-community-preview .workflow-detail-node {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 8px 20px var(--tv-shadow-soft);
+}
+.studio-page .workflow-card-preview path,
+.studio-page .workflow-community-preview path { stroke: var(--tv-primary); }
+.studio-page .workflow-card-preview > span {
+  border: 1px solid var(--tv-border);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .workflow-community-preview .workflow-detail-node b { color: var(--tv-text); }
+.studio-page .workflow-community-preview .workflow-detail-node small { color: var(--tv-text-muted); }
+.studio-page .workflow-community-dialog {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 28px 90px var(--tv-dialog-shadow);
+}
+.studio-page .workflow-community-dialog::backdrop { background: var(--tv-backdrop); }
+.studio-page .workflow-community-author > span { background: var(--tv-primary); color: var(--tv-on-primary); }
+
+/* Generated-media overlays, empty canvases and loading states. */
+.studio-page :is(.skill-card, .scenario-card)::after { background: linear-gradient(180deg, transparent 34%, var(--tv-media-overlay)); }
+.studio-page :is(.local-tool-preview, .image-editor-canvas-shell) {
+  background-color: var(--tv-editor-canvas);
+  background-image:
+    linear-gradient(45deg, var(--tv-editor-check) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--tv-editor-check) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--tv-editor-check) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--tv-editor-check) 75%);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+}
+.studio-page .result-placeholder.is-pending::before,
+.studio-page .session-image-loader {
+  background: linear-gradient(105deg,
+    var(--tv-image-placeholder) 20%,
+    var(--tv-surface-raised) 38%,
+    var(--tv-image-placeholder) 56%);
+  background-size: 220% 100%;
+  box-shadow: inset 0 0 0 1px var(--tv-border);
+}
+.studio-page .image-editor-stage.is-dragging-file::after {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+
+/* High-specificity component details found by the rendered color-difference
+   scan. These intentionally target the real element/ID selectors. */
+.studio-page .topbar-actions .credits-button > span,
+.pricing-page .balance-chip > span,
+.profile-page .profile-balance > span { color: var(--tv-accent); }
+.studio-page #credits-total,
+.profile-page #nav-credit-total { color: var(--tv-primary-ink); }
+.studio-page .prompt-group { border-color: var(--tv-border); box-shadow: none; }
+.studio-page #active-capability-chip { box-shadow: 0 5px 14px var(--tv-shadow-soft); }
+.studio-page #history-title { color: var(--tv-text); }
+.studio-page #history-drawer-close { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page #history-empty { color: var(--tv-text-muted); }
+.studio-page #history-empty > span { color: var(--tv-primary); }
+.studio-page #history-empty > strong { color: var(--tv-text); }
+.studio-page .skill-filters button { color: var(--tv-text-secondary); }
+.studio-page .skill-filters button:hover { color: var(--tv-primary-ink); }
+.studio-page .skill-filters button.active { border-color: var(--tv-accent); color: var(--tv-primary-ink); }
+.studio-page .skill-card { box-shadow: 0 10px 30px var(--tv-shadow-soft); }
+.studio-page .skill-card.cover-fallback::before {
+  background:
+    radial-gradient(circle at 72% 18%, color-mix(in srgb, var(--tv-on-primary) 30%, transparent), transparent 28%),
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--tv-primary) 36%, var(--tv-surface-muted)),
+      color-mix(in srgb, var(--tv-primary) 30%, var(--tv-inverse)) 68%,
+      var(--tv-inverse));
+}
+.studio-page .skill-card > em { color: color-mix(in srgb, var(--tv-media-text) 84%, transparent); }
+.studio-page .studio-sidebar .discover-nav a > span { color: var(--tv-sidebar-icon); }
+.studio-page .studio-sidebar .discover-nav svg,
+.studio-page .studio-sidebar .discover-nav svg * { stroke: currentColor; }
+
+.studio-page #capability-workspace-back,
+.studio-page #information-dialog-close,
+.studio-page #asset-save-cancel,
+.studio-page #asset-category-cancel {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-primary-ink);
+}
+.studio-page #capability-workspace-note,
+.studio-page #information-dialog-summary,
+.studio-page #history-dialog > div > span,
+.studio-page #asset-save-form > span,
+.studio-page #plaza-detail-dialog .plaza-detail-copy > span { color: var(--tv-text-muted); }
+.studio-page #local-tool-view { box-shadow: 0 18px 48px var(--tv-shadow-soft); }
+.studio-page #local-editor-open-local {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+.studio-page #local-editor-open-local:hover { border-color: var(--tv-primary-hover); background: var(--tv-primary-hover); color: var(--tv-on-primary); }
+.studio-page #local-editor-open-assets { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-primary-ink); }
+.studio-page #local-editor-open-assets:hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.studio-page #information-dialog-eyebrow,
+.studio-page #asset-save-form > p,
+.studio-page #asset-category-form > p { color: var(--tv-accent-ink); }
+.studio-page #history-dialog-save-asset,
+.studio-page #asset-save-form button.primary,
+.studio-page #asset-category-form button.primary,
+.studio-page #workflow-comment-form > button {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+.studio-page #history-dialog-use { color: var(--tv-primary-ink); }
+.studio-page #workflow-comment-input { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page #workflow-comment-status,
+.studio-page #feedback-status { color: var(--tv-danger); }
+.studio-page .feedback-heading > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page button.workflow-node-remove { color: var(--tv-text-muted); }
+.studio-page button.workflow-node-remove:hover { background: var(--tv-danger-soft); color: var(--tv-danger); }
+
+/* Profile and pricing pages use the same global roles at their strongest
+   incumbent selectors. */
+.profile-page .profile-nav .profile-brand { color: var(--tv-text); }
+.profile-page .profile-nav .profile-balance { color: var(--tv-primary-ink); }
+.pricing-page .price-advantage { box-shadow: 0 18px 45px var(--tv-shadow-soft); }
+.pricing-page .price-advantage > div > span { color: var(--tv-text-secondary); }
+.pricing-page .membership-cards article > ul { color: var(--tv-text-secondary); }
+.pricing-page .membership-cards article > ul > li::before { color: var(--tv-primary); }
+
+
+/* Final precedence closure for legacy selectors that carry additional class
+   specificity or historical !important declarations. */
+.studio-page:not(.studio-has-output) .controls-panel .prompt-group {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  box-shadow: none !important;
+}
+.studio-page .skill-filters.discovery-subnav button,
+.studio-page .model-family-nav.discovery-subnav button,
+.studio-page .discovery-subnav button {
+  color: var(--tv-text-secondary);
+}
+.studio-page .skill-filters.discovery-subnav button:hover,
+.studio-page .skill-filters.discovery-subnav button:focus-visible,
+.studio-page .skill-filters.discovery-subnav button.active,
+.studio-page .model-family-nav.discovery-subnav button:hover,
+.studio-page .model-family-nav.discovery-subnav button:focus-visible,
+.studio-page .model-family-nav.discovery-subnav button.active,
+.studio-page .discovery-subnav button:hover,
+.studio-page .discovery-subnav button:focus-visible,
+.studio-page .discovery-subnav button.active {
+  color: var(--tv-primary-ink);
+}
+.studio-page .workflow-node-dynamic > header .workflow-node-remove {
+  color: var(--tv-text-muted);
+}
+.studio-page .workflow-node-dynamic > header .workflow-node-remove:hover {
+  background: var(--tv-danger-soft);
+  color: var(--tv-danger);
+}
+.profile-page .profile-nav .profile-brand { color: var(--tv-text) !important; }
+.profile-page .profile-nav .profile-balance { color: var(--tv-primary-ink) !important; }
+
+/* Feedback path: use explicit selectors so legacy textarea placeholder and
+   native option rules cannot reintroduce the incumbent jade typography. */
+.studio-page #feedback-button { color: var(--tv-sidebar-text); }
+.studio-page #feedback-button > span { color: var(--tv-sidebar-icon); }
+.studio-page #feedback-button:hover { color: var(--tv-sidebar-strong); }
+.studio-page #feedback-dialog-title,
+.studio-page .feedback-dialog label,
+.studio-page #feedback-screenshot-label { color: var(--tv-text); }
+.studio-page .feedback-heading p,
+.studio-page .feedback-dialog label > small,
+.studio-page .feedback-screenshot small,
+.studio-page #feedback-count { color: var(--tv-text-muted); }
+.studio-page #feedback-category,
+.studio-page #feedback-message {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page #feedback-message::placeholder {
+  color: var(--tv-text-muted);
+  opacity: 1;
+}
+.studio-page #feedback-category option,
+.studio-page #feedback-category optgroup {
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page #feedback-category:focus,
+.studio-page #feedback-message:focus {
+  border-color: var(--tv-primary);
+  box-shadow: 0 0 0 3px var(--tv-focus);
+}
+.studio-page #feedback-cancel {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-primary-ink);
+}
+.studio-page #feedback-submit {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+
+/* Sidebar account identity: legacy `.sidebar-bottom b` and visited-link rules
+   must not pin the user name to the incumbent green palette. */
+.studio-page .sidebar-bottom .sidebar-user-card,
+.studio-page .sidebar-bottom .sidebar-user-card:visited {
+  color: var(--tv-sidebar-strong);
+}
+.studio-page .sidebar-bottom .sidebar-user-card > b,
+.studio-page .sidebar-bottom .sidebar-user-card:hover > b,
+.studio-page .sidebar-bottom .sidebar-user-card:focus-visible > b {
+  color: inherit;
+}
+.studio-page .sidebar-bottom .sidebar-user-card:hover,
+.studio-page .sidebar-bottom .sidebar-user-card:focus-visible {
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong) !important;
+}
+.studio-page .sidebar-bottom .sidebar-user-avatar {
+  background: var(--tv-sidebar-accent);
+  color: var(--tv-on-sidebar-accent);
+}
+.studio-page .capability-subnav .capability-models-toggle > i {
+  color: var(--tv-sidebar-muted);
+}
+.studio-page .capability-subnav .capability-models-toggle:hover > i,
+.studio-page .capability-subnav .capability-models-toggle:focus-visible > i {
+  color: var(--tv-sidebar-icon);
+}
+.studio-page .capability-subnav .capability-models-toggle.is-open > i {
+  color: var(--tv-sidebar-active-icon);
+}

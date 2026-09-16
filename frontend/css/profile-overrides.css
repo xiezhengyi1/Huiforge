@@ -1,0 +1,187 @@
+.profile-page [hidden] {
+  display: none !important;
+}
+
+/* v68 — verified-phone registration controls. */
+.sms-code-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 8px;
+}
+.sms-code-field > button {
+  border: 1px solid #b9cfc0;
+  border-radius: 9px;
+  background: #edf5ef;
+  color: var(--green);
+  font: 750 12px/1 inherit;
+  cursor: pointer;
+}
+.sms-code-field > button:disabled,
+#register-submit:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+.sms-availability {
+  margin-top: -3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.sms-availability.is-ready { color: var(--green); }
+.sms-availability.is-error { color: var(--coral); }
+@media (max-width: 620px) {
+  .sms-code-field { grid-template-columns: minmax(0, 1fr) 104px; }
+}
+
+/* v69 — registration is a focused product entry, not a profile landing page. */
+.profile-page .profile-main {
+  width: min(1320px, calc(100% - 48px));
+  margin: 10px auto 80px;
+}
+.profile-page .auth-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.14fr) minmax(360px, .72fr);
+  min-height: min(760px, calc(100dvh - 130px));
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #cfdcd2;
+  border-radius: 30px;
+  background: #f9faf6;
+  box-shadow: 0 30px 90px rgba(29,59,44,.1);
+}
+.profile-page .auth-back {
+  position: absolute;
+  z-index: 3;
+  top: 22px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(225,241,232,.22);
+  border-radius: 999px;
+  background: rgba(7,35,25,.26);
+  color: #edf7f1;
+  font-size: 13px;
+  font-weight: 760;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: background .18s ease,border-color .18s ease,transform .18s ease;
+}
+.profile-page .auth-back:hover {
+  border-color: rgba(225,241,232,.42);
+  background: rgba(7,35,25,.48);
+  transform: translateX(-2px);
+}
+.profile-page .auth-back:focus-visible {
+  outline: 3px solid rgba(192,231,211,.42);
+  outline-offset: 3px;
+}
+.profile-page.auth-view .profile-nav { display:none; }
+.profile-page.auth-view .profile-main { padding-top:clamp(18px,4vh,48px); }
+.profile-page .auth-showcase {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: clamp(38px,5vw,72px);
+  background: radial-gradient(circle at 95% 0,rgba(163,207,182,.22),transparent 36%),linear-gradient(145deg,#153f30,#0f3025);
+  color: #f1f7f3;
+}
+.profile-page .auth-showcase-copy > span {
+  color: #9fd3ba;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.profile-page .auth-showcase-copy h1 {
+  margin: 18px 0 22px;
+  font: 500 clamp(38px,4.5vw,65px)/1.04 Georgia,"Songti SC",serif;
+  letter-spacing: -.045em;
+}
+.profile-page .auth-showcase-copy p {
+  max-width: 590px;
+  margin: 0;
+  color: #bed3c7;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.profile-page .auth-models { margin-top: clamp(38px,6vh,68px); }
+.profile-page .auth-models h2 {
+  margin: 0 0 15px;
+  color: #dcebe3;
+  font-size: 14px;
+}
+.profile-page .auth-models > div {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 9px;
+}
+.profile-page .auth-models article {
+  display: grid;
+  grid-template-columns: 36px minmax(0,1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(220,239,229,.14);
+  border-radius: 13px;
+  background: rgba(255,255,255,.065);
+}
+.profile-page .auth-models img {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 9px;
+  background: #f4f7f2;
+  object-fit: contain;
+}
+.profile-page .auth-models b,.profile-page .auth-models small { display: block; }
+.profile-page .auth-models b { overflow: hidden; color: #fff; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.profile-page .auth-models small { margin-top: 3px; color: #9fbbae; font-size: 10px; }
+.profile-page .auth-models em { padding: 4px 6px; border-radius: 999px; background: rgba(169,219,194,.12); color: #b7ddca; font-size: 9px; font-style: normal; font-weight: 760; white-space: nowrap; }
+.profile-page .auth-benefits {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 38px;
+}
+.profile-page .auth-benefits span { padding-top: 13px; border-top: 1px solid rgba(222,239,230,.16); }
+.profile-page .auth-benefits b,.profile-page .auth-benefits small { display: block; }
+.profile-page .auth-benefits b { color: #f1f7f3; font-size: 12px; }
+.profile-page .auth-benefits small { margin-top: 5px; color: #93b1a2; font-size: 10px; line-height: 1.5; }
+.profile-page .auth-card {
+  align-self: center;
+  width: min(410px,calc(100% - 54px));
+  margin: 40px auto;
+  padding: 30px;
+  border: 0;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 20px 52px rgba(24,56,41,.09);
+}
+.profile-page .auth-tabs button { font-size: 14px; }
+.profile-page .auth-card label { font-size: 12px; }
+.profile-page .auth-card input { min-height: 44px; font-size: 14px; }
+.profile-page .auth-card form > button { min-height: 46px; font-size: 14px; }
+@media(max-width:920px){
+  .profile-page .auth-panel{grid-template-columns:1fr;min-height:0}
+  .profile-page .auth-showcase{padding:36px}
+  .profile-page .auth-showcase-copy h1{font-size:42px}
+  .profile-page .auth-benefits{margin-top:28px}
+}
+@media(max-width:620px){
+  .profile-page .profile-main{width:min(100% - 24px,1320px)}
+  .profile-page .auth-panel{border-radius:22px}
+  .profile-page .auth-back{top:14px;left:14px;min-height:36px;padding:0 11px}
+  .profile-page .auth-showcase{padding:28px 22px}
+  .profile-page .auth-showcase-copy h1{font-size:35px}
+  .profile-page .auth-models>div{grid-template-columns:1fr}
+  .profile-page .auth-benefits{grid-template-columns:1fr;gap:7px}
+  .profile-page .auth-benefits span{display:flex;justify-content:space-between;gap:12px}
+  .profile-page .auth-card{width:calc(100% - 28px);margin:14px auto;padding:23px}
+}

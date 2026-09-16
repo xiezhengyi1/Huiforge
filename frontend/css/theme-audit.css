@@ -1,0 +1,1259 @@
+/* V144 component contract.
+   Legacy sheets only provide layout. This file is the single authority for
+   colour, typography, radii, borders and shadows on every product surface. */
+
+html[data-studio-theme] {
+  color-scheme: light !important;
+  background: var(--tv-canvas) !important;
+  --tv-radius-control: 11px;
+  --tv-radius-card: 18px;
+  --tv-radius-panel: 24px;
+  --tv-radius-shell: 30px;
+  --tv-radius-pill: 999px;
+  --tv-focus-ring: color-mix(in srgb, var(--tv-primary) 24%, transparent);
+}
+html[data-studio-theme="indigo"],
+html[data-studio-theme="monochrome-accent"],
+html[data-studio-theme="graphite-amber"] { color-scheme: dark !important; }
+html[data-studio-theme] body {
+  color: var(--tv-text) !important;
+  background-color: var(--tv-canvas) !important;
+  background-image: var(--tv-canvas-art) !important;
+}
+html[data-studio-theme] ::selection { background: var(--tv-selection) !important; color: var(--tv-selection-text) !important; }
+html[data-studio-theme] :focus-visible { outline-color: var(--tv-primary) !important; }
+html[data-studio-theme] :disabled,
+html[data-studio-theme] [aria-disabled="true"] { color: var(--tv-disabled) !important; }
+
+/* Global health notice: invisible while healthy and visually identical across
+   the landing page, studio, pricing and profile surfaces. */
+html[data-studio-theme] .service-health-banner {
+  position: fixed !important;
+  z-index: 180 !important;
+  left: 50% !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: min(520px, calc(100vw - 32px)) !important;
+  padding: 10px 12px !important;
+  transform: translateX(-50%) !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 18px 52px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] .service-health-banner[hidden] { display: none !important; }
+html[data-studio-theme] .service-health-marker {
+  display: grid !important;
+  width: 28px !important;
+  height: 28px !important;
+  place-items: center !important;
+  border-radius: var(--tv-radius-pill) !important;
+  background: var(--tv-primary-soft) !important;
+  color: var(--tv-primary-ink) !important;
+  font-weight: 800 !important;
+}
+html[data-studio-theme] .service-health-banner[data-state="danger"] .service-health-marker {
+  background: var(--tv-danger-soft) !important;
+  color: var(--tv-danger) !important;
+}
+html[data-studio-theme] .service-health-message {
+  min-width: 0 !important;
+  color: var(--tv-text) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+}
+html[data-studio-theme] .service-health-action {
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  border: 1px solid var(--tv-border-strong) !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: transparent !important;
+  color: var(--tv-primary-ink) !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+html[data-studio-theme] .service-health-action:hover { background: var(--tv-primary-soft) !important; }
+@media (max-width: 520px) {
+  html[data-studio-theme] .service-health-banner {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+  }
+  html[data-studio-theme] .service-health-action { grid-column: 2 !important; justify-self: start !important; }
+}
+
+/* Shared typographic and control roles. */
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(h1,h2,h3,h4,h5,h6,legend,label,dt,th) { color: var(--tv-text) !important; }
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select,option,optgroup) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-control) !important;
+  color: var(--tv-control-text) !important;
+}
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select) { border-radius: var(--tv-radius-control) !important; }
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select)::placeholder { color: var(--tv-text-muted) !important; opacity: 1; }
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select):focus {
+  border-color: var(--tv-primary) !important;
+  box-shadow: 0 0 0 3px var(--tv-focus) !important;
+}
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(button,a,[role="button"]) { text-decoration-color: currentColor !important; }
+
+/* Canonical type scale: supporting copy stays readable and never falls back
+   to legacy 8–10px editorial labels. */
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page) {
+  font-size: 14px !important;
+}
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :where(small,.eyebrow,.section-overline,.section-heading p,.field-meta,.help-text,
+    .model-badge,.model-status-tag,.model-availability,.capability-state,
+    .workflow-port-caption,.workflow-input-meta,.plaza-card-meta,.quick-access-empty) {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+/* Complete readable-text contracts for the two legacy-dense surfaces. Icons
+   stay optically sized through aria-hidden while every user-facing label is
+   at least 12px. */
+html[data-studio-theme] .studio-page .workflow-workspace
+  :is(p,small,em,time,code,dt,dd,label,button,select,output),
+html[data-studio-theme] .studio-page .workflow-workspace span:not([aria-hidden="true"]),
+html[data-studio-theme] .studio-page .information-dialog
+  :is(p,small,em,time,code,dt,dd,label,button),
+html[data-studio-theme] .studio-page .information-dialog span:not([aria-hidden="true"]),
+html[data-studio-theme] .studio-page .asset-workspace-head p {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+html[data-studio-theme] .studio-page .workflow-discovery-card
+  :is(span,small,em,button),
+html[data-studio-theme] .studio-page .model-guide-card
+  :is(span,small,em,dt,dd,b,strong) {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+html[data-studio-theme] .studio-page #plaza-search-status {
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page .work-dialog
+  :is(p,span,small,em,time,code,label,button:not(.dialog-close)),
+html[data-studio-theme] .studio-page .workflow-community-dialog
+  :is(p,span,small,em,time,code,label,b,button:not(.dialog-close)) {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+/* Canonical geometry. Components are assigned one of four roles instead of
+   keeping page-specific 10/13/15/16/20/22/26px values. */
+html[data-studio-theme] .studio-page :where(
+  .model-select-trigger,.output-settings-trigger,.toolbar-history-button,
+  .theme-picker-trigger,.source-replace-button,.source-save-voice-button,
+  .history-actions button,.workflow-actions button,.workflow-canvas-toolbar button,
+  .image-editor-commandbar button,.image-editor-inspector button,
+  .camera-preset-grid button,.camera-controls button) {
+  border-radius: var(--tv-radius-control) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  .capability-card,.asset-card,.asset-page-card,.history-item,.result-card,
+  .media-result-card,.skill-card,.workflow-discovery-card,.shared-workflow-card,
+  .workflow-asset-card,.workflow-node,.workflow-node-dynamic,.scenario-card,
+  .model-detail-grid article,.info-card-grid article,.information-card,
+  .layer-stack-item) {
+  border-radius: var(--tv-radius-card) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  .workflow-node-option,.model-select-item,.theme-option,.plan-option,
+  .ratio-option,.output-settings-menu button) {
+  border-radius: var(--tv-radius-control) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  .controls-panel,.results-panel,.history-panel,.capability-center,
+  .capability-tool-workspace,.asset-workspace,.image-tool-workspace,
+  .analysis-layout,.layer-result-workbench,.local-tool-shell,
+  .workflow-library-panel,.workflow-assets-panel,.shared-workflow-panel,
+  .workflow-node-picker,.image-editor) {
+  border-radius: var(--tv-radius-panel) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  .model-select-menu,.output-settings-menu,.theme-picker-menu,
+  .prompt-mention-picker,.workflow-prompt-mention-picker,.sidebar-pin-menu) {
+  border-radius: var(--tv-radius-card) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  dialog,.work-dialog,.dialog-card,.modal-card,.feedback-dialog,
+  .plaza-detail-dialog,.profile-history-dialog) {
+  border-radius: var(--tv-radius-panel) !important;
+}
+
+/* Canonical component surfaces. This closes gaps where an unlisted legacy
+   card could still display a fixed jade background in indigo/cinnabar themes. */
+html[data-studio-theme] .studio-page :where(
+  .capability-card,.asset-card,.asset-page-card,.history-item,.result-card,
+  .media-result-card,.workflow-discovery-card,.workflow-node,
+  .workflow-node-dynamic,.scenario-card,.model-detail-grid article,
+  .info-card-grid article,.information-card,.layer-stack-item) {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  .workflow-node-option,.shared-workflow-card,.workflow-asset-card,
+  .workflow-node-run-result,.workflow-output-preview) {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :where(
+  dialog,.work-dialog,.dialog-card,.modal-card,.feedback-dialog,
+  .plaza-detail-dialog,.model-select-menu,.output-settings-menu,
+  .theme-picker-menu,.prompt-mention-picker,.workflow-prompt-mention-picker) {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 24px 70px var(--tv-dialog-shadow) !important;
+}
+
+/* Primary actions always carry inverse text, including nested counters/icons. */
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(.button-primary,.generate-button,.workflow-run,.workflow-community-use,.new-session,
+      button.primary,[type="submit"],.membership-cards article.featured > button,
+      .home-console button,.landing-header-cta) {
+  border-color: var(--tv-primary) !important;
+  background-color: var(--tv-primary) !important;
+  color: var(--tv-on-primary) !important;
+}
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(.button-primary,.generate-button,.workflow-run,.workflow-community-use,.new-session,
+      button.primary,[type="submit"],.membership-cards article.featured > button,
+      .home-console button,.landing-header-cta) * { color: inherit !important; }
+html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
+  :is(.button-primary,.generate-button,.workflow-run,.workflow-community-use,.new-session,
+      button.primary,[type="submit"]):hover {
+  border-color: var(--tv-primary-hover) !important;
+  background-color: var(--tv-primary-hover) !important;
+}
+
+/* Studio application shell and navigation. */
+html[data-studio-theme] .studio-page .studio-app,
+html[data-studio-theme] .studio-page .studio-content,
+html[data-studio-theme] .studio-page .capability-center { background-color: transparent !important; color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page .studio-discovery {
+  background: transparent !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.studio-sidebar,.capability-nav) {
+  border-color: var(--tv-sidebar-border) !important;
+  background: var(--tv-sidebar) !important;
+  color: var(--tv-sidebar-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.sidebar-brand,.sidebar-label,.tool-item,.capability-nav button,.capability-subitem,.sidebar-bottom) { color: var(--tv-sidebar-text) !important; }
+html[data-studio-theme] .studio-page :is(.sidebar-brand,.tool-item,.capability-nav button,.capability-subitem) :is(b,strong) { color: var(--tv-sidebar-strong) !important; }
+html[data-studio-theme] .studio-page :is(.sidebar-label,.tool-item em,.capability-nav small,.capability-subitem small,.capability-models-toggle i) { color: var(--tv-sidebar-muted) !important; }
+html[data-studio-theme] .studio-page :is(.tool-item,.capability-nav button,.capability-subitem):hover { background: var(--tv-sidebar-hover) !important; }
+html[data-studio-theme] .studio-page :is(.tool-item,.capability-nav button,.capability-subitem).active,
+html[data-studio-theme] .studio-page :is(.tool-item,.capability-nav button,.capability-subitem)[aria-current="page"] {
+  background: var(--tv-sidebar-active) !important;
+  color: var(--tv-sidebar-active-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.tool-item,.capability-nav button,.capability-subitem).active * { color: inherit !important; }
+html[data-studio-theme] .studio-page .capability-state {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text-secondary) !important;
+}
+html[data-studio-theme] body.studio-page .capability-nav .capability-state {
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text-secondary) !important;
+}
+html[data-studio-theme] body.studio-page .capability-center-head span {
+  color: var(--tv-primary-ink) !important;
+  font-size: 12px !important;
+}
+html[data-studio-theme] body.studio-page .capability-center-head p {
+  color: var(--tv-text-secondary) !important;
+}
+
+/* Studio surfaces: composers, tools, results, history, assets and dialogs. */
+html[data-studio-theme] .studio-page :is(
+  .controls-panel,.results-panel,.history-panel,.field-group,.prompt-group,.prompt-toolbar,
+  .tool-command-panel,.analysis-layout,.analysis-input-panel,.analysis-result-panel,
+  .capability-tool-workspace,.capability-tool-view,.capability-workspace-head,
+  .asset-card,
+  .image-tool-workspace,.interactive-editor,.layer-result-workbench,.local-tool-shell,
+  .information-card,.model-select-menu,.output-settings-menu,.theme-picker-menu,
+  dialog,.dialog-card,.modal-card,.feedback-dialog) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.controls-panel,.results-panel,.history-panel,.capability-tool-workspace,dialog) {
+  box-shadow: 0 18px 50px var(--tv-shadow-soft) !important;
+}
+html[data-studio-theme] .studio-page :is(
+  .settings-heading,.results-bar,.history-heading,.field-group,.prompt-toolbar,.privacy-note,
+  .capability-toolbar,.capability-tabs,.capability-workspace-head,.asset-workspace-head,
+  .asset-library-toolbar,.image-tool-heading,.output-settings-section,.video-duration-section,
+  .audio-speed-section,.image-editor-commandbar,.image-editor-inspector) { border-color: var(--tv-border) !important; }
+html[data-studio-theme] .studio-page :is(.field-meta,.privacy-note,.source-meta,.history-privacy,
+  .capability-state,.capability-workspace-head span,.asset-workspace-head span,.result-tip,
+  .empty-state,p.empty,small.helper,.help-text) { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page .asset-page-empty > span {
+  color: var(--tv-primary) !important;
+}
+html[data-studio-theme] body.studio-page .asset-category-rail em,
+html[data-studio-theme] body.studio-page .asset-library-toolbar > div > span {
+  color: var(--tv-text-secondary) !important;
+}
+html[data-studio-theme] .studio-page :is(.history-heading h2,.settings-heading h2,.capability-workspace-head h2,.asset-workspace-head h2) { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page :is(.history-heading p,.capability-workspace-head p,.asset-workspace-head p,.eyebrow) { color: var(--tv-accent-ink) !important; }
+
+/* Composer continuity: the generation form is only a layout shell. The
+   visible prompt and material cards sit directly above the themed canvas. */
+html[data-studio-theme] .studio-page:not(.studio-has-output) .controls-panel {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page:not(.studio-has-output) .controls-panel .prompt-group,
+html[data-studio-theme] .studio-page .controls-panel[data-mode="text"] .prompt-group {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-panel) !important;
+  background: var(--tv-surface-raised) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel #prompt {
+  border: 0 !important;
+  outline: 0 !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: none !important;
+  border-radius: calc(var(--tv-radius-panel) - 1px) calc(var(--tv-radius-panel) - 1px) 0 0 !important;
+}
+html[data-studio-theme] .studio-page .controls-panel .prompt-toolbar {
+  background: var(--tv-surface-raised) !important;
+  border-radius: 0 0 calc(var(--tv-radius-panel) - 1px) calc(var(--tv-radius-panel) - 1px) !important;
+}
+html[data-studio-theme] .studio-page :is(.model-select-trigger,.output-settings-trigger,.toolbar-select-trigger,.toolbar-history-button,.generate-button,.button) {
+  border-radius: var(--tv-radius-control) !important;
+}
+
+/* One dropdown language everywhere: controls, native selects and floating menus. */
+html[data-studio-theme] body.studio-page :where(select) {
+  min-height: 40px !important;
+  padding: 0 34px 0 12px !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-control) !important;
+  outline: 0 !important;
+  appearance: none !important;
+  background-color: var(--tv-control) !important;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--tv-text-secondary) 50%),
+    linear-gradient(135deg, var(--tv-text-secondary) 50%, transparent 50%) !important;
+  background-position:
+    calc(100% - 16px) calc(50% - 1px),
+    calc(100% - 11px) calc(50% - 1px) !important;
+  background-repeat: no-repeat !important;
+  background-size: 5px 5px, 5px 5px !important;
+  color: var(--tv-control-text) !important;
+  font: 700 14px/1 var(--tv-font-sans) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page :where(select):hover {
+  border-color: var(--tv-border-strong) !important;
+  background-color: var(--tv-control-hover) !important;
+}
+html[data-studio-theme] body.studio-page :where(select):focus-visible,
+html[data-studio-theme] body.studio-page :is(.model-select-trigger,.output-settings-trigger,.toolbar-select-trigger):focus-visible {
+  border-color: var(--tv-primary) !important;
+  box-shadow: 0 0 0 3px var(--tv-focus-ring) !important;
+}
+html[data-studio-theme] body.studio-page :where(select) option {
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] body.studio-page :is(.model-select-trigger,.output-settings-trigger,.toolbar-select-trigger) {
+  min-height: 40px !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: var(--tv-control) !important;
+  color: var(--tv-control-text) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page :is(.model-select-menu,.output-settings-menu,.toolbar-select-menu,.sidebar-select-menu,.sidebar-pin-menu,.workflow-node-picker) {
+  z-index: 1100 !important;
+  overflow: auto !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 18px 46px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button) {
+  min-height: 42px !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: transparent !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button):hover,
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button)[aria-selected="true"] {
+  background: var(--tv-primary-soft) !important;
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] .studio-page :is(.source-image-group,.source-upload-layout,.source-upload-surface,.source-image-copy) {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page :is(.tool-command-panel,.analysis-input-panel) {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) {
+  border-color: var(--tv-border-strong) !important;
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell):hover {
+  border-color: var(--tv-primary) !important;
+  background: var(--tv-control-hover) !important;
+}
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) :is(b,strong) { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) :is(p,small,span) { color: var(--tv-text-secondary) !important; }
+
+/* Reference-driven modes share the text composer's one-card language. The
+   upload slot and prompt are compartments of one input, never stacked cards. */
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) {
+  grid-template-columns: minmax(0,1fr) !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .active-capability-chip {
+  margin: 14px 18px 10px !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .reference-composer {
+  padding: 0 18px 16px !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .image-tool-grid {
+  grid-template-columns: clamp(132px,17vw,170px) minmax(0,1fr) !important;
+  gap: 14px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-upload-surface {
+  min-height: 168px !important;
+  border: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel {
+  min-height: 168px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .upload-drop {
+  min-height: 168px !important;
+  border: 1px dashed var(--tv-border-strong) !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: var(--tv-surface-muted) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-preview-shell {
+  min-height: 168px !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: var(--tv-surface-muted) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-preview-shell #source-preview {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: 360px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-control) !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+html[data-studio-theme] .studio-page :is(img,video,audio)[hidden] {
+  display: none !important;
+}
+html[data-studio-theme] .studio-page .tool-command-panel input[type="text"] {
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: var(--tv-control) !important;
+  color: var(--tv-control-text) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .tool-command-panel select {
+  border-color: var(--tv-border) !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: var(--tv-control) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 128px !important;
+  margin: 0 !important;
+  padding: 10px 2px !important;
+  resize: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea:focus,
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel .prompt-tools .tool-preset-field {
+  display: inline-flex !important;
+  width: auto !important;
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+}
+html[data-studio-theme] .studio-page .controls-panel .prompt-tools .tool-preset-field[hidden] {
+  display: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel .prompt-tools :is(#preset-select-wrap,#style-select-wrap)[hidden],
+html[data-studio-theme] .studio-page .controls-panel .prompt-tools #mask-toolbar-actions[hidden] {
+  display: none !important;
+}
+html[data-studio-theme] .studio-page .controls-panel .prompt-tools #tool-preset-select {
+  width: auto !important;
+  max-width: 168px !important;
+  min-height: 40px !important;
+  font-size: 13px !important;
+}
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .prompt-toolbar {
+  margin: 0 !important;
+  padding: 14px 18px !important;
+  border: 0 !important;
+  border-top: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+@media (max-width: 760px) {
+  html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .image-tool-grid {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+  html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-upload-surface {
+    min-height: 116px !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+  }
+}
+html[data-studio-theme] .studio-page :is(.prompt-reference-trigger,.image-editor-open,#local-editor-open-assets,#local-tool-save-asset,.button-secondary,.button-ghost) {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-control) !important;
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] .studio-page :is(.prompt-reference-trigger,.image-editor-open,#local-editor-open-assets,#local-tool-save-asset,.button-secondary,.button-ghost):hover {
+  border-color: var(--tv-border-strong) !important;
+  background: var(--tv-control-hover) !important;
+}
+html[data-studio-theme] .studio-page .generate-credit-cost > span {
+  color: var(--tv-on-primary) !important;
+}
+html[data-studio-theme] .studio-page .credits-button > span:first-child {
+  color: var(--tv-credit-accent, var(--tv-primary-ink)) !important;
+}
+
+/* Discovery, filters and cards. */
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button {
+  border: 0 !important;
+  border-radius: 9px !important;
+  color: var(--tv-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button:not(.active):not([aria-selected="true"]),
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button:not(.active):not([aria-selected="true"]):hover,
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button:not(.active):not([aria-selected="true"]):focus-visible {
+  color: var(--tv-text-secondary) !important;
+  background: transparent !important;
+}
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button:not(.active):not([aria-selected="true"]):hover,
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button:not(.active):not([aria-selected="true"]):focus-visible {
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button.active,
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button[aria-selected="true"] {
+  color: var(--tv-primary-ink) !important;
+  background: var(--tv-primary-soft) !important;
+  border-color: transparent !important;
+}
+html[data-studio-theme] .studio-page :is(.discovery-switch,.discovery-subnav,.skill-filters,.model-family-nav,.workflow-discovery-toolbar) button::after { display: none !important; }
+html[data-studio-theme] .studio-page :is(.skill-card,.model-card,.shared-workflow-card,.workflow-asset-card,.asset-card) { border-color: var(--tv-border) !important; background-color: var(--tv-surface-raised) !important; }
+html[data-studio-theme] .studio-page .plaza-preview-card {
+  overflow: hidden !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-image-placeholder) !important;
+}
+html[data-studio-theme] .studio-page .plaza-preview-card::after {
+  background: linear-gradient(180deg,transparent 35%,var(--tv-media-overlay)) !important;
+}
+html[data-studio-theme] .studio-page .plaza-preview-card > .plaza-card-meta {
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  border-radius: 0 0 calc(var(--tv-radius-card) - 1px) calc(var(--tv-radius-card) - 1px) !important;
+  background: var(--tv-media-overlay) !important;
+  color: var(--tv-media-text) !important;
+  backdrop-filter: blur(8px) !important;
+}
+html[data-studio-theme] .studio-page .plaza-preview-card > .plaza-card-meta :is(small,span,svg) {
+  color: var(--tv-media-text) !important;
+  font-size: 12px !important;
+}
+html[data-studio-theme] .studio-page .model-family-feature {
+  overflow: hidden !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-panel) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 16px 42px var(--tv-shadow-soft) !important;
+}
+html[data-studio-theme] .studio-page .model-family-feature > div > span { color: var(--tv-accent-ink) !important; }
+html[data-studio-theme] .studio-page .model-family-feature :is(h2,h3,b,strong) { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page .model-family-feature p { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .studio-page .model-family-feature ul {
+  padding: 16px 18px 16px 34px !important;
+  border-radius: 12px !important;
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text-secondary) !important;
+}
+html[data-studio-theme] .studio-page .model-family-feature li { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .studio-page .model-family-feature li::marker { color: var(--tv-primary) !important; }
+html[data-studio-theme] .studio-page .model-family-feature a { color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] .studio-page .model-detail-grid article {
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 10px 28px var(--tv-shadow-soft) !important;
+}
+html[data-studio-theme] .studio-page .model-detail-grid span { font-size: 12px !important; }
+
+/* Workflow canvas, nodes, ports and all node-local controls. */
+html[data-studio-theme] .studio-page :is(.workflow-workspace,.workflow-canvas-shell,.workflow-viewport) { background-color: var(--tv-workspace) !important; color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page :is(.workflow-resource-dock,.workflow-library-panel,.workflow-canvas-toolbar,.workflow-actions,.workflow-node-picker,.workflow-node-editor,.workflow-community-dialog) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic,.workflow-detail-node,.workflow-node-option) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 12px 32px var(--tv-shadow-soft) !important;
+}
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(h3,h4,b,strong,label) { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(p,small,i,.workflow-port-caption,.workflow-input-meta) { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(input,textarea,select,button:not(.workflow-port):not(.workflow-node-run-button)) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-control) !important;
+  color: var(--tv-control-text) !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-run-button {
+  border-color: var(--tv-primary) !important;
+  background: var(--tv-primary-soft) !important;
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-run-button:hover { background: var(--tv-primary) !important; color: var(--tv-on-primary) !important; }
+html[data-studio-theme] .studio-page .workflow-node-editor {
+  border-color: var(--tv-border) !important;
+  background: color-mix(in srgb,var(--tv-surface-raised) 98%,transparent) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 24px 72px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-editor.is-expanded {
+  background: var(--tv-surface-raised) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-editor label { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page .workflow-node-editor :is(small,label>span) { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] .studio-page .workflow-node-editor textarea {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--tv-control-text) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-editor textarea:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-prompt textarea:focus,
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-prompt textarea:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-fields :is(input,select) {
+  appearance: none !important;
+  min-height: 30px !important;
+  padding: 0 16px 0 5px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: var(--tv-control-text) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-fields label:has(select)::after {
+  content: "⌄";
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  color: var(--tv-text-muted);
+  font-size: 9px;
+  pointer-events: none;
+  transform: translateY(-56%);
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-fields :is(input,select):focus { background: var(--tv-primary-soft) !important; box-shadow: none !important; }
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger {
+  min-height: 30px !important;
+  border: 0 !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: transparent !important;
+  color: var(--tv-control-text) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger:hover,
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger[aria-expanded="true"] {
+  background: var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger > span,
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger > i {
+  color: var(--tv-text-muted) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-trigger > b {
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover {
+  border-color: var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 16px 38px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover > div:first-child > span,
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-bounds {
+  color: var(--tv-text-muted) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover output {
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"],
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]:focus {
+  width: 100% !important;
+  min-width: 140px !important;
+  max-width: none !important;
+  min-height: 14px !important;
+  height: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(to right,
+    var(--tv-primary) 0,
+    var(--tv-primary) var(--workflow-range-progress),
+    var(--tv-border) var(--workflow-range-progress),
+    var(--tv-border) 100%) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 4px !important;
+  box-shadow: none !important;
+  cursor: ew-resize !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]::-webkit-slider-thumb {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: -5px !important;
+  border: 2px solid var(--tv-surface-raised) !important;
+  border-radius: 50% !important;
+  appearance: none !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 2px var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]::-moz-range-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--tv-border) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]::-moz-range-progress {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--tv-primary) !important;
+}
+html[data-studio-theme] body.studio-page .workflow-node-editor .workflow-node-editor-range-popover input[type="range"]::-moz-range-thumb {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid var(--tv-surface-raised) !important;
+  border-radius: 50% !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 2px var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-editor-credit { color: #6546cb !important; }
+html[data-studio-theme] .studio-page .workflow-node-editor-credit > span { color: #8259ee !important; }
+html[data-studio-theme] .studio-page .workflow-node-editor > footer > button {
+  border-color: var(--tv-primary) !important;
+  background: var(--tv-primary) !important;
+  color: var(--tv-on-primary) !important;
+}
+html[data-studio-theme] .studio-page .workflow-node-result-empty > span,
+html[data-studio-theme] .studio-page .workflow-node-status { background: var(--tv-primary-soft) !important; color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] .studio-page .workflow-port { border-color: var(--tv-surface-raised) !important; background: var(--tv-primary) !important; box-shadow: 0 0 0 1px var(--tv-primary) !important; }
+html[data-studio-theme] .studio-page .workflow-port:is(.is-connected,.is-snap-target) { background: var(--tv-accent) !important; box-shadow: 0 0 0 3px var(--tv-focus-ring) !important; }
+html[data-studio-theme] .studio-page .workflow-port.is-over-limit { background: var(--tv-danger) !important; box-shadow: 0 0 0 5px color-mix(in srgb,var(--tv-danger) 22%,transparent) !important; }
+html[data-studio-theme] .studio-page .workflow-mask-controls label {
+  display: grid !important;
+  grid-template-columns: auto minmax(88px,1fr) 40px !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+html[data-studio-theme] .studio-page .workflow-node.workflow-node-dynamic .workflow-mask-controls input[type="range"] {
+  width: 100% !important;
+  min-height: 20px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  appearance: auto !important;
+  background: transparent !important;
+  accent-color: var(--tv-primary) !important;
+  cursor: ew-resize !important;
+}
+html[data-studio-theme] .studio-page .workflow-mask-controls output {
+  color: var(--tv-primary-ink) !important;
+  font-size: 12px !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 800 !important;
+  text-align: right !important;
+}
+@media (min-width: 981px) {
+  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
+    top: 14px !important;
+    right: 210px !important;
+  }
+}
+html[data-studio-theme] .studio-page .workflow-lines path:not(.workflow-link-hit) { stroke: var(--tv-primary) !important; }
+html[data-studio-theme] .studio-page .workflow-lines path.workflow-link-hit { stroke: transparent !important; opacity: 0 !important; }
+html[data-studio-theme] .studio-page .workflow-lines path.workflow-link-visible.is-selected { stroke: var(--tv-danger) !important; }
+html[data-studio-theme] .studio-page .workflow-canvas-shell[data-edge-style="dashed"] .workflow-lines path.workflow-link-visible { stroke-dasharray: 9 7 !important; }
+html[data-studio-theme] .studio-page .workflow-canvas-shell[data-edge-style="hidden"] .workflow-lines path.workflow-link-visible { opacity: 0 !important; }
+html[data-studio-theme] .studio-page .workflow-edge-style-control { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page .workflow-edge-style-control select { min-height: 26px !important; border: 0 !important; background: transparent !important; color: var(--tv-control-text) !important; box-shadow: none !important; }
+html[data-studio-theme] .studio-page .workflow-node-remove { background: transparent !important; color: var(--tv-text-muted) !important; }
+html[data-studio-theme] .studio-page .workflow-node-remove:hover { background: var(--tv-danger-soft) !important; color: var(--tv-danger) !important; }
+html[data-studio-theme] .studio-page .model-status-tag {
+  border: 1px solid #dce2e7 !important;
+  background: #eef1f4 !important;
+  color: #44515c !important;
+}
+html[data-studio-theme] .studio-page .model-status-free {
+  border-color: #bde4ce !important;
+  background: #e5f5ec !important;
+  color: #16704f !important;
+}
+html[data-studio-theme] .studio-page .model-status-new {
+  border-color: #f2c8b9 !important;
+  background: #fff0ea !important;
+  color: #b64e2f !important;
+}
+html[data-studio-theme] .studio-page .model-status-vip {
+  border-color: #3d4551 !important;
+  background: #29303a !important;
+  color: #f4d38e !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page :is(.model-status-热门,.model-status-推荐) {
+  border-color: #ecd59c !important;
+  background: #fff4d8 !important;
+  color: #986018 !important;
+}
+html[data-studio-theme] .studio-page :is(.model-status-多参考,.model-status-4k) {
+  border-color: #c8d8f3 !important;
+  background: #eaf2ff !important;
+  color: #315f9f !important;
+}
+html[data-studio-theme] .studio-page .model-status-经典 {
+  border-color: #d9cdf1 !important;
+  background: #f3effc !important;
+  color: #654f96 !important;
+}
+html[data-studio-theme] .studio-page .model-select-menu .model-badge {
+  border: 1px solid #dfe5e8 !important;
+  background: #f1f4f5 !important;
+  color: #52616b !important;
+}
+html[data-studio-theme] .studio-page .model-select-menu .model-badge:first-child {
+  border-color: #cbdcf1 !important;
+  background: #edf4ff !important;
+  color: #315f95 !important;
+}
+html[data-studio-theme] .studio-page .model-select-menu .model-availability {
+  border: 1px solid #e2d4d4 !important;
+  background: #f6eeee !important;
+  color: #8b5151 !important;
+}
+html[data-studio-theme] .studio-page .model-select-menu .model-availability.available {
+  border-color: #bde4ce !important;
+  background: #e5f5ec !important;
+  color: #16704f !important;
+}
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) .model-status-tag {
+  color: #44515c !important;
+}
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) .model-status-free {
+  color: #16704f !important;
+}
+
+/* Image editor. */
+html[data-studio-theme] .studio-page :is(.image-editor-commandbar,.image-editor-inspector,.image-editor-stage,.image-editor-canvas-shell) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-editor-shell) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .studio-page .image-editor-stage { background-color: var(--tv-editor-canvas) !important; }
+html[data-studio-theme] .studio-page :is(.image-editor-history,.image-editor-tabs) button { color: var(--tv-text-secondary) !important; background: transparent !important; }
+html[data-studio-theme] .studio-page :is(.image-editor-history,.image-editor-tabs) button:hover { color: var(--tv-primary-ink) !important; background: var(--tv-control-hover) !important; }
+html[data-studio-theme] .studio-page .image-editor-tabs button.active { color: var(--tv-primary-ink) !important; background: var(--tv-primary-soft) !important; box-shadow: inset 0 -2px var(--tv-primary) !important; }
+
+/* Semantic statuses and modal backdrop. */
+html[data-studio-theme] .studio-page :is(.success,.status-success,[data-status="success"]) { color: var(--tv-success) !important; background-color: var(--tv-success-soft) !important; }
+html[data-studio-theme] .studio-page :is(.warning,.status-warning,[data-status="warning"]) { color: var(--tv-warning) !important; background-color: var(--tv-warning-soft) !important; }
+html[data-studio-theme] .studio-page :is(.error,.danger,.form-error,.status-error,[data-status="error"]) { color: var(--tv-danger) !important; background-color: var(--tv-danger-soft) !important; }
+html[data-studio-theme] .studio-page dialog::backdrop { background: var(--tv-backdrop) !important; }
+
+/* Homepage colour, surface and radius rules are centralized in
+   home-surface.css; the important audit layer intentionally does not repaint
+   landing-page sections. */
+
+/* Pricing page. */
+html[data-studio-theme] .pricing-page :is(.pricing-nav,.pricing-main,.pricing-section) { border-color: var(--tv-border) !important; background-color: transparent !important; color: var(--tv-text) !important; }
+html[data-studio-theme] .pricing-page :is(.membership-status,.membership-cards article,.topup-grid button,.tariff-table) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .pricing-page .price-advantage {
+  border-color: color-mix(in srgb,var(--tv-on-inverse) 20%,transparent) !important;
+  border-radius: var(--tv-radius-panel) !important;
+  background: var(--tv-inverse) !important;
+  color: var(--tv-on-inverse) !important;
+}
+html[data-studio-theme] .pricing-page .price-advantage :is(h2,h3,b,strong) { color: var(--tv-on-inverse) !important; }
+html[data-studio-theme] .pricing-page .price-advantage :is(p,span,small) { color: color-mix(in srgb,var(--tv-on-inverse) 78%,transparent) !important; }
+html[data-studio-theme] .pricing-page .advantage-metrics article { border-color: color-mix(in srgb,var(--tv-on-inverse) 20%,transparent) !important; border-radius: 14px !important; background: color-mix(in srgb,var(--tv-on-inverse) 8%,transparent) !important; }
+html[data-studio-theme] .pricing-page :is(.usage-table,.all-pricing) {
+  padding: 28px !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-panel) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 14px 38px var(--tv-shadow-soft) !important;
+}
+html[data-studio-theme] .pricing-page :is(.wallets article,.membership-cards article,.topup-grid button) { border-radius: var(--tv-radius-card) !important; }
+html[data-studio-theme] .pricing-page :is(.membership-cards article,.topup-grid button,.tariff-table) :is(p,span,small,li,dd) { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .pricing-page .membership-cards .recommend {
+  background: var(--tv-primary) !important;
+  color: var(--tv-on-primary) !important;
+}
+html[data-studio-theme] .pricing-page .plan-models i {
+  background: var(--tv-warning-soft) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .pricing-page .plan-models { border-color: var(--tv-border) !important; background: transparent !important; }
+html[data-studio-theme] .pricing-page .plan-models > strong { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .pricing-page .plan-models > span {
+  min-height: 34px !important;
+  padding: 4px 7px !important;
+  border-radius: 8px !important;
+  background: var(--tv-surface-muted) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .pricing-page .tariff-tabs { gap: 4px !important; padding: 5px !important; border: 1px solid var(--tv-border) !important; border-radius: 12px !important; background: var(--tv-surface-muted) !important; }
+html[data-studio-theme] .pricing-page .tariff-tabs button { padding: 9px 13px !important; border: 0 !important; border-radius: 8px !important; color: var(--tv-text-secondary) !important; background: transparent !important; }
+html[data-studio-theme] .pricing-page .tariff-tabs button.active { border-color: var(--tv-primary) !important; color: var(--tv-primary-ink) !important; background: var(--tv-primary-soft) !important; }
+html[data-studio-theme] .pricing-page .tariff-table { border-radius: 14px !important; background: var(--tv-surface) !important; }
+html[data-studio-theme] .pricing-page .tariff-table > div { border-color: var(--tv-border) !important; color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .pricing-page .tariff-table .tariff-head { background: var(--tv-surface-muted) !important; color: var(--tv-text) !important; }
+
+/* Profile/account page. */
+html[data-studio-theme] .profile-page :is(.profile-nav,.profile-main) { border-color: var(--tv-border) !important; background: transparent !important; color: var(--tv-text) !important; }
+html[data-studio-theme] .profile-page :is(.auth-panel,.auth-card,.identity-card,.profile-edit,.credit-details,.account-history,.credit-cards article,.profile-history-dialog) {
+  border-color: var(--tv-border) !important;
+  background-color: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] .profile-page :is(.profile-hero,.auth-panel,.identity-card,.profile-edit,.credit-details,.account-history) :is(p,span,small,time,blockquote) { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .profile-page .auth-panel { overflow: hidden !important; border-radius: var(--tv-radius-shell) !important; background: var(--tv-surface) !important; }
+html[data-studio-theme] .profile-page .auth-showcase {
+  background: var(--tv-inverse) !important;
+  color: var(--tv-on-inverse) !important;
+}
+html[data-studio-theme] .profile-page .auth-showcase :is(h1,h2,h3,b,strong) { color: var(--tv-on-inverse) !important; }
+html[data-studio-theme] .profile-page .auth-showcase :is(p,span,small) { color: color-mix(in srgb,var(--tv-on-inverse) 80%,transparent) !important; }
+html[data-studio-theme] .profile-page .auth-showcase-copy > span { color: color-mix(in srgb,var(--tv-on-inverse) 76%,var(--tv-accent)) !important; }
+html[data-studio-theme] .profile-page .auth-back {
+  border-color: color-mix(in srgb,var(--tv-on-inverse) 34%,transparent) !important;
+  border-radius: var(--tv-radius-pill) !important;
+  background: color-mix(in srgb,var(--tv-on-inverse) 8%,transparent) !important;
+  color: var(--tv-on-inverse) !important;
+}
+html[data-studio-theme] .profile-page .auth-models article {
+  border-color: color-mix(in srgb,var(--tv-on-inverse) 20%,transparent) !important;
+  border-radius: 13px !important;
+  background: color-mix(in srgb,var(--tv-on-inverse) 8%,transparent) !important;
+  color: var(--tv-on-inverse) !important;
+}
+html[data-studio-theme] .profile-page .auth-models article :is(b,strong) { color: var(--tv-on-inverse) !important; }
+html[data-studio-theme] .profile-page .auth-models article :is(small,span) { color: color-mix(in srgb,var(--tv-on-inverse) 74%,transparent) !important; }
+html[data-studio-theme] .profile-page .auth-models article em { background: color-mix(in srgb,var(--tv-on-inverse) 12%,transparent) !important; color: var(--tv-on-inverse) !important; }
+html[data-studio-theme] .profile-page .auth-benefits :is(b,strong) { color: var(--tv-on-inverse) !important; }
+html[data-studio-theme] .profile-page .auth-benefits small { color: color-mix(in srgb,var(--tv-on-inverse) 72%,transparent) !important; }
+html[data-studio-theme] .profile-page .auth-card { border-radius: 20px !important; background: var(--tv-surface-raised) !important; }
+html[data-studio-theme] .profile-page :where(.identity-card,.profile-edit,.credit-details,.account-history,.profile-history-dialog) { border-radius: var(--tv-radius-panel) !important; }
+html[data-studio-theme] .profile-page .credit-cards article { border-radius: var(--tv-radius-card) !important; }
+html[data-studio-theme] .profile-page :is(.profile-balance,.identity-card>p:first-of-type) { border-color: var(--tv-border) !important; background: var(--tv-primary-soft) !important; color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] .profile-page .profile-nav :is(.profile-brand,.profile-balance) { color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] .studio-page .sidebar-bottom .sidebar-user-card:hover,
+html[data-studio-theme] .studio-page .sidebar-bottom .sidebar-user-card:focus-visible {
+  background: var(--tv-sidebar-hover) !important;
+  color: var(--tv-sidebar-strong) !important;
+}
+html[data-studio-theme] .profile-page .profile-history-dialog::backdrop { background: var(--tv-backdrop) !important; }
+html[data-studio-theme] .profile-page .account-history-card span { background: var(--tv-media-overlay) !important; color: var(--tv-media-text) !important; }
+html[data-studio-theme] .studio-page .asset-page-card footer .asset-delete,
+html[data-studio-theme] .profile-page .profile-history-actions button {
+  color: var(--tv-danger) !important;
+  background: transparent !important;
+  border-color: color-mix(in srgb,var(--tv-danger) 32%,var(--tv-border)) !important;
+}
+html[data-studio-theme] .studio-page .asset-page-card footer .asset-delete.is-confirming,
+html[data-studio-theme] .profile-page .profile-history-actions button.is-confirming {
+  color: var(--tv-danger) !important;
+  background: var(--tv-danger-soft) !important;
+  border-color: var(--tv-danger) !important;
+}
+html[data-studio-theme] .profile-page .profile-history-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: auto !important;
+}
+html[data-studio-theme] .profile-page .profile-history-actions :is(a,button) {
+  margin: 0 !important;
+  min-height: var(--tv-control-height) !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-control) !important;
+  font: 800 12px/1 var(--tv-font-sans) !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+html[data-studio-theme] .profile-page .profile-history-actions a {
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--tv-on-primary) !important;
+  background: var(--tv-primary) !important;
+  border-color: var(--tv-primary) !important;
+}
+html[data-studio-theme] .profile-page :where(
+  .profile-hero>p,.profile-hero>span,.auth-intro>p,.auth-intro>span,
+  .auth-card label,.auth-card button,.auth-message,.sms-availability,
+  .identity-card p,.identity-card span,.identity-card nav a,.identity-card>button,
+  .section-title p,.section-title>span,.section-title>a,.profile-edit label,
+  .profile-edit button,.profile-edit form>span,.credit-cards span,.credit-cards small,
+  .ledger-row,.ledger>p,.account-history-card span,.account-history-empty p,
+  .profile-history-dialog>div>span,.profile-history-dialog blockquote) {
+  font-size: 12px !important;
+}
+html[data-studio-theme] .pricing-page :where(
+  .price-advantage>div:first-child>p,.price-advantage>p,
+  .plan-models>strong,.membership-cards .recommend,.usage-table>div>p) {
+  font-size: 12px !important;
+}
+
+/* Scrollbars match each palette and never create a fourth colour family. */
+html[data-studio-theme] * { scrollbar-color: var(--tv-scrollbar) transparent !important; }
+html[data-studio-theme] *::-webkit-scrollbar-thumb { background-color: var(--tv-scrollbar) !important; }
+
+/* Local redraw uses the same compact parameter language as workflow editors. */
+html[data-studio-theme] body.studio-page .mask-toolbar-copy b { color: var(--tv-text) !important; }
+html[data-studio-theme] body.studio-page .mask-toolbar-copy span,
+html[data-studio-theme] body.studio-page .mask-editor > p { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page :is(.mask-brush-trigger,.mask-clear-button,.mask-focus-trigger) {
+  border: 0 !important;
+  border-radius: var(--tv-radius-control) !important;
+  background: transparent !important;
+  color: var(--tv-text-secondary) !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-trigger:hover,
+html[data-studio-theme] body.studio-page .mask-brush-trigger[aria-expanded="true"] {
+  background: var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-trigger > b { color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] body.studio-page .mask-brush-trigger > i { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page .mask-clear-button:not(:disabled):hover {
+  background: var(--tv-danger-soft) !important;
+  color: var(--tv-danger) !important;
+}
+html[data-studio-theme] body.studio-page .mask-focus-trigger:not(:disabled):hover {
+  background: var(--tv-primary-soft) !important;
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover {
+  border-color: var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 16px 38px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover > div:first-child > span,
+html[data-studio-theme] body.studio-page .mask-brush-bounds { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page .mask-brush-popover output { color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"],
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]:focus {
+  width: 100% !important;
+  min-width: 140px !important;
+  min-height: 14px !important;
+  height: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(to right,
+    var(--tv-primary) 0,
+    var(--tv-primary) var(--mask-range-progress),
+    var(--tv-border) var(--mask-range-progress),
+    var(--tv-border) 100%) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 4px !important;
+  box-shadow: none !important;
+  cursor: ew-resize !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]::-webkit-slider-thumb {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: -5px !important;
+  border: 2px solid var(--tv-surface-raised) !important;
+  border-radius: 50% !important;
+  appearance: none !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 2px var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]::-moz-range-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--tv-border) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]::-moz-range-progress {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--tv-primary) !important;
+}
+html[data-studio-theme] body.studio-page .mask-brush-popover input[type="range"]::-moz-range-thumb {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid var(--tv-surface-raised) !important;
+  border-radius: 50% !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 2px var(--tv-primary-soft) !important;
+}
+html[data-studio-theme] body.studio-page .mask-focus-dialog {
+  background: var(--tv-canvas) !important;
+  color: var(--tv-text) !important;
+}
+html[data-studio-theme] body.studio-page .mask-focus-header {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-surface-raised) !important;
+}
+html[data-studio-theme] body.studio-page .mask-focus-heading b { color: var(--tv-text) !important; }
+html[data-studio-theme] body.studio-page .mask-focus-heading span { color: var(--tv-text-muted) !important; }
+html[data-studio-theme] body.studio-page .mask-zoom-controls {
+  border-color: var(--tv-border) !important;
+  background: var(--tv-control) !important;
+}
+html[data-studio-theme] body.studio-page .mask-zoom-controls button { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] body.studio-page .mask-zoom-controls button:not(:disabled):hover { background: var(--tv-primary-soft) !important; color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] body.studio-page .mask-zoom-controls output { color: var(--tv-primary-ink) !important; }
+html[data-studio-theme] body.studio-page .mask-focus-done { background: var(--tv-primary) !important; color: var(--tv-on-primary) !important; }
+html[data-studio-theme] body.studio-page .mask-focus-stage {
+  background-color: var(--tv-canvas) !important;
+  background-image: radial-gradient(circle,var(--tv-border-strong) 1px,transparent 1px) !important;
+}
+
+/* The asset library belongs to the workspace canvas rather than a separate card. */
+html[data-studio-theme] .studio-page.asset-active :is(.studio-content, .asset-workspace, .asset-library-layout, .asset-library-content) {
+  background: transparent !important;
+}
+html[data-studio-theme] .studio-page.asset-active .asset-workspace {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html[data-studio-theme] .studio-page.asset-active :is(.asset-workspace-head, .asset-library-toolbar) {
+  background: transparent !important;
+}
+
+html[data-studio-theme] .studio-page #camera-stage.camera-stage-viewport {
+  border-color: var(--tv-border-strong) !important;
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tv-surface-raised) 64%, var(--tv-primary-soft)) 0, var(--tv-editor-canvas) 54%, color-mix(in srgb, var(--tv-editor-canvas) 76%, var(--tv-border)) 100%) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tv-surface-raised) 84%, transparent), inset 0 0 0 4px color-mix(in srgb, var(--tv-primary) 9%, transparent), 0 16px 28px var(--tv-shadow) !important;
+}

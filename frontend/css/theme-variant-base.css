@@ -1,0 +1,593 @@
+/* Shared color-role mapping for the two theme concepts. No layout or behavior changes. */
+
+.studio-page {
+  background: var(--tv-canvas);
+  color: var(--tv-text);
+  accent-color: var(--tv-primary);
+  caret-color: var(--tv-primary);
+}
+.studio-page ::selection { background: var(--tv-selection); color: var(--tv-selection-text); }
+.studio-page * { scrollbar-color: var(--tv-scrollbar) transparent; }
+.studio-page *::-webkit-scrollbar-thumb { background-color: var(--tv-scrollbar); }
+.studio-page *::-webkit-scrollbar-track { background-color: transparent; }
+
+.studio-page .studio-section {
+  background-color: var(--tv-canvas);
+  background-image: var(--tv-canvas-art);
+}
+.studio-page .studio-sidebar {
+  border-right-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar);
+  color: var(--tv-sidebar-text);
+}
+.studio-page .sidebar-brand,
+.studio-page .sidebar-brand:visited { color: var(--tv-sidebar-strong); }
+.studio-page .sidebar-brand .brand-mark { background: var(--tv-sidebar-accent); color: var(--tv-on-sidebar-accent); }
+.studio-page .sidebar-label,
+.studio-page .quick-access-empty,
+.studio-page .sidebar-model-entry small { color: var(--tv-sidebar-muted); }
+.studio-page .sidebar-collapse {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar-control);
+  color: var(--tv-sidebar-text);
+}
+.studio-page .sidebar-collapse:hover {
+  border-color: var(--tv-sidebar-accent);
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+.studio-page .quick-access-nav > button,
+.studio-page .quick-access-pin,
+.studio-page .capability-nav > button,
+.studio-page .capability-menu-trigger,
+.studio-page .capability-subitem,
+.studio-page .sidebar-section-toggle,
+.studio-page .discover-nav a,
+.studio-page .feedback-button,
+.studio-page .sidebar-user-card,
+.studio-page .sidebar-profile { color: var(--tv-sidebar-text); }
+.studio-page .quick-access-nav > button b,
+.studio-page .quick-access-pins .quick-access-pin b,
+.studio-page .capability-nav > button > b,
+.studio-page .capability-nav .capability-menu-trigger > b,
+.studio-page .sidebar-section-toggle b,
+.studio-page .capability-subnav .capability-subitem > b,
+.studio-page .capability-model-copy > .model-option-heading > b { color: var(--tv-sidebar-strong); }
+.studio-page .quick-access-nav > button > span,
+.studio-page .capability-nav > button > span,
+.studio-page .capability-menu-trigger > span,
+.studio-page .capability-subitem > .capability-item-icon,
+.studio-page .discover-nav span,
+.studio-page .feedback-button span { color: var(--tv-sidebar-icon); }
+.studio-page .quick-access-nav > button:hover,
+.studio-page .quick-access-pin:hover,
+.studio-page .capability-nav > button:hover,
+.studio-page .capability-menu-trigger:hover,
+.studio-page .capability-subitem:hover,
+.studio-page .discover-nav a:hover,
+.studio-page .feedback-button:hover,
+.studio-page .sidebar-profile:hover { background: var(--tv-sidebar-hover); color: var(--tv-sidebar-strong); }
+.studio-page .quick-access-nav > button.active,
+.studio-page .capability-nav > button.active,
+.studio-page .capability-nav > button[aria-expanded="true"],
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger,
+.studio-page .capability-subitem.active {
+  background: var(--tv-sidebar-active);
+  color: var(--tv-sidebar-active-text);
+}
+.studio-page .quick-access-nav > button.active b,
+.studio-page .capability-nav > button.active > b,
+.studio-page .capability-nav > button[aria-expanded="true"] > b,
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger > b,
+.studio-page .capability-subitem.active > b { color: var(--tv-sidebar-active-text); }
+.studio-page .quick-access-nav > button.active > span,
+.studio-page .capability-nav > button.active > span,
+.studio-page .capability-nav > button[aria-expanded="true"] > span,
+.studio-page .capability-menu-group.is-open > .capability-menu-trigger > span,
+.studio-page .capability-subitem.active > .capability-item-icon { color: var(--tv-sidebar-active-icon); }
+.studio-page .capability-subnav,
+.studio-page .sidebar-section-toggle,
+.studio-page .sidebar-bottom { border-color: var(--tv-sidebar-border); }
+.studio-page .sidebar-user-card b { color: var(--tv-sidebar-strong); }
+.studio-page .sidebar-user-avatar { background: var(--tv-sidebar-accent); color: var(--tv-on-sidebar-accent); }
+
+.studio-page .studio-content,
+.studio-page .studio-topbar,
+.studio-page .studio-discovery { color: var(--tv-text); }
+.studio-page .credits-button,
+.studio-page .credits-link {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-primary-ink);
+  box-shadow: 0 8px 24px var(--tv-shadow-soft);
+}
+
+.studio-page:not(.studio-has-output) .controls-panel .prompt-group,
+.studio-page .controls-panel,
+.studio-page .tool-command-panel {
+  border-color: var(--tv-surface-raised);
+  background: var(--tv-surface-raised);
+  box-shadow: 0 20px 48px var(--tv-shadow);
+}
+.studio-page .controls-panel textarea,
+.studio-page .tool-command-panel textarea { color: var(--tv-text); }
+.studio-page .controls-panel textarea::placeholder,
+.studio-page .tool-command-panel textarea::placeholder { color: var(--tv-text-muted); opacity: 1; }
+.studio-page .active-capability-chip {
+  border-color: var(--tv-border);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .active-capability-chip strong { color: var(--tv-primary-ink); }
+.studio-page .active-capability-chip::before { background: var(--tv-accent); }
+
+.studio-page .model-select-trigger,
+.studio-page .output-settings-trigger,
+.studio-page .prompt-toolbar select,
+.studio-page .toolbar-history-button,
+.studio-page .controls-panel select,
+.studio-page .tool-command-panel select,
+.studio-page .tool-command-panel input {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page .model-select-trigger:hover,
+.studio-page .output-settings-trigger:hover,
+.studio-page .toolbar-history-button:hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+.studio-page .button-primary,
+.studio-page .generate-button,
+.studio-page .workflow-floating-actions .workflow-run,
+.studio-page .workflow-node-output > button:not(.workflow-port) {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+  box-shadow: 0 10px 24px var(--tv-primary-shadow);
+}
+.studio-page .button-primary:hover,
+.studio-page .generate-button:hover { border-color: var(--tv-primary-hover); background: var(--tv-primary-hover); }
+.studio-page :is(button, a, input, textarea:not(#prompt), select):focus-visible {
+  outline-color: var(--tv-focus);
+}
+
+.studio-page .discovery-switch { border-bottom-color: var(--tv-border); }
+.studio-page .discovery-switch [role="tab"] { color: var(--tv-text-secondary); }
+.studio-page .discovery-switch [role="tab"]:hover { background: var(--tv-surface-muted); color: var(--tv-primary-ink); }
+.studio-page .discovery-switch [role="tab"].active { background: transparent; color: var(--tv-text); }
+.studio-page .discovery-switch [role="tab"].active::after,
+.studio-page .skill-filters button.active::after,
+.studio-page .plaza-tag-bar button.active { background: var(--tv-accent); border-color: var(--tv-accent); }
+.studio-page .skill-filters button,
+.studio-page .plaza-tag-bar button { color: var(--tv-text-secondary); }
+.studio-page .skill-filters button:hover,
+.studio-page .plaza-tag-bar button:hover { color: var(--tv-primary); }
+.studio-page .skill-filters button.active,
+.studio-page .plaza-tag-bar button.active { color: var(--tv-primary-ink); }
+.studio-page .skill-card { background: var(--tv-image-placeholder); }
+.studio-page .skill-card > span,
+.studio-page .skill-card > i { background: var(--tv-card-badge); color: var(--tv-primary-ink); }
+
+.studio-page .results-panel,
+.studio-page .history-panel,
+.studio-page .capability-center,
+.studio-page .workflow-node-picker,
+.studio-page .workflow-library-panel { border-color: var(--tv-border); background: var(--tv-surface); color: var(--tv-text); }
+.studio-page .workflow-canvas,
+.studio-page .workflow-stage { background-color: var(--tv-workspace); }
+.studio-page .workflow-node-dynamic { background: var(--tv-surface); color: var(--tv-text); }
+.studio-page .workflow-node-dynamic input,
+.studio-page .workflow-node-dynamic textarea,
+.studio-page .workflow-node-dynamic select { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+
+.studio-page .image-editor-dialog {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-editor-shell);
+  color: var(--tv-text);
+  box-shadow: 0 32px 100px var(--tv-dialog-shadow);
+}
+.studio-page .image-editor-dialog::backdrop { background: var(--tv-backdrop); }
+.studio-page .image-editor-header,
+.studio-page .image-editor-footer,
+.studio-page .image-editor-inspector { border-color: var(--tv-border); background: var(--tv-surface); }
+.studio-page .image-editor-tools { border-color: var(--tv-border); background: var(--tv-surface-muted); }
+.studio-page .image-editor-stage {
+  background-color: var(--tv-editor-canvas);
+  background-image:
+    linear-gradient(45deg, var(--tv-editor-check) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--tv-editor-check) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--tv-editor-check) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--tv-editor-check) 75%);
+}
+.studio-page .image-editor-heading > span,
+.studio-page .image-editor-file-button,
+.studio-page .image-editor-empty label,
+.studio-page .image-editor-footer button.primary,
+.studio-page .image-editor-ratio-grid button.active,
+.studio-page .image-editor-format-grid button.active {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+.studio-page .image-editor-heading p,
+.studio-page .image-editor-panel-title span { color: var(--tv-accent-ink); }
+.studio-page .image-editor-tools button { color: var(--tv-text-secondary); }
+.studio-page .image-editor-tools button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .image-editor-tools button.active {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+  box-shadow: inset 3px 0 var(--tv-primary);
+}
+.studio-page .image-editor-panel input,
+.studio-page .image-editor-panel select,
+.studio-page .image-editor-ratio-grid button,
+.studio-page .image-editor-format-grid button,
+.studio-page .image-editor-action-grid button,
+.studio-page .image-editor-footer button { border-color: var(--tv-border); background: var(--tv-control); color: var(--tv-control-text); }
+.studio-page .image-editor-tip,
+.studio-page .image-editor-switch { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+
+.studio-page .theme-variant-label {
+  position: fixed;
+  z-index: 9999;
+  right: 20px;
+  bottom: 18px;
+  padding: 8px 11px;
+  border: 1px solid var(--tv-border);
+  border-radius: 9px;
+  background: var(--tv-card-badge);
+  color: var(--tv-primary-ink);
+  box-shadow: 0 8px 22px var(--tv-shadow-soft);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+@media (max-width: 800px) {
+  .studio-page .theme-variant-label { display: none; }
+}
+
+/* V141 global coverage: workflow, capability surfaces and multi-angle editor. */
+.studio-page .workflow-workspace {
+  border-color: var(--tv-border);
+  background: var(--tv-workspace);
+  box-shadow: 0 14px 42px var(--tv-shadow-soft);
+}
+.studio-page .workflow-header {
+  border-color: var(--tv-border);
+  background: color-mix(in srgb, var(--tv-surface-raised) 94%, transparent);
+}
+.studio-page .workflow-header h2,
+.studio-page .workflow-library-panel > header h3,
+.studio-page .workflow-node-picker > header h3 { color: var(--tv-text); }
+.studio-page .workflow-header p,
+.studio-page .workflow-library-panel > header span,
+.studio-page .workflow-node-picker > header span { color: var(--tv-accent-ink); }
+.studio-page .workflow-header > div:first-child > span,
+.studio-page .workflow-node-group h4,
+.studio-page .workflow-list-status { color: var(--tv-text-muted); }
+.studio-page .workflow-actions button,
+.studio-page .workflow-canvas-toolbar,
+.studio-page .workflow-node-picker > header button,
+.studio-page .shared-workflow-panel > header > button,
+.studio-page .workflow-assets-panel > header > button {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page .workflow-actions button:hover,
+.studio-page .workflow-canvas-toolbar button:hover,
+.studio-page .workflow-node-picker > header button:hover,
+.studio-page .shared-workflow-panel > header > button:hover,
+.studio-page .workflow-assets-panel > header > button:hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+.studio-page .workflow-actions .workflow-run,
+.studio-page .workflow-actions .workflow-run:hover {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+.studio-page .workflow-layout,
+.studio-page .workflow-library-panel,
+.studio-page .workflow-assets-panel,
+.studio-page .shared-workflow-panel { border-color: var(--tv-border); background: var(--tv-surface); }
+.studio-page .workflow-library-tabs { background: var(--tv-surface-muted); }
+.studio-page .workflow-library-tabs button,
+.studio-page .shared-workflow-scopes button,
+.studio-page .workflow-asset-filters button { color: var(--tv-text-muted); }
+.studio-page .workflow-library-tabs button:hover,
+.studio-page .shared-workflow-scopes button:hover,
+.studio-page .workflow-asset-filters button:hover { color: var(--tv-primary-ink); }
+.studio-page .workflow-library-tabs button.active,
+.studio-page .workflow-asset-filters button.active {
+  background: var(--tv-surface-raised);
+  color: var(--tv-primary-ink);
+  box-shadow: 0 2px 8px var(--tv-shadow-soft);
+}
+.studio-page .shared-workflow-scopes button.active { border-color: var(--tv-primary); color: var(--tv-primary-ink); }
+.studio-page .shared-workflow-card,
+.studio-page .workflow-asset-card,
+.studio-page .workflow-node-option {
+  border-color: transparent;
+  background: var(--tv-surface-muted);
+  color: var(--tv-text);
+}
+.studio-page .shared-workflow-card:hover,
+.studio-page .workflow-asset-card:hover,
+.studio-page .workflow-node-option:hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+.studio-page .shared-workflow-card > span:first-child,
+.studio-page .workflow-node-option > span:first-child,
+.studio-page .workflow-library-panel > header > b {
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .shared-workflow-card small,
+.studio-page .workflow-asset-card small,
+.studio-page .workflow-node-option small { color: var(--tv-text-muted); }
+.studio-page .shared-workflow-card em { color: var(--tv-accent-ink); }
+
+.studio-page .workflow-canvas-shell,
+.studio-page .workflow-viewport {
+  background-color: var(--tv-workspace);
+}
+.studio-page .workflow-viewport {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--tv-border-strong) 72%, transparent) 1.05px, transparent 1.05px);
+}
+.studio-page .workflow-canvas-toolbar {
+  box-shadow: 0 8px 24px var(--tv-shadow-soft);
+}
+.studio-page .workflow-canvas-toolbar button { color: var(--tv-primary-ink); }
+.studio-page .workflow-canvas-toolbar output,
+.studio-page .workflow-canvas-toolbar > span { color: var(--tv-text-muted); }
+.studio-page .workflow-lines path { stroke: var(--tv-border-strong); }
+.studio-page .workflow-lines path:hover,
+.studio-page .workflow-lines path:focus,
+.studio-page .workflow-lines path.is-selected { stroke: var(--tv-primary); }
+.studio-page .workflow-port,
+.studio-page .workflow-port.is-source,
+.studio-page .workflow-port.is-compatible {
+  border-color: var(--tv-surface-raised) !important;
+  background: var(--tv-primary) !important;
+  box-shadow: 0 0 0 1px var(--tv-border-strong) !important;
+}
+.studio-page .workflow-node,
+.studio-page .workflow-node-dynamic {
+  border-color: var(--tv-border);
+  background: color-mix(in srgb, var(--tv-surface-raised) 97%, transparent);
+  color: var(--tv-text);
+  box-shadow: 0 14px 34px var(--tv-shadow);
+}
+.studio-page .workflow-node.is-dragging { box-shadow: 0 20px 50px var(--tv-dialog-shadow); }
+.studio-page .workflow-node > header > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-node > header small,
+.studio-page .workflow-node > header > i,
+.studio-page .workflow-node-dynamic label,
+.studio-page .workflow-node-style label,
+.studio-page .workflow-input-meta p { color: var(--tv-text-muted); }
+.studio-page .workflow-node-dynamic input:not([type="checkbox"]):not([type="range"]),
+.studio-page .workflow-node-dynamic textarea,
+.studio-page .workflow-node-dynamic select,
+.studio-page .workflow-node-prompt textarea,
+.studio-page .workflow-node-style select,
+.studio-page .workflow-media-source select,
+.studio-page .workflow-media-source button {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page .workflow-node-dynamic input:focus,
+.studio-page .workflow-node-dynamic textarea:focus,
+.studio-page .workflow-node-dynamic select:focus,
+.studio-page .workflow-node-prompt textarea:focus {
+  border-color: var(--tv-primary);
+  box-shadow: 0 0 0 3px var(--tv-focus);
+}
+.studio-page .workflow-inline-tool-picker,
+.studio-page .workflow-camera-workbench { border-color:var(--tv-border-strong); background:var(--tv-surface-muted); }
+.studio-page .workflow-camera-workbench-heading { border-color:var(--tv-border); background:var(--tv-surface-raised); }
+.studio-page .workflow-camera-workbench-heading b { color:var(--tv-text); }
+.studio-page .workflow-camera-workbench-heading output { color:var(--tv-primary-ink); }
+.studio-page .workflow-camera-stage { background:var(--tv-editor-canvas); }
+.studio-page .workflow-camera-focus-dialog { border-color:var(--tv-border-strong); background:var(--tv-editor-shell); box-shadow:0 28px 88px var(--tv-dialog-shadow); }
+.studio-page .workflow-camera-focus-dialog::backdrop { background:color-mix(in srgb,var(--tv-inverse) 62%,transparent); }
+.studio-page .workflow-camera-workbench-expand,
+.studio-page .workflow-camera-focus-close { color:var(--tv-text-muted); }
+.studio-page .workflow-camera-workbench-expand:hover,
+.studio-page .workflow-camera-focus-close:hover { background:var(--tv-control-hover); color:var(--tv-primary-ink); }
+.studio-page .workflow-node-upload,
+.studio-page .workflow-output-preview,
+.studio-page .workflow-node-run-result {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text-secondary);
+}
+.studio-page .workflow-node-upload > span { background: var(--tv-card-badge); }
+.studio-page .workflow-node-upload > span b,
+.studio-page .workflow-output-preview b { color: var(--tv-text); }
+.studio-page .workflow-node-upload > span small,
+.studio-page .workflow-output-preview small { color: var(--tv-text-muted); }
+.studio-page .workflow-output-preview > span { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-node-run-button {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .workflow-node-run-button:hover { border-color: var(--tv-primary); background: var(--tv-control-hover); }
+.studio-page .workflow-credit-summary {
+  border-color: var(--tv-border);
+  background: color-mix(in srgb, var(--tv-accent) 10%, var(--tv-surface-raised));
+  color: var(--tv-text);
+}
+.studio-page .workflow-credit-summary > span:first-child,
+.studio-page .workflow-model-credit { background: color-mix(in srgb, var(--tv-accent) 18%, var(--tv-surface-raised)); color: var(--tv-accent-ink); }
+.studio-page .workflow-credit-summary small,
+.studio-page .workflow-credit-summary em { color: var(--tv-text-muted); }
+.studio-page .workflow-credit-summary b { color: var(--tv-accent-ink); }
+.studio-page .workflow-node-picker { box-shadow: 0 24px 70px var(--tv-dialog-shadow); }
+.studio-page .workflow-node-category-tabs { border-color: var(--tv-border); }
+.studio-page .workflow-node-category-tabs button { color: var(--tv-text-secondary); }
+.studio-page .workflow-node-category-tabs button:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .workflow-node-category-tabs button[aria-selected="true"] { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.studio-page .workflow-node-picker kbd { border-color: var(--tv-border); background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+
+.studio-page .capability-card,
+.studio-page .capability-center-card,
+.studio-page .model-select-menu,
+.studio-page .output-settings-menu,
+.studio-page .history-item,
+.studio-page .result-card { border-color: var(--tv-border); background: var(--tv-surface-raised); color: var(--tv-text); }
+.studio-page .model-select-item:hover,
+.studio-page .output-settings-menu button:hover,
+.studio-page .capability-card:hover { background: var(--tv-control-hover); color: var(--tv-primary-ink); }
+.studio-page .model-option-name,
+.studio-page .capability-card b { color: var(--tv-text); }
+.studio-page .model-badge,
+.studio-page .model-status-tag,
+.studio-page .model-availability { background: var(--tv-surface-muted); color: var(--tv-text-secondary); }
+
+body.studio-page .model-select-menu {
+  box-sizing: border-box;
+  width: min(430px, calc(100vw - 24px));
+  min-width: min(360px, calc(100vw - 24px));
+  max-width: min(430px, calc(100vw - 24px));
+  padding: 8px;
+}
+body.studio-page .model-select-menu .model-select-item {
+  grid-template-columns: 24px minmax(0, 1fr) 28px;
+  min-height: 60px;
+  padding: 8px 9px;
+}
+body.studio-page .model-select-menu .model-select-item > img { width: 21px; height: 21px; }
+body.studio-page .model-select-menu .model-option-copy { gap: 4px; }
+body.studio-page .model-select-menu .model-option-heading {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+body.studio-page .model-select-menu .model-option-name { flex: 0 1 auto; }
+body.studio-page .model-select-menu .model-status-tags {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+body.studio-page .model-select-menu .model-credit-cost { margin-left: auto; }
+
+/* Prompt presets and visual styles use the same compact, portaled menu contract. */
+body.studio-page .toolbar-select-menu {
+  box-sizing: border-box;
+  display: block;
+  width: min(300px, calc(100vw - 24px));
+  min-width: min(260px, calc(100vw - 24px));
+  max-width: min(320px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 24px));
+  padding: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 18px 46px var(--tv-dialog-shadow);
+}
+body.studio-page .toolbar-select-menu[hidden] { display: none; }
+body.studio-page .toolbar-select-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+body.studio-page .toolbar-select-section + .toolbar-select-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--tv-border);
+}
+body.studio-page .toolbar-select-section-title {
+  display: block;
+  padding: 7px 10px 5px;
+  color: var(--tv-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+body.studio-page .toolbar-select-item {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--tv-radius-control);
+  background: transparent;
+  color: var(--tv-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+body.studio-page .toolbar-select-item:hover,
+body.studio-page .toolbar-select-item[aria-selected="true"] {
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+
+.studio-page .camera-editor {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-muted);
+  color: var(--tv-text);
+}
+.studio-page .camera-stage-heading b,
+.studio-page .camera-quickbar-heading { color: var(--tv-text); }
+.studio-page .camera-stage-heading span { color: var(--tv-text-muted); }
+.studio-page .camera-stage-heading output {
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page .camera-quickbar,
+.studio-page .camera-controls label {
+  border-color: var(--tv-border);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text-secondary);
+}
+.studio-page .camera-controls input[type="range"] { accent-color: var(--tv-primary); }
+.studio-page .camera-quickbar-heading output,
+.studio-page .camera-controls output { color: var(--tv-primary-ink); }
+.studio-page .camera-preset-grid button,
+.studio-page .camera-controls button {
+  border-color: var(--tv-border);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.studio-page .camera-preset-grid button:hover,
+.studio-page .camera-controls button:hover {
+  border-color: var(--tv-border-strong);
+  background: var(--tv-control-hover);
+  color: var(--tv-primary-ink);
+}
+.studio-page .camera-preset-grid button[aria-pressed="true"] {
+  border-color: var(--tv-primary);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.studio-page #camera-stage { border-color: var(--tv-border); background: var(--tv-surface-raised); }
+.studio-page #camera-grid path { stroke: color-mix(in srgb, var(--tv-border) 65%, transparent); }
+.studio-page #camera-stage > rect:first-of-type { fill: var(--tv-surface-raised); }
+.studio-page #camera-stage > ellipse:first-of-type { stroke: var(--tv-border-strong); }
+.studio-page #camera-stage > ellipse:nth-of-type(2) { fill: var(--tv-surface-muted); stroke: var(--tv-border); }
+.studio-page #camera-line { stroke: var(--tv-primary); }
+.studio-page #camera-target rect { fill: var(--tv-surface-muted); stroke: var(--tv-text-secondary); }
+.studio-page #camera-target circle { fill: var(--tv-accent); }
+.studio-page #camera-dot-halo { fill: var(--tv-primary-soft); stroke: var(--tv-primary); }
+.studio-page #camera-dot { fill: var(--tv-primary); }

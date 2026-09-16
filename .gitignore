@@ -1,0 +1,30 @@
+# Local configuration and credentials
+.env
+.env.*
+
+# Python environments and generated files
+.venv/
+.local-venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime state and user-generated media
+.codex-tmp/
+.workbuddy/
+.learnings/
+var/
+uploads/
+private-media/
+analytics-backups/
+test-results/
+*.sqlite3
+stats.json
+users.json
+model-usage.jsonl
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

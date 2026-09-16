@@ -1,0 +1,89 @@
+html[data-studio-theme="indigo"] {
+  --tv-canvas: #10141c;
+  --tv-canvas-art: radial-gradient(circle at 84% 6%, rgba(93,141,255,.20), transparent 31%), radial-gradient(circle at 12% 84%, rgba(243,154,122,.12), transparent 26%);
+  --tv-surface: #151b25;
+  --tv-surface-raised: #191f2a;
+  --tv-surface-muted: #121820;
+  --tv-text: #e8edf5;
+  --tv-text-secondary: #b7c2d2;
+  --tv-text-muted: #8492a6;
+  --tv-border: #2b3748;
+  --tv-border-strong: #4b5f78;
+  --tv-control: #202938;
+  --tv-control-hover: #293548;
+  --tv-control-text: #e8edf5;
+  --tv-primary: #5d8dff;
+  --tv-primary-hover: #7ba5ff;
+  --tv-primary-soft: #263c69;
+  --tv-primary-ink: #b7ccff;
+  --tv-on-primary: #101827;
+  --tv-accent: #f39a7a;
+  --tv-accent-ink: #ffb69c;
+  --tv-credit-accent: #d7b464;
+  --tv-selection: #304d83;
+  --tv-selection-text: #ffffff;
+  --tv-focus: rgba(93,141,255,.5);
+  --tv-scrollbar: #61738a;
+  --tv-shadow: rgba(0,0,0,.38);
+  --tv-shadow-soft: rgba(0,0,0,.22);
+  --tv-primary-shadow: rgba(93,141,255,.30);
+  --tv-dialog-shadow: rgba(0, 0, 0, .58);
+  --tv-backdrop: rgba(5, 6, 11, .7);
+  --tv-image-placeholder: #263242;
+  --tv-card-badge: rgba(25,31,42,.93);
+  --tv-workspace: #121a24;
+  --tv-editor-shell: #161e29;
+  --tv-editor-canvas: #141c26;
+  --tv-editor-check: #243042;
+  --tv-sidebar: #0d1118;
+  --tv-sidebar-control: #171f2b;
+  --tv-sidebar-hover: #202b3a;
+  --tv-sidebar-active: #263e6c;
+  --tv-sidebar-border: #243143;
+  --tv-sidebar-text: #c5d0df;
+  --tv-sidebar-strong: #f3f7fc;
+  --tv-sidebar-muted: #8394aa;
+  --tv-sidebar-icon: #8fb0ff;
+  --tv-sidebar-accent: #5d8dff;
+  --tv-on-sidebar-accent: #101827;
+  --tv-sidebar-active-text: #f4f8ff;
+  --tv-sidebar-active-icon: #ffb296;
+  --tv-success: #54a986;
+  --tv-success-soft: #18382f;
+  --tv-warning: #d9ad55;
+  --tv-warning-soft: #3b301b;
+  --tv-danger: #ec7d78;
+  --tv-danger-soft: #452728;
+  --tv-info: #7da5ff;
+  --tv-info-soft: #253a60;
+  --tv-disabled: #77869a;
+  --tv-disabled-soft: #26303d;
+  --tv-media-text: #ffffff;
+  --tv-media-overlay: rgba(5, 6, 12, .78);
+  --tv-inverse: #e8edf5;
+  --tv-on-inverse: #10141c;
+}
+
+html[data-studio-theme="indigo"] .studio-page .capability-nav button:hover,
+html[data-studio-theme="indigo"] .studio-page .capability-nav button:focus-visible,
+html[data-studio-theme="indigo"] .studio-page .capability-subitem:hover,
+html[data-studio-theme="indigo"] .studio-page .capability-subitem:focus-visible {
+  background: var(--tv-sidebar-hover);
+  color: var(--tv-sidebar-strong);
+}
+html[data-studio-theme="indigo"] .studio-page .capability-nav button:hover b,
+html[data-studio-theme="indigo"] .studio-page .capability-nav button:focus-visible b,
+html[data-studio-theme="indigo"] .studio-page .capability-subitem:hover b,
+html[data-studio-theme="indigo"] .studio-page .capability-subitem:focus-visible b,
+html[data-studio-theme="indigo"] .studio-page .capability-model-copy > .model-option-heading > b {
+  color: var(--tv-sidebar-strong);
+}
+html[data-studio-theme="indigo"] .studio-page .capability-model-copy .model-badge {
+  border-color: var(--tv-sidebar-border);
+  background: var(--tv-sidebar-control);
+  color: var(--tv-sidebar-text);
+}
+html[data-studio-theme="indigo"] .studio-page .capability-model-copy .model-badge:first-child {
+  background: var(--tv-sidebar-active);
+  color: var(--tv-sidebar-strong);
+}

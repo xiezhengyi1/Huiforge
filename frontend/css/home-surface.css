@@ -1,0 +1,196 @@
+/* Homepage surface contract.
+   One owner paints the canvas (body). Sections stay transparent; only
+   functional cards, media and actions introduce another semantic surface. */
+
+html[data-studio-theme] body.home-page {
+  background-color: var(--tv-canvas);
+  background-image: var(--tv-canvas-art);
+  background-attachment: fixed;
+  color: var(--tv-text);
+  accent-color: var(--tv-primary);
+}
+
+.home-page :is(main, .landing-header, .home-workbench-hero, .home-capability-map,
+  .landing-ticker, .manifesto-shell, .prompt-cinema, .process-shell, .landing-footer) {
+  background: transparent;
+  color: var(--tv-text);
+}
+
+.home-page .landing-header { border-bottom: 1px solid var(--tv-border); }
+.home-page :is(.brand, .landing-header nav a) { color: var(--tv-text); }
+.home-page .brand-mark { background: var(--tv-primary); color: var(--tv-on-primary); }
+.home-page .landing-header nav a:hover { color: var(--tv-primary-ink); }
+.home-page .landing-header-cta {
+  border: 1px solid var(--tv-primary);
+  border-radius: var(--tv-radius-pill);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+  box-shadow: 0 8px 20px var(--tv-primary-shadow);
+}
+.home-page .landing-header-cta > span {
+  border: 1px solid color-mix(in srgb, var(--tv-on-primary) 48%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tv-on-primary) 10%, transparent);
+  color: inherit;
+}
+
+.home-page .home-workbench-heading :is(h1, b, strong) { color: var(--tv-text); }
+.home-page .home-workbench-heading :is(p, span) { color: var(--tv-text-secondary); }
+.home-page .home-workbench-heading > p { color: var(--tv-accent-ink); }
+.home-page .home-workbench-heading em { color: var(--tv-primary-ink); }
+
+.home-page .home-console {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-panel);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 18px 52px var(--tv-shadow-soft);
+}
+.home-page .home-console nav a {
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tv-text-secondary);
+}
+.home-page .home-console nav a:hover { color: var(--tv-primary-ink); }
+.home-page .home-console nav a.active { background: var(--tv-primary-soft); color: var(--tv-primary-ink); }
+.home-page .home-prompt-box {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: transparent;
+  color: var(--tv-text);
+}
+.home-page .home-prompt-box:hover { border-color: var(--tv-border-strong); }
+.home-page .home-prompt-box > span { color: var(--tv-text); }
+.home-page .home-prompt-box > p { color: var(--tv-text-secondary); }
+.home-page .home-prompt-box small {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-control);
+  background: var(--tv-control);
+  color: var(--tv-control-text);
+}
+.home-page .home-prompt-box b {
+  border-radius: var(--tv-radius-control);
+  background: var(--tv-primary);
+  color: var(--tv-on-primary);
+}
+.home-page .home-prompt-box b i { color: var(--tv-credit-accent, var(--tv-warning)); }
+.home-page .home-launchers a {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: transparent;
+  color: var(--tv-text);
+}
+.home-page .home-launchers a:hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.home-page .home-launchers i {
+  border-radius: var(--tv-radius-control);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.home-page .home-launchers small,
+.home-page .home-console > footer { color: var(--tv-text-secondary); }
+.home-page .home-console > footer i {
+  background: var(--tv-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tv-success) 14%, transparent);
+}
+.home-page .home-console > footer em { color: var(--tv-accent-ink); }
+
+.home-page .home-visual-board { background: transparent; }
+.home-page .home-visual-board figure {
+  border-radius: var(--tv-radius-card);
+  background: var(--tv-image-placeholder);
+}
+.home-page :is(.home-visual-board figure, .editorial-card, .prompt-film)::after {
+  background: linear-gradient(180deg, transparent, var(--tv-media-overlay));
+}
+.home-page :is(.home-visual-board figure, .editorial-card, .prompt-film) figcaption,
+.home-page :is(.home-visual-board figure, .editorial-card, .prompt-film) figcaption * { color: var(--tv-media-text); }
+.home-page .home-visual-board > a {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+}
+.home-page .home-visual-board > a span { color: var(--tv-accent-ink); }
+
+.home-page .home-capability-map { border-block: 1px solid var(--tv-border); }
+.home-page .home-capability-map header :is(h2, b) { color: var(--tv-text); }
+.home-page .home-capability-map header p { color: var(--tv-accent-ink); }
+.home-page .home-capability-map header > span { color: var(--tv-text-secondary); }
+.home-page .home-capability-map > div a {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: var(--tv-surface-raised);
+  color: var(--tv-text);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--tv-shadow-soft) 62%, transparent);
+}
+.home-page .home-capability-map > div a:hover { border-color: var(--tv-border-strong); background: var(--tv-control-hover); }
+.home-page .home-capability-map a > i {
+  border-radius: var(--tv-radius-control);
+  background: var(--tv-primary-soft);
+  color: var(--tv-primary-ink);
+}
+.home-page .home-capability-map small { color: var(--tv-text-secondary); }
+
+.home-page .landing-ticker { border-block: 1px solid var(--tv-border); color: var(--tv-text-secondary); }
+.home-page .landing-ticker i,
+.home-page .section-marker,
+.home-page .section-overline { color: var(--tv-accent-ink); }
+.home-page .section-marker i { background: var(--tv-accent); }
+
+.home-page :is(.manifesto-intro, .prompt-cinema-top, .process-title, .editorial-copy) {
+  background: transparent;
+  color: var(--tv-text);
+}
+.home-page :is(.manifesto-intro, .prompt-cinema-top, .process-title, .editorial-copy) :is(p, span, small) {
+  color: var(--tv-text-secondary);
+}
+.home-page :is(.manifesto-intro h2, .prompt-cinema h2, .process-title h2) { color: var(--tv-text); }
+.home-page :is(.manifesto-intro h2 em, .editorial-copy a, .library-link) { color: var(--tv-accent-ink); }
+.home-page .editorial-card,
+.home-page .prompt-film {
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius-card);
+  background: var(--tv-image-placeholder);
+  box-shadow: 0 12px 34px var(--tv-shadow-soft);
+}
+.home-page .editorial-copy { border-top: 1px solid var(--tv-border); }
+.home-page .prompt-film > :is(span, div),
+.home-page .prompt-film > div :is(small, strong, em) { color: var(--tv-media-text); }
+.home-page .library-link { border-bottom: 1px solid currentColor; }
+
+.home-page .process-list li { border-top: 1px solid var(--tv-border); }
+.home-page .process-list li:last-child { border-bottom: 1px solid var(--tv-border); }
+.home-page .process-list li > span { color: var(--tv-accent-ink); }
+.home-page .process-list small { color: var(--tv-text-muted); }
+.home-page .process-list strong { color: var(--tv-text); }
+.home-page .process-list p { color: var(--tv-text-secondary); }
+
+.home-page .closing-cta {
+  border: 1px solid color-mix(in srgb, var(--tv-on-inverse) 16%, var(--tv-border));
+  border-radius: var(--tv-radius-shell);
+  background: var(--tv-inverse);
+  color: var(--tv-on-inverse);
+  box-shadow: 0 24px 64px var(--tv-dialog-shadow);
+}
+.home-page .closing-backdrop {
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--tv-inverse) 92%, transparent), color-mix(in srgb, var(--tv-inverse) 38%, transparent)),
+    url("/static/showcase/v167/skills/watercolor-poster.webp");
+  background-position: center;
+  background-size: cover;
+}
+.home-page .closing-copy,
+.home-page .closing-copy h2 { color: var(--tv-on-inverse); }
+.home-page .closing-copy h2 em { color: var(--tv-accent); }
+.home-page .closing-copy a {
+  border: 1px solid color-mix(in srgb, var(--tv-on-inverse) 48%, transparent);
+  border-radius: var(--tv-radius-pill);
+  color: var(--tv-on-inverse);
+}
+.home-page .closing-copy a:hover { background: var(--tv-on-inverse); color: var(--tv-inverse); }
+.home-page .closing-side { color: color-mix(in srgb, var(--tv-on-inverse) 74%, transparent); }
+
+.home-page .landing-footer { border-top: 1px solid var(--tv-border); color: var(--tv-text-secondary); }
+.home-page .landing-footer .brand { color: var(--tv-text); }
+.home-page .landing-footer > a:last-child { color: var(--tv-accent-ink); }
+.home-page > .skip-link { background: var(--tv-inverse); color: var(--tv-on-inverse); }
