@@ -8,10 +8,10 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="huiju-release" content="20260908-member-access-v41" />
     <title>绘域 · 创作工作台</title>
-    <link rel="stylesheet" href="css/layout.css?v=20260908-member-access-v41" />
+    <link rel="stylesheet" href="css/layout.css?v=20261011-workflow-v58" />
     <link rel="stylesheet" href="css/theme.css?v=20260908-member-access-v41" />
-    <link rel="stylesheet" href="css/onboarding.css?v=20260908-member-access-v41" />
-    <link rel="stylesheet" href="css/design-refresh.css?v=20260909-workflow-svg-v50" />
+    <link rel="stylesheet" href="css/onboarding.css?v=20260923-navigation-v45" />
+    <link rel="stylesheet" href="css/design-refresh.css?v=20261011-workflow-v58" />
     <script src="js/theme.js?v=20260908-member-access-v41">
 </script>
   </head>
@@ -30,6 +30,16 @@
 <span aria-hidden="true">‹</span>
 </button>
 </div>
+            <div class="sidebar-search" id="sidebar-search">
+              <label class="sidebar-search-field" for="sidebar-search-input">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.6 4.6"/></svg>
+                <input id="sidebar-search-input" type="search" placeholder="搜索功能或页面" aria-label="搜索功能或页面" autocomplete="off" aria-controls="sidebar-search-results" />
+              </label>
+              <button class="sidebar-search-open" id="sidebar-search-open" type="button" aria-label="搜索功能" title="搜索功能">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.6 4.6"/></svg>
+              </button>
+              <div class="sidebar-search-results" id="sidebar-search-results" role="region" aria-label="功能搜索结果" aria-live="polite" hidden></div>
+            </div>
             <p class="sidebar-label sidebar-quick-label">快速访问</p>
             <nav class="workspace-nav quick-access-nav" aria-label="快速访问">
               <button class="active" type="button" data-workspace-view="quick" aria-label="主页面" title="主页面" aria-current="page">
@@ -1113,8 +1123,9 @@
               <div class="workflow-layout">
                 <div class="workflow-canvas-shell" id="workflow-canvas-shell" tabindex="0" aria-label="无界、可平移缩放的工作流画布">
                   <input id="workflow-import-file" type="file" accept="application/json,.json" hidden />
-                  <div class="workflow-canvas-context" aria-hidden="true"><b>工作流幕布</b><span>双击添加节点 · 拖动端口连线</span></div>
+                  <div class="workflow-canvas-context"><b>工作流幕布</b><span id="workflow-draft-status" role="status">尚未保存 · 需手动保存，仅限本机浏览器</span></div>
                   <div class="workflow-actions workflow-floating-actions">
+<button id="workflow-add-node" type="button" aria-controls="workflow-node-picker">添加节点</button>
 <button id="workflow-new" type="button" title="新建空白工作流" aria-label="新建空白工作流">新建</button>
 <button id="workflow-import" type="button" title="导入工作流" aria-label="导入工作流">导入</button>
 <button id="workflow-fit" type="button" title="适配全部节点" aria-label="适配全部节点">适配</button>
@@ -1390,7 +1401,7 @@
       <div class="workflow-share-copy">
 <p>工作流</p>
 <h2 id="workflow-share-dialog-title">保存与分享工作流</h2>
-<span>保存到本机可以继续编辑；发布后会生成可复制链接，其他人可以直接复用。</span>
+<span>保存会更新当前草稿，另存副本会创建独立版本。草稿仅在当前浏览器保存，不跨设备同步。发布会移除私人素材引用，复用者需重新选择素材。</span>
 </div>
       <label>工作流名称<input id="workflow-share-name" maxlength="40" value="我的图像工作流" />
 </label>
@@ -1401,6 +1412,7 @@
 </label>
       <div class="workflow-share-actions">
 <button id="workflow-save-local" type="button">保存到本机</button>
+<button id="workflow-save-copy" type="button">另存副本</button>
 <button id="workflow-export" type="button">导出 JSON</button>
 <button class="primary" id="workflow-publish" type="button">发布分享</button>
 </div>
@@ -1620,13 +1632,13 @@
     </dialog>
     <script src="js/catalog.js?v=20260908-member-access-v41" defer>
 </script>
-    <script type="module" src="js/app.js?v=20260909-workflow-svg-v43">
+    <script type="module" src="js/app.js?v=20261011-workflow-v58">
 </script>
     <script src="js/onboarding-main.js?v=20260908-member-access-v41">
 </script>
     <script src="js/onboarding-workflow.js?v=20260908-member-access-v41">
 </script>
-    <script src="js/onboarding.js?v=20260908-member-access-v41">
+    <script src="js/onboarding.js?v=20260923-navigation-v45">
 </script>
   </body>
 </html>

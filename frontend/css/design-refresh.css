@@ -130,7 +130,7 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
 .studio-page .plaza-search-tools, .studio-page .workflow-discovery-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 auto 20px; width: min(100% - 48px, 1260px); }
 .studio-page .plaza-community-actions { display: flex; align-items: center; gap: 12px; }
 .studio-page .plaza-community-actions p { margin: 0; }
-.studio-page #plaza-open-history, .studio-page #workflow-discovery-publish { min-height: 38px; padding: 0 15px; border: 0; border-radius: 999px; background: var(--tv-primary); color: var(--tv-on-primary); font-size: 12px; font-weight: 760; box-shadow: 0 10px 20px var(--tv-primary-shadow); }
+.studio-page #plaza-open-history, .studio-page #workflow-discovery-publish { min-height: 38px; padding: 0 15px; border: 0; border-radius: 999px; background: var(--tv-primary); color: var(--tv-on-primary); font-size: 12px; font-weight: 760; white-space: nowrap; box-shadow: 0 10px 20px var(--tv-primary-shadow); }
 .studio-page .plaza-preview-grid { width: min(100% - 30px, 1320px); margin: 0 auto; gap: 8px; }
 .studio-page .plaza-preview-card { border-radius: 14px; background: var(--tv-surface-muted); box-shadow: 0 6px 16px color-mix(in srgb, var(--tv-shadow) 20%, transparent); transition: transform .2s ease, box-shadow .2s ease; }
 .studio-page .plaza-preview-card:hover { z-index: 2; transform: translateY(-2px); box-shadow: 0 12px 28px color-mix(in srgb, var(--tv-shadow) 36%, transparent); }
@@ -142,9 +142,9 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
 .studio-page.workflow-active .studio-content { padding: 0; }
 .studio-page.workflow-active .workflow-workspace { min-height: calc(100dvh - 66px); }
 .studio-page .workflow-canvas-shell { background-color: color-mix(in srgb, var(--tv-workspace) 78%, #edf5ef) !important; background-image: radial-gradient(circle, color-mix(in srgb, var(--tv-primary) 28%, transparent) 1px, transparent 1.2px) !important; background-size: 22px 22px !important; }
-.studio-page .workflow-canvas-context { position: absolute; z-index: 24; top: 62px; left: 16px; display: grid; gap: 2px; pointer-events: none; }
+.studio-page .workflow-canvas-context { position: absolute; z-index: 24; top: 66px; left: 16px; right: 16px; display: grid; gap: 2px; pointer-events: none; }
 .studio-page .workflow-canvas-context b { color: var(--tv-primary-ink); font-size: 13px; }
-.studio-page .workflow-canvas-context span { color: var(--tv-text-muted); font-size: 10px; }
+.studio-page .workflow-canvas-context span { color: var(--tv-text-secondary); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .studio-page .workflow-floating-actions { top: 14px; left: 50%; right: auto; max-width: calc(100% - 220px); padding: 5px; border-color: var(--dr-line); border-radius: 12px; background: color-mix(in srgb, var(--tv-surface-raised) 88%, transparent); box-shadow: 0 8px 24px color-mix(in srgb, var(--tv-shadow) 28%, transparent); transform: translateX(-50%); }
 .studio-page .workflow-floating-actions button { min-height: 34px; border-radius: 10px; font-size: 11px; }
 .studio-page .workflow-floating-actions #workflow-share { color: var(--tv-primary-ink); background: var(--tv-primary-soft); }
@@ -163,8 +163,6 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
 
 @media (min-width: 981px) {
   .studio-page .studio-discovery .discovery-switch { padding-right: calc(var(--discovery-gutter) + 210px); }
-  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions { left: auto; right: 210px !important; width: max-content; max-width: calc(100% - 230px); transform: none; }
-  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) { flex-shrink: 0; white-space: nowrap; }
 }
 
 @media (max-width: 980px) {
@@ -172,9 +170,12 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
   .home-page .home-workbench-heading > :is(h1, p, span, .home-agent-switch) { grid-column: 1; }
   .home-page .home-workbench-heading > span { max-width: 600px; }
   .home-page .home-agent-switch { justify-self: start; order: -1; }
-  .studio-page .workflow-canvas-context { display: none; }
-  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions { left: 50%; right: auto !important; max-width: calc(100% - 132px); overflow-x: auto; transform: translateX(-50%); }
-  html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) { flex-shrink: 0; white-space: nowrap; }
+}
+
+@media (max-width: 1200px) {
+  .studio-page .plaza-search-tools { flex-wrap: wrap; }
+  .studio-page .plaza-tag-bar { flex: 1 1 100%; }
+  .studio-page .plaza-community-actions { width: 100%; justify-content: space-between; }
 }
 
 @media (max-width: 680px) {
@@ -189,9 +190,6 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
   .studio-page .plaza-search-tools, .studio-page .workflow-discovery-toolbar { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; }
   .studio-page .plaza-community-actions { width: 100%; justify-content: space-between; }
   .studio-page .plaza-community-actions p { max-width: 52%; }
-  .studio-page .workflow-floating-actions { top: 10px; }
-  .studio-page .workflow-floating-actions :is(#workflow-import, #workflow-reset, .workflow-edge-style-control) { display: none; }
-  .studio-page .workflow-canvas-toolbar { top: 10px; left: 10px; }
   .studio-page .workflow-resource-dock { left: 10px; bottom: 10px; }
   .studio-page .workflow-resource-dock button b { display: none; }
   .studio-page .workflow-resource-drawer { left: 10px; bottom: 66px; width: min(328px, calc(100% - 20px)); }
@@ -199,6 +197,42 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
 
 /* theme-audit is in the later theme layer. Important declarations in base
    intentionally take precedence for these narrow compatibility overrides. */
+/* 侧栏搜索只替换导航列表，不改变创作工作区。 */
+.studio-page .sidebar-search { position: relative; display: flex; flex-direction: column; min-width: 0; margin: 3px 4px 11px; }
+.studio-page .sidebar-search-field { display: flex; align-items: center; min-height: 38px; gap: 8px; padding: 0 10px; border: 1px solid var(--tv-sidebar-border); border-radius: 10px; background: var(--tv-sidebar-control); color: var(--tv-sidebar-text); }
+.studio-page .sidebar-search-field:focus-within { border-color: var(--tv-sidebar-icon); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tv-sidebar-icon) 24%, transparent); }
+.studio-page .sidebar-search :is(.sidebar-search-field,.sidebar-search-open) svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.studio-page .sidebar-search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--tv-sidebar-strong); font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1.4; }
+.studio-page .sidebar-search-field input::placeholder { color: var(--tv-sidebar-muted); }
+.studio-page .sidebar-search-open { display: none; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--tv-sidebar-text); }
+.studio-page .sidebar-search-open:hover { background: var(--tv-sidebar-hover); }
+.studio-page .sidebar-search-results { display: grid; align-content: start; gap: 3px; min-height: 0; max-height: min(55vh, 540px); margin-top: 9px; overflow-y: auto; scrollbar-width: thin; }
+.studio-page .sidebar-search-results[hidden] { display: none !important; }
+.studio-page .sidebar-search-result { display: grid; gap: 3px; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--tv-sidebar-strong); text-align: left; cursor: pointer; }
+.studio-page .sidebar-search-result:hover,.studio-page .sidebar-search-result:focus-visible { outline: 0; background: var(--tv-sidebar-hover); }
+.studio-page .sidebar-search-result b { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.studio-page .sidebar-search-result small,.studio-page .sidebar-search-empty { color: var(--tv-sidebar-muted); font-size: 10px; }
+.studio-page .sidebar-search-empty { margin: 12px 10px; }
+@media (min-width: 801px) {
+  .studio-page.sidebar-searching .sidebar-search { flex: 1 1 auto; }
+  .studio-page.sidebar-searching .sidebar-search-results { flex: 1 1 auto; max-height: none; }
+  .studio-page.sidebar-searching :is(.sidebar-quick-label,.quick-access-nav,.capability-nav,.sidebar-section-toggle,.discover-nav) { display: none !important; }
+  .studio-page.sidebar-collapsed .sidebar-search { margin: 2px auto 10px; }
+  .studio-page.sidebar-collapsed .sidebar-search-field { display: none; }
+  .studio-page.sidebar-collapsed .sidebar-search-open { display: grid; }
+}
+@media (max-width: 800px) {
+  .studio-page.workflow-active .workflow-workspace { min-height: 0; }
+  .studio-page .studio-sidebar { z-index: 120; backdrop-filter: none; }
+  .studio-page .sidebar-search { position: absolute; top: 12px; right: 12px; margin: 0; }
+  .studio-page .quick-access-nav { grid-column: 2; grid-row: 1; padding-right: 44px; }
+  .studio-page .sidebar-search-field { display: none; }
+  .studio-page .sidebar-search-open { display: grid; }
+  .studio-page.sidebar-search-mobile-open .sidebar-search { position: fixed; z-index: 100; top: 64px; right: 12px; left: 12px; max-height: min(70vh, 560px); margin: 0; padding: 12px; border: 1px solid var(--tv-sidebar-border); border-radius: 14px; background: var(--tv-sidebar); box-shadow: 0 16px 40px var(--tv-dialog-shadow); }
+  .studio-page.sidebar-search-mobile-open .sidebar-search-field { display: flex; }
+  .studio-page.sidebar-search-mobile-open .sidebar-search-open { display: none; }
+  .studio-page.sidebar-search-mobile-open .sidebar-search-results { max-height: 58vh; }
+}
 @layer base {
   html[data-studio-theme] body.studio-page :is(#plaza-open-history,#workflow-discovery-publish) {
     min-height: 38px !important;
@@ -231,7 +265,7 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
     outline: 0 !important;
     box-shadow: none !important;
   }
-  @media (min-width: 981px) {
+  @media (min-width: 801px) {
     html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
       top: 14px !important;
       left: auto !important;
@@ -245,17 +279,36 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
       white-space: nowrap !important;
     }
   }
-  @media (max-width: 980px) {
+  @media (min-width: 801px) and (max-width: 1200px) {
     html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
-      left: 50% !important;
-      right: auto !important;
-      max-width: calc(100% - 132px) !important;
-      overflow-x: auto !important;
-      transform: translateX(-50%) !important;
-    }
-    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) {
-      flex-shrink: 0 !important;
-      white-space: nowrap !important;
+      top: 64px !important;
+      right: 16px !important;
+      max-width: calc(100% - 32px) !important;
     }
   }
+  @media (max-width: 800px) {
+    html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
+      top: 48px !important;
+      left: 10px !important;
+      right: 10px !important;
+      width: auto !important;
+      max-width: none !important;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      transform: none !important;
+    }
+  }
+}
+
+@media (min-width: 801px) and (max-width: 1200px) {
+  .studio-page .workflow-canvas-context { top: 118px; }
+}
+@media (max-width: 800px) {
+  .studio-page .workflow-floating-actions :is(button, .workflow-edge-style-control) { min-width: 0; min-height: 40px; padding-inline: 3px; justify-content: center; white-space: nowrap; }
+  .studio-page .workflow-edge-style-control > span { display: none; }
+  .studio-page .workflow-edge-style-control select { width: 100%; max-width: 100%; }
+  .studio-page .workflow-canvas-context { top: 148px; left: 12px; right: 12px; }
+  .studio-page .workflow-canvas-context b { display: none; }
+  .studio-page .workflow-canvas-toolbar { top: 210px; left: 10px; }
+  .studio-page .workflow-viewport { margin-top: 256px; height: calc(100% - 256px); }
 }

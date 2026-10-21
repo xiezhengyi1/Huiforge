@@ -294,7 +294,7 @@
 .workflow-share-dialog > label { display:grid; gap:6px; margin-top:17px; color:#52675c; font-size:10px; font-weight:750; }
 .workflow-share-dialog > label input,.workflow-share-dialog > label textarea { box-sizing:border-box; width:100%; padding:11px 12px; border:1px solid #ced9d0; border-radius:10px; outline:0; background:#fff; color:#243d31; font:12px/1.5 inherit; }
 .workflow-share-dialog > label textarea { min-height:78px; resize:vertical; }
-.workflow-share-actions { display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:8px; margin-top:18px; }
+.workflow-share-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:18px; }
 .workflow-share-actions button,.workflow-share-link button { min-height:39px; border:1px solid #c7d3ca; border-radius:9px; background:#fff; color:#416052; font-size:10px; font-weight:760; cursor:pointer; }
 .workflow-share-actions .primary { border-color:#1f8069; background:#1f8069; color:#fff; }
 .workflow-share-link { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; margin-top:14px; padding:9px; border-radius:10px; background:#edf3ee; }
@@ -303,11 +303,13 @@
 .workflow-share-link input { min-width:0; height:34px; padding:0 9px; border:1px solid #ccd8cf; border-radius:7px; background:#fff; color:#446054; font-size:9px; }
 .workflow-share-link button { min-height:34px; padding:0 11px; }
 .workflow-share-status { min-height:17px; margin:9px 0 0; color:#6a7b72; font-size:9px; }
-.workflow-toast { position:fixed; z-index:90; right:24px; bottom:24px; max-width:min(360px,calc(100vw - 48px)); padding:11px 15px; border-radius:10px; background:#203d31; color:#fff; box-shadow:0 14px 42px rgba(24,44,34,.24); font-size:11px; }
+.workflow-toast { position:fixed; z-index:90; right:24px; bottom:76px; max-width:min(360px,calc(100vw - 48px)); padding:11px 15px; border-radius:10px; background:#203d31; color:#fff; box-shadow:0 14px 42px rgba(24,44,34,.24); font-size:11px; }
 .workflow-toast[hidden] { display:none !important; }
+@media (max-width: 800px) {
+  .workflow-toast { bottom: 120px; }
+}
 
 @media (max-width:1040px) {
-  .studio-page .workflow-actions #workflow-import,.studio-page .workflow-actions #workflow-reset { display:none; }
   .studio-page .workflow-node-groups { grid-template-columns:1fr; }
   .studio-page .workflow-node-category-tabs button { min-height:36px; padding:0 10px; }
 }
@@ -320,7 +322,7 @@
   .studio-page .shared-workflow-card { flex:0 0 210px; }
   .studio-page .shared-workflow-local { flex:0 0 260px; }
   .studio-page .workflow-node-picker { top:8px !important; left:8px !important; width:calc(100% - 16px); max-height:calc(100% - 16px); }
-  .workflow-share-actions { grid-template-columns:1fr; }
+  .workflow-share-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 .studio-page select option,
@@ -1608,7 +1610,7 @@
   .studio-page .workflow-workspace { height:calc(100dvh - 136px); min-height:560px; border-radius:14px; }
   .studio-page .workflow-header { height:auto; min-height:72px; padding:10px 12px; }
   .studio-page .workflow-header h2 { font-size:19px; }
-  .studio-page .workflow-header > div:first-child > span,.studio-page .workflow-actions > :not(.workflow-run) { display:none; }
+  .studio-page .workflow-header > div:first-child > span { display:none; }
   .studio-page .workflow-actions .workflow-run { padding-inline:10px; }
   .studio-page .workflow-layout { grid-template-columns:1fr; grid-template-rows:146px minmax(0,1fr); height:calc(100% - 72px); }
   .studio-page .scenario-library { grid-template-rows:auto auto minmax(0,1fr); border-right:0; border-bottom:1px solid #d3dcd4; }
@@ -2905,9 +2907,7 @@
     height: min(420px, calc(100% - 136px));
   }
   .studio-page .workflow-floating-actions { top: 10px; right: 10px; }
-  .studio-page .workflow-floating-actions #workflow-import,
-  .studio-page .workflow-floating-actions #workflow-reset { display: none; }
-  .studio-page .workflow-canvas-toolbar { top: 10px; left: 10px; transform: translateY(48px); }
+  .studio-page .workflow-canvas-toolbar { top: 10px; left: 10px; }
 }
 
 /* Remove the last inherited content gutter: the canvas itself is the workspace. */
@@ -3993,6 +3993,21 @@
 }
 .studio-page .plaza-preview-card:hover > .plaza-card-model,
 .studio-page .plaza-preview-card:focus-visible > .plaza-card-model { opacity: 1; transform: translateY(0); }
+.studio-page .plaza-preview-card > .plaza-sample-badge {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 10px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(248, 250, 247, .9);
+  color: #174c3a;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1;
+}
+.studio-page #plaza-detail-like[hidden] { display: none; }
 .plaza-detail-image { background: #e9eee8; }
 .plaza-detail-image.is-video { background: #101b16; }
 .plaza-detail-image img,

@@ -15,6 +15,7 @@
       <div class="onboarding-head"><span class="onboarding-step-label"></span><button class="onboarding-skip" type="button">跳过引导</button></div>
       <h2 id="onboarding-title"></h2>
       <p id="onboarding-description"></p>
+      <small class="onboarding-click-hint">点击卡片空白处继续 →</small>
       <div class="onboarding-footer"><div class="onboarding-progress" aria-label="引导进度"></div><div class="onboarding-actions"><button class="onboarding-back" type="button">上一步</button><button class="onboarding-next" type="button">下一步</button></div></div>
     </section>`;
   document.body.append(layer);
@@ -222,6 +223,9 @@
   }
 
   nextButton.addEventListener("click", () => show(state.index + 1, 1));
+  popover.addEventListener("click", (event) => {
+    if (state.open && !state.transitioning && !event.target.closest("button")) show(state.index + 1, 1);
+  });
   backButton.addEventListener("click", () => show(state.index - 1, -1));
   skipButton.addEventListener("click", () => finish("skipped"));
   replay.addEventListener("click", () => start(currentView(), { force: true }));
@@ -237,6 +241,7 @@
     if (event.key === "Escape") { event.preventDefault(); finish("skipped"); }
     if (event.key === "ArrowRight") { event.preventDefault(); show(state.index + 1, 1); }
     if (event.key === "ArrowLeft" && state.index > 0) { event.preventDefault(); show(state.index - 1, -1); }
+    if ((event.key === "Enter" || event.key === " ") && document.activeElement === popover) { event.preventDefault(); show(state.index + 1, 1); }
     if (event.key === "Tab") {
       const controls = [...popover.querySelectorAll("button:not([hidden])")];
       if (!controls.length) return;

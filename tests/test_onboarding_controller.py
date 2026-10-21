@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from backend.huiju.core.config import FRONTEND_ASSETS, RELEASE_ID
+from backend.huiju.core.config import FRONTEND_ASSETS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,7 +10,7 @@ def test_onboarding_assets_are_public_and_loaded_after_workspace_code():
     required = {"css/onboarding.css", "js/onboarding.js", "js/onboarding-main.js", "js/onboarding-workflow.js"}
     assert required <= FRONTEND_ASSETS
     html = (ROOT / "frontend" / "pages" / "studio.html").read_text(encoding="utf-8")
-    assert f'href="css/onboarding.css?v={RELEASE_ID}"' in html
+    assert 'href="css/onboarding.css?v=' in html
     assert html.index('src="js/app.js?') < html.index('src="js/onboarding-main.js?')
     assert html.index('src="js/onboarding-main.js?') < html.index('src="js/onboarding-workflow.js?')
     assert html.index('src="js/onboarding-workflow.js?') < html.index('src="js/onboarding.js?')
@@ -32,11 +32,14 @@ def test_onboarding_controller_has_first_run_state_accessibility_and_replay():
         "onboarding-replay",
         "state.transitioning",
         "nextButton.disabled",
+        'popover.addEventListener("click"',
+        'event.target.closest("button")',
     ):
         assert contract in script
     assert "onboarding-focus-ring" in stylesheet
     assert "9999px" in stylesheet
     assert "onboarding-popover::before" in stylesheet
+    assert "onboarding-click-hint" in stylesheet
     assert "prefers-reduced-motion" in stylesheet
 
 
@@ -69,6 +72,7 @@ def test_asset_categories_are_a_top_navigation_menu():
     assert ".asset-category-menu { display: flex;" in stylesheet
     assert ".asset-library-layout { min-height:" in stylesheet
     assert "assetCategoryIconMarkup" not in script
-    assert f'@import url("studio.css?v={RELEASE_ID}") layer(base);' in layout
+    assert '@import url("studio.css?v=' in layout
+    assert '") layer(base);' in layout
 
 

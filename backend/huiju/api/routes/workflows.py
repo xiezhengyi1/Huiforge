@@ -79,19 +79,36 @@ async def workflow_create(payload: WorkflowCreateInput, request: Request) -> dic
     profile = relay.public_user(owner) if relay.database.user_exists(owner) else None
     graph = payload.graph.model_dump(mode="json")
     node_ids = {node["id"] for node in graph["nodes"]}
-    seen_edges: set[tuple[str, str]] = set()
-    valid_edges: list[dict[str, str]] = []
-    for edge in graph.get("edges", []):
-        signature = (edge["from_node"], edge["to_node"])
-        if edge["from_node"] == edge["to_node"] or not set(signature).issubset(node_ids) or signature in seen_edges:
-            continue
+    if len(node_ids) != len(graph["nodes"]):
+        raise HTTPException(status_code=422, detail="duplicate_workflow_nodes")
+    seen_edges: set[tuple[str, str, str, str]] = set()
+    for edge in graph["edges"]:
+        signature = (edge["from_node"], edge["to_node"], edge["from_port"], edge["to_port"])
+        if edge["from_node"] == edge["to_node"] or not {edge["from_node"], edge["to_node"]}.issubset(node_ids) or signature in seen_edges:
+            raise HTTPException(status_code=422, detail="invalid_workflow_edges")
         seen_edges.add(signature)
-        valid_edges.append(edge)
-    graph["edges"] = valid_edges
+    pending = set(node_ids)
+    while pending:
+        ready = {node_id for node_id in pending if not any(edge["to_node"] == node_id and edge["from_node"] in pending for edge in graph["edges"])}
+        if not ready:
+            raise HTTPException(status_code=422, detail="cyclic_workflow")
+        pending -= ready
+    outputs = {node["id"] for node in graph["nodes"] if node["type"] in {"media_output", "text_output"}}
+    capabilities = {node["id"] for node in graph["nodes"] if node["type"] not in {"media_input", "media_output", "text_output"}}
+    upstream = set(outputs)
+    while True:
+        sources = upstream | {edge["from_node"] for edge in graph["edges"] if edge["to_node"] in upstream}
+        if sources == upstream:
+            break
+        upstream = sources
+    if not outputs or not upstream.intersection(capabilities):
+        raise HTTPException(status_code=422, detail="workflow_output_disconnected")
     for node in graph["nodes"]:
         sanitized: dict[str, str | int | float | bool] = {}
         for key, value in node.get("config", {}).items():
             if not re.fullmatch(r"[a-z][a-z0-9_]{0,31}", key):
+                continue
+            if key in {"url", "asset_id", "history_url", "upload_id"} or (node["type"] == "media_input" and key in {"prompt", "kind", "media_type"}):
                 continue
             sanitized[key] = value[:1000] if isinstance(value, str) else value
         node["config"] = sanitized

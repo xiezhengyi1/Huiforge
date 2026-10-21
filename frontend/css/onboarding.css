@@ -4,7 +4,7 @@
 .onboarding-blocker { position: absolute; inset: 0; border: 0; background: transparent; cursor: default; }
 .onboarding-focus-ring { position: fixed; z-index: 1; pointer-events: none; border: 2px solid #5bc7a0; border-radius: 14px; background: rgba(255,255,255,.035); box-shadow: 0 0 0 5px rgba(91,199,160,.18), 0 0 0 9999px rgba(7,18,13,.66); transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
 .onboarding-focus-ring::after { content: ""; position: absolute; inset: -8px; border: 1px solid rgba(205,246,226,.54); border-radius: inherit; animation: onboarding-edge-pulse 1.8s ease-in-out infinite; }
-.onboarding-popover { --arrow-offset: 34px; position: fixed; z-index: 2; width: min(368px, calc(100vw - 28px)); padding: 22px; border: 1px solid #c9d9ce; border-radius: 18px; outline: 0; background: #fcfdf9; color: #20372c; box-shadow: 0 24px 70px rgba(11,31,21,.28); }
+.onboarding-popover { --arrow-offset: 34px; position: fixed; z-index: 2; width: min(368px, calc(100vw - 28px)); padding: 22px; border: 1px solid #c9d9ce; border-radius: 18px; outline: 0; background: #fcfdf9; color: #20372c; box-shadow: 0 24px 70px rgba(11,31,21,.28); cursor: pointer; }
 .onboarding-popover::before { content: ""; position: absolute; width: 14px; height: 14px; background: #fcfdf9; transform: rotate(45deg); }
 .onboarding-popover[data-placement="bottom"]::before { top: -8px; left: var(--arrow-offset); border-top: 1px solid #c9d9ce; border-left: 1px solid #c9d9ce; }
 .onboarding-popover[data-placement="top"]::before { bottom: -8px; left: var(--arrow-offset); border-right: 1px solid #c9d9ce; border-bottom: 1px solid #c9d9ce; }
@@ -16,6 +16,7 @@
 .onboarding-skip:hover { color: #b85d46; }
 .onboarding-popover h2 { margin: 0; color: #173328; font: 500 25px/1.16 Georgia, "Songti SC", serif; letter-spacing: -.04em; }
 .onboarding-popover p { margin: 11px 0 20px; color: #607269; font-size: 13px; line-height: 1.75; }
+.onboarding-click-hint { display: block; margin: -11px 0 15px; color: #6a8375; font-size: 11px; }
 .onboarding-progress { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .onboarding-progress i { display: block; width: 18px; height: 4px; border-radius: 999px; background: #dbe5dd; transition: width .18s ease, background .18s ease; }
 .onboarding-progress i.active { width: 28px; background: #238064; }

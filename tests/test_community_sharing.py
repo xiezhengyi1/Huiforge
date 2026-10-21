@@ -5,7 +5,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from backend.huiju.api.app import app
-from backend.huiju.api.routes import plaza
+from backend.huiju.api.routes import plaza, workflows
 from backend.huiju.api.schemas import PlazaPostCreateInput
 from backend.huiju.persistence.database import UserDatabase
 
@@ -111,3 +111,56 @@ def test_frontend_exposes_workflow_local_publish_and_artwork_publish_contract():
     assert 'openPlazaPublishDialog' in script
     assert 'history_url' in script
     assert 'id="plaza-publish-dialog"' in page
+
+
+def test_workflow_publish_requires_connected_acyclic_output(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(workflows.relay, "database", UserDatabase(tmp_path / "users.sqlite3", tmp_path / "private"))
+    client = TestClient(app)
+    graph = {
+        "version": 6,
+        "nodes": [
+            {"id": "generator", "type": "image_generator", "category": "image", "x": 0, "y": 0, "config": {"prompt": "雨夜街景"}},
+            {"id": "output", "type": "media_output", "category": "output", "x": 300, "y": 0, "config": {}},
+        ],
+        "edges": [],
+    }
+    payload = {"name": "测试工作流", "graph": graph}
+    response = client.post("/api/v1/workflows", json=payload)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "workflow_output_disconnected"
+
+    graph["edges"] = [
+        {"id": "one", "from_node": "generator", "to_node": "output"},
+        {"id": "two", "from_node": "output", "to_node": "generator"},
+    ]
+    response = client.post("/api/v1/workflows", json=payload)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "cyclic_workflow"
+
+
+def test_public_workflow_strips_private_input_metadata_but_keeps_distinct_ports(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(workflows.relay, "database", UserDatabase(tmp_path / "users.sqlite3", tmp_path / "private"))
+    client = TestClient(app)
+    graph = {
+        "version": 6,
+        "nodes": [
+            {"id": "input", "type": "media_input", "category": "input", "x": 0, "y": 0, "config": {
+                "input_type": "image", "url": f"/api/v1/private-media/asset/{'a' * 32}",
+                "asset_id": "private-asset", "prompt": "私人素材描述", "kind": "upload", "media_type": "image/webp",
+            }},
+            {"id": "generator", "type": "image_generator", "category": "image", "x": 300, "y": 0, "config": {"prompt": "雨夜街景"}},
+            {"id": "output", "type": "media_output", "category": "output", "x": 600, "y": 0, "config": {}},
+        ],
+        "edges": [
+            {"id": "first", "from_node": "input", "to_node": "generator", "to_port": "image1"},
+            {"id": "second", "from_node": "input", "to_node": "generator", "to_port": "image2"},
+            {"id": "third", "from_node": "generator", "to_node": "output"},
+        ],
+    }
+    response = client.post("/api/v1/workflows", json={"name": "测试工作流", "graph": graph})
+    assert response.status_code == 200
+    workflow_id = response.json()["workflow"]["id"]
+    public_graph = TestClient(app).get(f"/api/v1/workflows/{workflow_id}").json()["workflow"]["graph"]
+    assert public_graph["nodes"][0]["config"] == {"input_type": "image"}
+    assert public_graph["nodes"][1]["config"]["prompt"] == "雨夜街景"
+    assert len(public_graph["edges"]) == 3

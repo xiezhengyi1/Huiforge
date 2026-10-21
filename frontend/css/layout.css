@@ -1,7 +1,7 @@
 @layer base;
 @import url("styles.css") layer(base);
 @import url("home.css") layer(base);
-@import url("studio.css?v=20260908-member-access-v41") layer(base);
+@import url("studio.css?v=20261011-workflow-v58") layer(base);
 @import url("profile.css") layer(base);
 @import url("profile-overrides.css") layer(base);
 @import url("pricing.css") layer(base);

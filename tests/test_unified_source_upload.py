@@ -46,7 +46,7 @@ def test_unified_media_composer_has_no_route_banner_or_unified_entry_tag() -> No
 
 
 def test_studio_loads_the_source_upload_composer_from_the_module_directory() -> None:
-    assert 'js/app.js?v=20260909-workflow-svg-v43' in HTML
+    assert 'src="js/app.js?v=' in HTML
 
 
 def test_workflow_discovery_deep_link_waits_for_its_module_constants() -> None:

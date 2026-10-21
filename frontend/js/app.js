@@ -129,6 +129,9 @@ const capabilityNotice = document.querySelector("#capability-notice");
 const capabilityProviderStrip = document.querySelector("#capability-provider-strip");
 const capabilityNav = document.querySelector(".capability-nav");
 const quickAccessPins = document.querySelector("#quick-access-pins");
+const sidebarSearchInput = document.querySelector("#sidebar-search-input");
+const sidebarSearchOpen = document.querySelector("#sidebar-search-open");
+const sidebarSearchResults = document.querySelector("#sidebar-search-results");
 const discoverToggle = document.querySelector("#discover-toggle");
 const discoverNav = document.querySelector("#discover-nav");
 const capabilityToolWorkspace = document.querySelector("#capability-tool-workspace");
@@ -5021,6 +5024,77 @@ function sidebarCapabilityGroups() {
   }));
 }
 
+function renderSidebarSearch() {
+  const query = sidebarSearchInput.value.trim().toLocaleLowerCase();
+  document.body.classList.toggle("sidebar-searching", Boolean(query));
+  sidebarSearchResults.replaceChildren();
+  sidebarSearchResults.hidden = !query;
+  if (!query) return;
+
+  const entries = [
+    { id:"quick", kind:"workspace", name:"主页面", location:"快速访问", terms:"首页 工作台" },
+    { id:"workflow", kind:"workspace", name:"工作流幕布", location:"快速访问", terms:"画布 节点" },
+    { id:"skills", kind:"discovery", name:"技能推荐", location:"发现", terms:"技能" },
+    { id:"plaza", kind:"discovery", name:"共绘广场", location:"发现", terms:"社区 作品" },
+    { id:"workflows", kind:"discovery", name:"工作流分享", location:"发现", terms:"社区 分享 模板" },
+    { id:"models", kind:"discovery", name:"模型说明", location:"发现", terms:"模型" },
+    ...sidebarCapabilityGroups().flatMap((group) => group.items.filter((item) => item.id !== "workflow-canvas").map((item) => ({
+      id:item.id, kind:"capability", name:item.name,
+      location:`${group.name} · ${item.sidebarSection}`, terms:`${group.name} ${item.sidebarSection}`,
+    }))),
+  ];
+  const matches = entries.filter((entry) => `${entry.name} ${entry.location} ${entry.terms}`.toLocaleLowerCase().includes(query));
+  if (!matches.length) {
+    const empty = document.createElement("p");
+    empty.className = "sidebar-search-empty";
+    empty.textContent = "没有找到相关功能";
+    sidebarSearchResults.append(empty);
+    return;
+  }
+  sidebarSearchResults.append(...matches.map((entry) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sidebar-search-result";
+    button.dataset.sidebarSearchKind = entry.kind;
+    button.dataset.sidebarSearchId = entry.id;
+    const name = document.createElement("b");
+    name.textContent = entry.name;
+    const location = document.createElement("small");
+    location.textContent = entry.location;
+    button.append(name, location);
+    return button;
+  }));
+}
+
+function closeSidebarSearch() {
+  sidebarSearchInput.value = "";
+  renderSidebarSearch();
+  document.body.classList.remove("sidebar-search-mobile-open");
+}
+
+sidebarSearchInput?.addEventListener("input", renderSidebarSearch);
+sidebarSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { closeSidebarSearch(); sidebarSearchInput.blur(); }
+  if (event.key === "Enter") { event.preventDefault(); sidebarSearchResults.querySelector("button")?.click(); }
+});
+sidebarSearchOpen?.addEventListener("click", () => {
+  if (window.innerWidth <= 800) document.body.classList.add("sidebar-search-mobile-open");
+  else setSidebarCollapsed(false);
+  sidebarSearchInput.focus();
+});
+sidebarSearchResults?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sidebar-search-kind]");
+  if (!button) return;
+  const { sidebarSearchKind:kind, sidebarSearchId:id } = button.dataset;
+  closeSidebarSearch();
+  if (kind === "workspace") setWorkspaceView(id);
+  else if (kind === "discovery") { setWorkspaceView("quick"); showDiscovery(id, true); }
+  else activateCapabilityItem(capabilityGroups.flatMap((group) => group.items).find((item) => item.id === id));
+});
+document.addEventListener("pointerdown", (event) => {
+  if (document.body.classList.contains("sidebar-search-mobile-open") && !event.target.closest("#sidebar-search")) closeSidebarSearch();
+});
+
 function renderCapabilitySidebar() {
   if (!capabilityNav || !capabilityGroups.length) return;
   capabilityNav.replaceChildren(...sidebarCapabilityGroups().map((group) => {
@@ -5059,6 +5133,7 @@ function renderCapabilitySidebar() {
     section.append(trigger, subnav);
     return section;
   }));
+  if (sidebarSearchInput.value) renderSidebarSearch();
 }
 
 function openCapabilityCenter(groupId = activeCapabilityGroup) {
@@ -6578,7 +6653,7 @@ function renderPlazaSearch() {
   grid.append(...visible, ...cards.filter((card) => !visibleSet.has(card)));
   const empty = document.querySelector("#gallery-empty");
   if (empty) empty.hidden = visible.length !== 0;
-  if (plazaSearchStatus) plazaSearchStatus.textContent = query ? `找到 ${visible.length} 件与“${query}”相关的作品` : Object.keys(loadPlazaInterests()).length ? "根据你查看和点赞的作品进行推荐，并自动保持风格多样" : "综合热度与风格多样性推荐";
+  if (plazaSearchStatus) plazaSearchStatus.textContent = query ? `找到 ${visible.length} 件与“${query}”相关的作品` : Object.keys(loadPlazaInterests()).length ? "根据你查看的作品进行推荐，并自动保持风格多样" : "精选示例与社区作品";
   plazaTagBar?.querySelectorAll("button").forEach((button) => button.classList.toggle("active", button.dataset.plazaQuery === (query || "推荐")));
 }
 
@@ -6745,18 +6820,19 @@ if (plazaPreviewGrid) {
     const title = card.querySelector("b")?.textContent?.trim() || "共绘作品";
     const subtitle = card.querySelector(":scope > span small")?.textContent?.trim() || "";
     const user = card.dataset.plazaUser || "神秘画家";
-    const baseLikes = Number(card.dataset.plazaLikes || 0);
-    const likeKey = `huiju.plaza.like.${title}`;
-    const liked = (() => { try { return window.localStorage.getItem(likeKey) === "1"; } catch { return false; } })();
+    card.dataset.plazaLikes = "0";
     card.dataset.plazaTitle = title;
     card.dataset.plazaSubtitle = subtitle;
-    card.setAttribute("aria-label", `${title}，作者 ${user}，${baseLikes + (liked ? 1 : 0)} 次点赞`);
+    card.setAttribute("aria-label", `${title}，官方创作示例`);
+    const badge = document.createElement("em");
+    badge.className = "plaza-sample-badge";
+    badge.textContent = "官方示例";
+    card.append(badge);
     const meta = card.querySelector(":scope > span");
     if (meta) {
       meta.className = "plaza-card-meta";
-      meta.innerHTML = '<small class="plaza-card-author"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.8 19c.7-4 2.8-6 6.2-6s5.5 2 6.2 6"></path></svg><span></span></small><small class="plaza-card-likes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 9.5c0 4.7-8.5 9-8.5 9s-8.5-4.3-8.5-9a4.5 4.5 0 0 1 8.5-2.3 4.5 4.5 0 0 1 8.5 2.3Z"></path></svg><span></span></small>';
+      meta.innerHTML = '<small class="plaza-card-author"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.8 19c.7-4 2.8-6 6.2-6s5.5 2 6.2 6"></path></svg><span></span></small>';
       meta.querySelector(".plaza-card-author span").textContent = user;
-      meta.querySelector(".plaza-card-likes span").textContent = String(baseLikes + (liked ? 1 : 0));
     }
     const modelBadge = document.createElement("small");
     modelBadge.className = "plaza-card-model";
@@ -6815,7 +6891,7 @@ plazaPreviewGrid?.addEventListener("click", (event) => {
     plazaDetailVideo.parentElement.classList.toggle("is-video", mediaType === "video");
   }
   if (plazaDetailTitle) plazaDetailTitle.textContent = title;
-  if (plazaDetailUser) plazaDetailUser.textContent = user;
+  if (plazaDetailUser) plazaDetailUser.textContent = activePlazaPostId ? user : `${user} · 官方示例`;
   if (plazaAuthorAvatar) plazaAuthorAvatar.textContent = user.slice(0, 1);
   if (plazaDetailPrompt) plazaDetailPrompt.textContent = activePlazaPrompt;
   if (plazaDetailPromptLabel) plazaDetailPromptLabel.textContent = mediaType === "video" ? "视频提示词" : "创作提示词";
@@ -6835,6 +6911,7 @@ plazaPreviewGrid?.addEventListener("click", (event) => {
     }));
   }
   if (plazaDetailLikes) plazaDetailLikes.textContent = String(Number(card.dataset.plazaLikes || 0) + (activePlazaPostId ? 0 : liked ? 1 : 0));
+  if (plazaDetailLike) plazaDetailLike.hidden = !activePlazaPostId;
   plazaDetailLike?.setAttribute("aria-pressed", String(liked));
   if (plazaDetailLike?.firstElementChild) plazaDetailLike.firstElementChild.textContent = liked ? "♥" : "♡";
   plazaDetailDialog.showModal();
@@ -7918,11 +7995,13 @@ requestAnimationFrame(() => { applyWorkflowTransform(); updateWorkflowLines(); }
 /* v46: reusable workflow graphs. Complexity stays behind the canvas entry: users can
    begin from a scene, then reveal categorized nodes only when they double-click. */
 const WORKFLOW_LOCAL_KEY = "huiju.workflows.local.v1";
+let currentWorkflowDraft = null;
 const workflowLibraryTabs = [...document.querySelectorAll("[data-workflow-library-tab]")];
 const workflowLibraryPanels = [...document.querySelectorAll("[data-workflow-library-panel]")];
 const sharedWorkflowList = document.querySelector("#shared-workflow-list");
 const sharedWorkflowScopes = [...document.querySelectorAll("[data-workflow-scope]")];
 const workflowNodePicker = document.querySelector("#workflow-node-picker");
+let workflowPickerReturnFocus = null;
 const workflowNodeGroups = document.querySelector("#workflow-node-groups");
 const workflowNodeCategoryTabs = document.querySelector("#workflow-node-category-tabs");
 const workflowNodeEditor = document.querySelector("#workflow-node-editor");
@@ -10301,12 +10380,13 @@ function showWorkflowNodePickerAt(clientX, clientY, sourcePort = null) {
   renderWorkflowNodePicker(sourceType);
   const pickerTitle = document.querySelector("#workflow-node-picker-title");
   if (pickerTitle) pickerTitle.textContent = sourcePort ? `选择可连接“${sourcePort.dataset.portLabel || "数据"}”的节点` : "添加工作流节点";
+  workflowPickerReturnFocus = document.activeElement;
   workflowNodePicker.hidden = false;
   const desiredLeft = clientX - shellRect.left + 12;
   const desiredTop = clientY - shellRect.top + 12;
   workflowNodePicker.style.left = `${Math.max(8, Math.min(shellRect.width - workflowNodePicker.offsetWidth - 8, desiredLeft))}px`;
   workflowNodePicker.style.top = `${Math.max(8, Math.min(shellRect.height - workflowNodePicker.offsetHeight - 8, desiredTop))}px`;
-  workflowNodePicker.querySelector("button")?.focus();
+  workflowNodePicker.querySelector(".workflow-node-option:not(:disabled)")?.focus();
 }
 
 function openWorkflowNodePicker(event) {
@@ -10317,7 +10397,9 @@ function openWorkflowNodePicker(event) {
 }
 
 function closeWorkflowNodePicker({ cancelConnection = true } = {}) {
+  const restoreFocus = workflowNodePicker?.contains(document.activeElement);
   if (workflowNodePicker) workflowNodePicker.hidden = true;
+  if (restoreFocus) workflowPickerReturnFocus?.focus();
   if (cancelConnection && workflowPickerAutoConnectSource) clearWorkflowConnectionState();
   workflowPickerAutoConnectSource = null;
 }
@@ -10378,6 +10460,11 @@ function defaultWorkflowGraph() {
 function loadWorkflowGraph(graph) {
   closeWorkflowNodeEditor();
   if (!graph || typeof graph !== "object" || !Array.isArray(graph.nodes)) throw new Error("invalid_workflow");
+  currentWorkflowDraft = null;
+  workflowShareName.value = "未命名工作流";
+  workflowShareDescription.value = "";
+  workflowShareTags.value = "";
+  updateWorkflowDraftStatus();
   workflowBoard?.querySelectorAll("[data-node-id]").forEach((node) => node.remove());
   if (typeof graph.scene_preset === "string") {
     const scene = SCENE_WORKFLOWS.find((item) => item.preset === graph.scene_preset);
@@ -10426,6 +10513,20 @@ function readLocalWorkflows() {
     const value = JSON.parse(window.localStorage.getItem(WORKFLOW_LOCAL_KEY) || "[]");
     return Array.isArray(value) ? value.filter((item) => item && typeof item === "object" && item.graph).slice(0, 40) : [];
   } catch { return []; }
+}
+
+function updateWorkflowDraftStatus() {
+  const status = currentWorkflowDraft ? "已有本机存档" : "尚未保存";
+  document.querySelector("#workflow-draft-status").textContent = `${workflowShareName.value} · ${status} · 需手动保存，仅限本机浏览器`;
+}
+
+function loadWorkflowRecord(record, source = "community") {
+  loadWorkflowGraph(record.graph);
+  workflowShareName.value = record.name;
+  workflowShareDescription.value = record.description;
+  workflowShareTags.value = record.tags.join("、");
+  if (source === "local") currentWorkflowDraft = record;
+  updateWorkflowDraftStatus();
 }
 
 function writeLocalWorkflows(items) {
@@ -10625,7 +10726,7 @@ async function toggleCommunityWorkflowLike(workflowId) {
 async function useCommunityWorkflow(workflowId) {
   try {
     const { body } = await fetchJson(`${API.workflows}/${encodeURIComponent(workflowId)}/use`, { method:"POST" }, 6000);
-    loadWorkflowGraph(body.workflow?.graph);
+    loadWorkflowRecord(body.workflow);
     workflowCommunityDialog?.close();
     setWorkspaceView("workflow");
     showWorkflowToast(`已加入「${String(body.workflow?.name || "社区工作流").slice(0, 30)}」，可继续编辑`);
@@ -10788,11 +10889,37 @@ function workflowRecordFromDialog() {
   return { name:name.slice(0, 40), description:description.slice(0, 120), tags:[...new Set(tags)].slice(0, 8), graph:serializeWorkflowGraph() };
 }
 
-function saveWorkflowLocally() {
-  const record = { id:`local-${Date.now()}`, ...workflowRecordFromDialog(), author:"本机创作", created_at:Date.now() / 1000 };
-  const saved = writeLocalWorkflows([record, ...readLocalWorkflows()]);
-  workflowShareStatus.textContent = saved ? "已保存到这台设备。" : "浏览器存储空间不足，建议导出 JSON。";
-  if (saved) { showWorkflowToast("工作流已保存到本机"); if (activeWorkflowScope === "local") renderSharedWorkflows(); }
+function workflowPublishIssue(graph) {
+  const nodeTypes = new Map(graph.nodes.map((node) => [node.id, node.type]));
+  const outputs = new Set(graph.nodes.filter((node) => ["media_output", "text_output"].includes(node.type)).map((node) => node.id));
+  if (!outputs.size) return "请先添加输出节点。";
+  const upstream = new Set(outputs);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    graph.edges.forEach((edge) => {
+      if (upstream.has(edge.to_node) && !upstream.has(edge.from_node)) { upstream.add(edge.from_node); changed = true; }
+    });
+  }
+  if (![...upstream].some((id) => !["media_input", "media_output", "text_output"].includes(nodeTypes.get(id)))) {
+    return "请先把能力节点连接到输出，再发布工作流。";
+  }
+  return "";
+}
+
+function saveWorkflowLocally(copy = false) {
+  const now = Date.now() / 1000;
+  const previous = copy ? null : currentWorkflowDraft;
+  const record = { ...workflowRecordFromDialog(), id:previous ? previous.id : `local-${crypto.randomUUID()}`, author:"本机创作", created_at:previous ? previous.created_at : now, updated_at:now };
+  const saved = writeLocalWorkflows([record, ...readLocalWorkflows().filter((item) => item.id !== record.id)]);
+  workflowShareStatus.textContent = saved ? (copy ? "已另存为独立副本，后续保存将更新此副本。" : "已保存；后续保存会更新这份草稿。仅保存在当前浏览器，不会跨设备同步。") : "浏览器存储空间不足，建议导出 JSON。";
+  if (saved) {
+    currentWorkflowDraft = record;
+    workflowShareName.value = record.name;
+    updateWorkflowDraftStatus();
+    showWorkflowToast(copy ? "已另存副本" : "工作流已保存到本机");
+    if (activeWorkflowScope === "local") renderSharedWorkflows();
+  }
 }
 
 function exportWorkflowJson() {
@@ -10809,6 +10936,8 @@ function exportWorkflowJson() {
 
 async function publishWorkflow() {
   const record = workflowRecordFromDialog();
+  const issue = workflowPublishIssue(record.graph);
+  if (issue) { workflowShareStatus.textContent = issue; return; }
   workflowShareStatus.textContent = "正在发布…";
   const publishButton = document.querySelector("#workflow-publish");
   publishButton.disabled = true;
@@ -10823,12 +10952,14 @@ async function publishWorkflow() {
     showWorkflowToast("工作流已发布到社区");
     activeWorkflowScope = "community";
     await loadCommunityWorkflows();
-  } catch {
-    workflowShareStatus.textContent = "发布失败，请检查网络后重试；也可以先保存到本机。";
+  } catch (error) {
+    workflowShareStatus.textContent = error.status === 422 ? "工作流连线无效或存在循环，请检查后重试。" : "发布失败，请检查网络后重试；也可以先保存到本机。";
   } finally { publishButton.disabled = false; }
 }
 
 async function publishSavedWorkflow(record) {
+  const issue = workflowPublishIssue(record.graph);
+  if (issue) { showWorkflowToast(issue); return; }
   try {
     await fetchJson(API.workflows, {
       method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({
@@ -10838,7 +10969,7 @@ async function publishSavedWorkflow(record) {
     showWorkflowToast("已发布到社区工作流分享");
     activeWorkflowScope = "community";
     await loadCommunityWorkflows();
-  } catch { showWorkflowToast("发布失败，请稍后重试"); }
+  } catch (error) { showWorkflowToast(error.status === 422 ? "工作流连线无效或存在循环" : "发布失败，请稍后重试"); }
 }
 
 function closeWorkflowResourceDrawer() {
@@ -10897,7 +11028,7 @@ sharedWorkflowList?.addEventListener("click", async (event) => {
       const { body } = await fetchJson(`${API.workflows}/${encodeURIComponent(card.dataset.workflowId)}`, { method:"GET" }, 5000);
       record = body.workflow;
     }
-    loadWorkflowGraph(record?.graph);
+    loadWorkflowRecord(record, card.dataset.workflowSource);
     showWorkflowToast(`已加载「${String(record?.name || "共享工作流").slice(0, 30)}」`);
   } catch { showWorkflowToast("这个工作流暂时无法加载"); }
 });
@@ -10953,6 +11084,11 @@ scenarioList?.addEventListener("click", (event) => {
   if (card?.dataset.scenePreset) activeWorkflowScenePreset = card.dataset.scenePreset;
 });
 workflowViewport?.addEventListener("dblclick", openWorkflowNodePicker);
+document.querySelector("#workflow-add-node").addEventListener("click", () => {
+  const rect = workflowViewport.getBoundingClientRect();
+  showWorkflowNodePickerAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  workflowPickerWorldPoint.x -= 150;
+});
 workflowNodeCategoryTabs?.addEventListener("click", (event) => {
   const tab = event.target instanceof Element ? event.target.closest("[data-workflow-node-category]") : null;
   if (!tab) return;
@@ -10975,6 +11111,7 @@ workflowNodeGroups?.addEventListener("click", (event) => {
     nodeConfig,
   );
   closeWorkflowNodePicker({ cancelConnection:false });
+  node?.focus();
   if (node && source) {
     pendingWorkflowSource = source;
     const input = [...node.querySelectorAll('[data-port-direction="input"]')].find((port) => workflowPortTypesCompatible(sourceType || "any", port.dataset.portType || "any"));
@@ -11141,11 +11278,12 @@ document.querySelector("#workflow-new")?.addEventListener("click", () => {
   workflowState.panY = Math.max(28, (workflowViewport?.clientHeight || 0) * .1);
   applyWorkflowTransform();
   closeWorkflowNodePicker();
-  showWorkflowToast("空白工作流已新建，双击幕布添加节点");
+  showWorkflowToast("空白工作流已新建，点击“添加节点”开始创作");
 });
 document.querySelector("#workflow-share")?.addEventListener("click", openWorkflowShareDialog);
 document.querySelector("#workflow-share-dialog-close")?.addEventListener("click", () => workflowShareDialog?.close());
-document.querySelector("#workflow-save-local")?.addEventListener("click", saveWorkflowLocally);
+document.querySelector("#workflow-save-local")?.addEventListener("click", () => saveWorkflowLocally());
+document.querySelector("#workflow-save-copy").addEventListener("click", () => saveWorkflowLocally(true));
 document.querySelector("#workflow-export")?.addEventListener("click", exportWorkflowJson);
 document.querySelector("#workflow-publish")?.addEventListener("click", publishWorkflow);
 document.querySelector("#workflow-copy-link")?.addEventListener("click", async () => {
@@ -11159,7 +11297,8 @@ workflowImportFile?.addEventListener("change", async () => {
   if (!file || file.size > 256 * 1024) return showWorkflowToast("只支持 256KB 以内的工作流 JSON");
   try {
     const value = JSON.parse(await file.text());
-    loadWorkflowGraph(value.graph || value);
+    if (value.graph) loadWorkflowRecord(value, "import");
+    else loadWorkflowGraph(value);
     setWorkspaceView("workflow");
     showWorkflowToast("工作流已导入");
   } catch { showWorkflowToast("工作流文件格式不正确"); }
@@ -11182,7 +11321,7 @@ if (workflowUrl.searchParams.get("workspace") === "assets") {
 const workflowIdFromUrl = workflowUrl.searchParams.get("workflow") || "";
 if (/^[a-f0-9]{12}$/.test(workflowIdFromUrl)) {
   fetchJson(`${API.workflows}/${workflowIdFromUrl}`, { method:"GET" }, 5000).then(({ body }) => {
-    loadWorkflowGraph(body.workflow?.graph);
+    loadWorkflowRecord(body.workflow);
     setWorkspaceView("workflow");
     showWorkflowToast(`已打开「${String(body.workflow?.name || "共享工作流").slice(0, 30)}」`);
   }).catch(() => showWorkflowToast("分享的工作流不存在或已下架"));
