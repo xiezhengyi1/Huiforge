@@ -1,4 +1,6 @@
-import { API, fetchJson } from "./core/api-client.js";
+import { API, fetchJson } from "./core/api-client.js?v=20261021-video-workflows-v4";
+import { createShortDramaController } from "./features/short-drama/controller.js?v=20261021-video-workflows-v4";
+import { createVideoWorkflowController } from "./features/video-workflows/controller.js?v=20261021-video-workflows-v4";
 import {
   AUDIO_MODES,
   AUDIO_REFERENCE_MODES,
@@ -818,6 +820,7 @@ function setPending() {
 }
 
 function setIdle() {
+  if (document.body.matches(".short-drama-active, .video-workflow-active")) return;
   const hasSession = Boolean(resultGrid.querySelector(".session-turn"));
   const needsSource = VIDEO_IMAGE_MODES.has(activeMode) || AUDIO_SOURCE_MODES.has(activeMode);
   const isTextDriven = !needsSource && (activeMode === "text" || activeMode === "video_text" || isAudioMode());
@@ -2152,6 +2155,8 @@ async function loadToolPresets() {
 
 function setMode(mode, capabilityId = "", capabilityLabel = "") {
   if (!hasToolingUI || !MODE_COPY[mode] || activeRequest) return;
+  if (document.body.classList.contains("short-drama-active")) leaveShortDramaAgent();
+  if (document.body.classList.contains("video-workflow-active")) leaveVideoWorkflow();
   const nextKey = sourceCapabilityKey(mode, capabilityId);
   const capabilityChanged = nextKey !== sourceCapabilityKey();
   if (capabilityChanged) {
@@ -3073,6 +3078,7 @@ function estimatedAudioSeconds(text) {
 
 function updateCreditCost() {
   if (!generateCreditCost) return;
+  if (document.body.matches(".short-drama-active, .video-workflow-active")) { generateCreditCost.hidden = true; return; }
   generateCreditCost.hidden = false;
   if (isAudioMode()) {
     const model = modelSelect?.value || 'qwen3-tts-flash';
@@ -4302,6 +4308,7 @@ if (hasToolingUI) {
 }
 
 form.addEventListener("submit", async (event) => {
+  if (document.body.matches(".short-drama-active, .video-workflow-active")) return;
   event.preventDefault();
   if (activeRequest) return;
   // Unified modes hand off to the concrete route implied by the attachments. Every
@@ -4746,9 +4753,9 @@ const requestedTool = new URLSearchParams(window.location.search).get("tool");
 if (hasToolingUI) setMode(TOOL_SELECTOR_CHOICES.some(([id]) => id === requestedTool) ? requestedTool : "unified_image");
 Promise.allSettled([loadPricing().then(loadModelAvailability), loadToolPresets()]).then(resumePendingJob);
 
-async function refreshCredits() {
+async function refreshCredits(fresh = false) {
   try {
-    const bootstrap = await workspaceBootstrapPromise;
+    const bootstrap = fresh ? null : await workspaceBootstrapPromise;
     const body = bootstrap?.credits || (await fetchJson(API.credits, { method: "GET" }, 5000)).body;
     const total = body.total ?? 0;
     const totalNode = document.querySelector("#credits-total");
@@ -5250,6 +5257,7 @@ function informationMarkup(view) {
 }
 
 function openInformationView(view) {
+  if (view === "short-drama-agent") { openShortDramaAgent(capabilityEntryById(view).item); return; }
   const copy = INFORMATION_VIEWS[view];
   if (!copy || !informationDialog || !informationDialogBody) return;
   informationDialogEyebrow.textContent = copy.eyebrow;
@@ -5262,6 +5270,118 @@ function openInformationView(view) {
 
 let analysisPreviewUrl = "";
 let currentAnalysisText = "";
+
+const shortDramaToolView = document.querySelector("#short-drama-tool-view");
+let shortDramaPreviousOutput = false;
+const shortDramaController = createShortDramaController({
+  root:document.querySelector("#quick-workspace"),
+  request:fetchJson,
+  mediaUrl:safeGeneratedImageUrl,
+  onCreditsChange:() => refreshCredits(true),
+  onMessagesChange:(hasMessages) => document.body.classList.toggle("studio-has-output", hasMessages),
+});
+
+let videoWorkflowPreviousOutput = false;
+function setCreationWorkspace(workspace) {
+  const url = new URL(window.location.href);
+  if (workspace) url.searchParams.set("workspace", workspace);
+  else url.searchParams.delete("workspace");
+  window.history.replaceState(null, "", url);
+}
+const videoWorkflowController = createVideoWorkflowController({
+  root:document.querySelector("#quick-workspace"),
+  request:fetchJson,
+  mediaUrl:safeWorkflowMediaUrl,
+  onCreditsChange:() => refreshCredits(true),
+  onMessagesChange:(hasResults) => document.body.classList.toggle("studio-has-output", hasResults),
+});
+
+function openVideoWorkflow(item) {
+  if (activeRequest) return;
+  closeCapabilityCenter();
+  setWorkspaceView("quick");
+  setMode("unified_image", item.id, item.name);
+  videoWorkflowPreviousOutput = document.body.classList.contains("studio-has-output");
+  document.body.classList.add("video-workflow-active");
+  modeEyebrow.textContent = item.name;
+  document.querySelector("#studio-title").textContent = item.id === "viral-remake" ? "从参考视频，找到你的分镜。" : "让视频说出你想说的话。";
+  resultsTitle.textContent = item.id === "viral-remake" ? "复刻分镜" : "配音视频";
+  toolPromptInput.maxLength = 2000;
+  toolPromptInput.setAttribute("aria-label", item.id === "viral-remake" ? "复刻要求" : "配音文案");
+  toolPromptInput.placeholder = item.id === "viral-remake" ? "描述想保留的节奏、画面风格，或要改编的主题…" : "输入配音文案；留空则识别并使用视频原台词…";
+  toolPromptInput.value = "";
+  videoWorkflowController.open(item.id, item.ready);
+  setCreationWorkspace(item.id);
+  updateCreditCost();
+}
+
+function leaveVideoWorkflow() {
+  videoWorkflowController.suspend();
+  setCreationWorkspace("");
+  document.body.classList.remove("video-workflow-active");
+  document.body.classList.toggle("studio-has-output", videoWorkflowPreviousOutput);
+  selectedCapabilityId = "";
+  updateActiveCapabilityIndicator(activeMode);
+  toolPromptInput.maxLength = 8000;
+  form.dataset.mode = activeMode;
+  configureToolPrompt(activeMode);
+  generateButton.querySelector(".button-label").textContent = MODE_COPY[activeMode].action;
+  setIdle();
+  updateCreditCost();
+}
+
+document.querySelector("#quick-workspace").addEventListener("video-workflow-use-plan", async (event) => {
+  await openShortDramaAgent(capabilityEntryById("storyboard-video").item);
+  if (!document.body.classList.contains("short-drama-active")) return;
+  shortDramaController.newDraft();
+  toolPromptInput.value = event.detail.text;
+  toolPromptInput.focus();
+});
+
+function openShortDramaAgent(item) {
+  if (activeRequest) return;
+  const storyboard = item.id === "storyboard-video";
+  const label = storyboard ? "分镜成片" : "短剧 Agent";
+  closeCapabilityCenter();
+  setWorkspaceView("quick");
+  setMode("unified_image", item.id, label);
+  shortDramaPreviousOutput = document.body.classList.contains("studio-has-output");
+  document.body.classList.add("short-drama-active");
+  modeEyebrow.textContent = label;
+  document.querySelector("#studio-title").textContent = storyboard ? "确认分镜，生成一条完整短片。" : "从故事想法到角色与分镜。";
+  resultsTitle.textContent = "对话与素材";
+  setStatus("准备就绪");
+  document.querySelector("#short-drama-controls").hidden = false;
+  document.querySelector("#short-drama-status").hidden = false;
+  shortDramaToolView.hidden = false;
+  toolPromptInput.placeholder = storyboard ? "粘贴分镜或描述故事，先确认每镜画面和时长，再生成完整短片…" : "写下故事想法，或粘贴剧本，让助手整理角色、场景和分镜…";
+  toolPromptInput.maxLength = 12000;
+  toolPromptInput.setAttribute("aria-label", "短剧创作需求");
+  if (item.id === "script-to-board") toolPromptInput.value = "请帮我把剧本拆成分镜。先询问我的剧本内容、画面风格和目标时长，暂不生成素材。";
+  if (storyboard) toolPromptInput.value = "请帮我制作一条分镜短片。先根据我提供的故事或分镜，整理 2–8 个镜头的画面和时长，等我确认后再使用分镜成片工具逐镜生成并合成。";
+  updateCreditCost();
+  setCreationWorkspace("short-drama");
+  return shortDramaController.open(item.ready);
+}
+
+function leaveShortDramaAgent() {
+  shortDramaController.suspend();
+  setCreationWorkspace("");
+  document.body.classList.remove("short-drama-active");
+  document.body.classList.toggle("studio-has-output", shortDramaPreviousOutput);
+  selectedCapabilityId = "";
+  updateActiveCapabilityIndicator(activeMode);
+  document.querySelector("#short-drama-controls").hidden = true;
+  document.querySelector("#short-drama-status").hidden = true;
+  document.querySelector("#short-drama-login").hidden = true;
+  shortDramaToolView.hidden = true;
+  toolPromptInput.maxLength = 8000;
+  form.dataset.mode = activeMode;
+  configureToolPrompt(activeMode);
+  generateButton.querySelector(".button-label").textContent = MODE_COPY[activeMode].action;
+  setIdle();
+  updateCreditCost();
+}
 
 function setAnalysisStatus(message, isError = false) {
   if (!analysisStatus) return;
@@ -5412,7 +5532,7 @@ capabilityWorkspaceBack?.addEventListener("click", () => setWorkspaceView("quick
 
 function activateCapabilityItem(item) {
   if (!item) return;
-  if (!item.ready && !["capability"].includes(item.action)) {
+  if (!item.ready && !["capability", "short_drama_agent"].includes(item.action)) {
     showCapabilityNotice(item.requires || "该能力当前未启用；页面不会用空按钮冒充可用功能。");
     return;
   }
@@ -5449,6 +5569,8 @@ function activateCapabilityItem(item) {
   else if (item.action === "assets") { closeCapabilityCenter(); setWorkspaceView("assets"); loadAssetLibrary(); }
   else if (item.action === "history") { closeCapabilityCenter(); openHistoryPanel({ returnToQuick:true }); }
   else if (item.action === "info") openInformationView(item.info_view);
+  else if (item.action === "short_drama_agent") openShortDramaAgent(item);
+  else if (item.action === "video_workflow") openVideoWorkflow(item);
   else if (item.action === "analysis") openImageAnalysis();
   else if (item.action === "workflow_recipe" && item.recipe === "image_dubbing") openImageDubbingWorkflow(item);
   else if (item.action === "workflow_recipe" && item.recipe === "reference_audio") openReferenceAudioWorkflow(item);
@@ -6321,6 +6443,9 @@ const requestedDiscovery = new URLSearchParams(window.location.search).get("disc
 loadQuickAccessIds();
 loadCapabilities().then(() => {
   if (requestedCapability) openCapabilityCenter(requestedCapability);
+  const workspace = new URLSearchParams(window.location.search).get("workspace");
+  if (workspace === "short-drama") openShortDramaAgent(capabilityEntryById("short-drama-agent").item);
+  else if (workspace === "viral-remake" || workspace === "video-dubbing") openVideoWorkflow(capabilityEntryById(workspace).item);
 });
 
 const sidebarCollapse = document.querySelector("#sidebar-collapse");
@@ -7135,6 +7260,8 @@ function updateWorkflowOutputSummary() {
 }
 
 function setWorkspaceView(view) {
+  if (document.body.classList.contains("short-drama-active")) leaveShortDramaAgent();
+  if (document.body.classList.contains("video-workflow-active")) leaveVideoWorkflow();
   if (view !== "quick") setHistoryDrawer(false);
   const workflow = view === "workflow";
   const capability = view === "capability";

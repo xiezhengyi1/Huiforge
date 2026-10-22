@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from backend.huiju.api.app import app
 from backend.huiju.api.schemas import AudioTtsInput, GenerationInput, ImageToolInput, VideoGenerationInput
@@ -81,3 +82,16 @@ def test_every_currently_available_model_accepts_its_public_request_contract() -
             "text": "这是绘域的模型接口测试。",
             "format": "mp3",
         }).model == model
+
+
+@pytest.mark.parametrize("model", ["wan2.7-t2v-2026-06-12", "wan2.7-i2v-2026-04-25", "wan2.7-r2v-2026-06-12"])
+@pytest.mark.parametrize("resolution", ["720P", "1080P"])
+def test_wan27_accepts_documented_resolutions_for_vertical_five_second_video(model, resolution):
+    payload = video_payload(model)
+    payload.update(resolution=resolution, ratio="9:16", duration=5)
+
+    video = VideoGenerationInput.model_validate(payload)
+
+    assert video.resolution == resolution
+    assert video.ratio == "9:16"
+    assert video.duration == 5

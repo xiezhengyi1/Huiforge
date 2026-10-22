@@ -554,17 +554,17 @@ CAPABILITY_GROUPS: list[dict[str, Any]] = [
         {"id": "character-swap-video", "name": "视频角色替换", "description": "保持动作、场景与光照替换角色", "badges": ["Wan Animate", "需肖像授权"], "action": "video_mode", "mode": "video_character_swap", "model": "wan2.2-animate-mix", "availability": "bailian_video"}
     ]},
     {"id": "short-drama", "name": "短剧工坊", "icon": "▤", "items": [
-        {"id": "short-drama-agent", "name": "短剧编辑 Agent", "description": "对话拆解分镜并调用站内图像、视频和配音工具", "badges": ["火山方舟", "函数调用", "可审计"], "action": "info", "info_view": "short-drama-agent", "availability": "ark_agent"},
-        {"id": "script-to-board", "name": "剧本转分镜", "description": "由短剧 Agent 拆解场次、角色与镜头", "action": "info", "info_view": "short-drama-agent", "availability": "ark_agent"},
-        {"id": "viral-remake", "name": "爆款复刻", "description": "解析视频结构并生成重制方案", "action": "unavailable", "availability": "route_pending", "requires": "视频下载/ASR、视觉理解、LLM 分析与视频生成 API 组合"},
+        {"id": "short-drama-agent", "name": "短剧编辑 Agent", "description": "对话拆解分镜并调用站内图像、视频和配音工具", "badges": ["火山方舟", "对话规划", "任务回执"], "action": "short_drama_agent", "availability": "ark_agent"},
+        {"id": "script-to-board", "name": "剧本转分镜", "description": "由短剧 Agent 拆解场次、角色与镜头", "action": "short_drama_agent", "availability": "ark_agent"},
+        {"id": "viral-remake", "name": "爆款复刻", "description": "上传参考视频，拆解节奏与镜头，整理可修改的复刻分镜", "action": "video_workflow", "availability": "viral_remake", "badges": ["台词识别", "镜头拆解"], "requires": "Fun-ASR、Qwen-VL、短剧 Agent 与本地视频处理"},
         {"id": "storyboard-render", "name": "分镜出图", "description": "角色一致的连续分镜图", "action": "model", "model": "bailian_wan_2_7", "availability": "bailian", "prompt": "生成连续短剧分镜组图，角色、服装、场景轴线和光色保持一致，每格镜头意图明确。"},
-        {"id": "storyboard-video", "name": "分镜成片", "description": "逐镜生成并自动拼接", "action": "unavailable", "availability": "video_route_pending", "requires": "Seedance/Wan 视频 API + 服务端转码与任务编排"}
+        {"id": "storyboard-video", "name": "分镜成片", "description": "确认分镜后逐镜生成，自动合成完整视频", "badges": ["逐镜生成", "自动合成"], "action": "short_drama_agent", "availability": "storyboard_video", "requires": "短剧助手、Wan 视频生成与服务端 FFmpeg"}
     ]},
     {"id": "sound", "name": "配声工坊", "icon": "◖", "items": [
         {"id": "unified-dubbing", "name": "AI 配音", "description": "输入文案；上传一段声音就沿用它的音色", "badges": ["豆包语音 2.0", "Qwen3-TTS", "文生/参考生"], "action": "audio_mode", "mode": "unified_audio", "model": "doubao-tts-2.0", "availability": "speech_tts"},
         {"id": "custom-voice", "name": "定制音色", "description": "用文字描述设计音色，也可选传已授权参考音频", "badges": ["文字定制", "参考音频选填", "可存资产"], "action": "audio_mode", "mode": "audio_custom_voice", "model": "qwen3-tts-instruct-flash", "availability": "bailian_audio", "requires": "参考音频选填；上传时仅可使用本人声音或已获得权利人明确授权的样本"},
         {"id": "image-dubbing", "name": "图片配音", "description": "看图生成旁白与配音", "badges": ["图片理解", "自动旁白", "语音合成"], "action": "audio_mode", "mode": "audio_image", "model": "doubao-tts-2.0", "availability": "image_dubbing", "requires": "视觉理解与语音合成服务"},
-        {"id": "video-dubbing", "name": "视频配音", "description": "理解视频并生成旁白", "action": "unavailable", "availability": "route_pending", "requires": "视频理解 API + ASR + LLM + TTS"}
+        {"id": "video-dubbing", "name": "视频配音", "description": "输入文案或识别原台词，生成配音并合成视频", "action": "video_workflow", "availability": "video_dubbing", "badges": ["自动识别", "配音合成"], "requires": "Fun-ASR、现有语音合成与本地视频处理"}
     ]},
     {"id": "workspace", "name": "工作流与资产", "icon": "⌘", "items": [
         {"id": "workflow-canvas", "name": "工作流幕布", "description": "无界节点编排与分享", "action": "workspace", "availability": "workflow"},

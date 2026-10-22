@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/theme.css?v=20260908-member-access-v41" />
     <link rel="stylesheet" href="css/onboarding.css?v=20260923-navigation-v45" />
     <link rel="stylesheet" href="css/design-refresh.css?v=20261011-workflow-v58" />
+    <link rel="stylesheet" href="css/short-drama.css?v=20261021-video-workflows-v3" />
     <script src="js/theme.js?v=20260908-member-access-v41">
 </script>
   </head>
@@ -412,6 +413,23 @@
 <button id="mask-clear" class="mask-clear-button" type="button" disabled><span aria-hidden="true">↺</span>清除</button>
 <button id="mask-focus-trigger" class="mask-focus-trigger" type="button" disabled><span aria-hidden="true">⛶</span>放大精修</button>
 </div>
+                      <div id="short-drama-controls" hidden>
+                        <span class="toolbar-select-wrap drama-session-select">
+                          <select class="toolbar-select-trigger" id="short-drama-sessions" aria-label="短剧会话"><option value="">新对话</option></select>
+                          <span class="model-select-chevron" aria-hidden="true">▾</span>
+                        </span>
+                        <button class="toolbar-history-button" id="short-drama-new" type="button" title="新建对话" aria-label="新建对话">新建对话</button>
+                        <label for="short-drama-auto-execute" title="本条消息允许提交任务并消耗额度"><input id="short-drama-auto-execute" type="checkbox" />允许生成</label>
+                      </div>
+                      <div id="video-workflow-parameters" hidden>
+                        <label id="video-workflow-voice-field" for="video-workflow-voice">音色
+                          <select class="toolbar-select-trigger" id="video-workflow-voice">
+                            <option value="Cherry">芊悦 · 自然女声</option>
+                            <option value="Serena">苏瑶 · 温柔女声</option>
+                            <option value="Ethan">晨煦 · 沉稳男声</option>
+                          </select>
+                        </label>
+                      </div>
                     </div>
                     <div class="prompt-actions">
                       <button class="toolbar-history-button" id="history-trigger-button" type="button" aria-label="查看已生成记录" aria-expanded="false" aria-controls="history-panel">
@@ -437,6 +455,15 @@
 <b id="source-action">选择需要处理的图片</b>
 <small id="source-file-help">PNG、JPG、WebP · 最大 15MB</small>
 </label>
+<div class="source-upload-surface video-workflow-source-panel" id="video-workflow-source-panel" hidden>
+  <label class="upload-drop" for="video-workflow-source">
+    <input id="video-workflow-source" type="file" accept="video/mp4,video/webm,video/quicktime" />
+    <span aria-hidden="true">↑</span>
+    <b>选择源视频</b>
+    <small>MP4、WebM、MOV</small>
+  </label>
+  <p id="video-workflow-source-name" hidden></p>
+</div>
 <div class="tool-command-panel">
 <label class="tool-prompt-field"><span class="tool-prompt-label" id="tool-prompt-label" hidden></span><textarea id="tool-prompt" rows="4" aria-label="编辑要求（选填）" placeholder="描述希望改变或保留的细节">
 </textarea>
@@ -555,6 +582,19 @@
 <p>生成的图像会显示在这里，并可直接下载。</p>
 </div>
 <div class="result-grid" id="result-grid" hidden>
+</div>
+<div id="short-drama-tool-view" hidden>
+<button id="short-drama-refresh-jobs" type="button" title="刷新任务" aria-label="刷新任务">↻</button>
+<p id="short-drama-empty">把故事想法写下来，先从剧本和分镜开始。</p>
+<div id="short-drama-messages" role="log" aria-label="短剧对话与任务记录" aria-live="polite" aria-relevant="additions"></div>
+<p id="short-drama-status" role="status" hidden></p>
+<a id="short-drama-login" href="profile.html" hidden>前往个人中心登录</a>
+</div>
+<div id="video-workflow-tool-view" hidden>
+  <button id="video-workflow-refresh" type="button" title="刷新任务状态" aria-label="刷新任务状态">↻</button>
+  <div id="video-workflow-content" aria-live="polite"></div>
+  <p id="video-workflow-status" role="status" hidden></p>
+  <a id="video-workflow-login" href="profile.html" hidden>前往个人中心登录</a>
 </div>
 </div>
 <p class="result-tip" id="result-tip">先确定创作目标，再补充场景、主体、构图、光色、材质和约束。</p>
@@ -1632,7 +1672,7 @@
     </dialog>
     <script src="js/catalog.js?v=20260908-member-access-v41" defer>
 </script>
-    <script type="module" src="js/app.js?v=20261011-workflow-v58">
+    <script type="module" src="js/app.js?v=20261021-video-workflows-v5">
 </script>
     <script src="js/onboarding-main.js?v=20260908-member-access-v41">
 </script>

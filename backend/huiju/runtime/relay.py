@@ -111,10 +111,11 @@ class RelayState:
     def public_user(self, user_id: str) -> dict[str, Any]:
         return self.database.public_user(user_id)
 
-    def record_history(self, owner: str, images: list[dict[str, str]], prompt: str, kind: str) -> None:
+    def record_history(self, owner: str, images: list[dict[str, str]], prompt: str, kind: str, *, job_id: str) -> None:
         if not self.database.user_exists(owner):
             return
         now = time.time()
+        permanent_images = []
         for image in images:
             url = image.get("url") if isinstance(image, dict) else None
             if isinstance(url, str):
@@ -133,6 +134,9 @@ class RelayState:
                     continue
                 self.database.add_history(owner, history_id, media_path, prompt, kind, now)
                 image["history_url"] = f"/api/v1/private-media/history/{history_id}"
+                permanent_images.append({"url": image["history_url"]})
+        if permanent_images:
+            self.database.complete_short_drama_image_job(owner, job_id, permanent_images)
 
     @staticmethod
     def _china_day() -> str:
@@ -491,7 +495,7 @@ class RelayState:
                 result_paths = await self.gpu.upscale_paths(source_paths, payload["resolution"])
                 images = public_images(result_paths)
             job.update(status="completed", images=images, updated_at=time.time())
-            self.record_history(job.get("owner", ""), images, payload["prompt"], model)
+            self.record_history(job.get("owner", ""), images, payload["prompt"], model, job_id=job_id)
             self.record_model_usage(
                 job_id=job_id, model=model, operation="text_to_image", status="completed",
                 resolution=payload["resolution"], request_count=payload["count"], image_count=len(images),
@@ -562,7 +566,7 @@ class RelayState:
             else:
                 images = await self.generate_api_tool(job_id, payload, source, mask_path, upload, reference_uploads)
                 job.update(status="completed", images=images, updated_at=time.time())
-                self.record_history(job.get("owner", ""), images, payload.get("user_prompt", ""), payload.get("model", payload["operation"]))
+                self.record_history(job.get("owner", ""), images, payload.get("user_prompt", ""), payload.get("model", payload["operation"]), job_id=job_id)
                 provider_usage_fields: dict[str, Any] = {}
                 if usage_model == "gpt_image":
                     output_count = payload.get("views", 1) if payload.get("operation") == "multiview" else 1
@@ -589,7 +593,7 @@ class RelayState:
                 return
             images = public_images(paths)
             job.update(status="completed", images=images, updated_at=time.time())
-            self.record_history(job.get("owner", ""), images, payload.get("user_prompt", ""), payload["operation"])
+            self.record_history(job.get("owner", ""), images, payload.get("user_prompt", ""), payload["operation"], job_id=job_id)
             self.record_model_usage(
                 job_id=job_id, model=usage_model, operation=payload["operation"], status="completed",
                 resolution=payload.get("resolution", "720p"), request_count=1, image_count=len(images),
@@ -1025,7 +1029,7 @@ class RelayState:
             if not images:
                 raise ValueError("api returned no valid image data")
             job.update(status="completed", images=images, updated_at=time.time())
-            self.record_history(job.get("owner", ""), images, payload["prompt"], model)
+            self.record_history(job.get("owner", ""), images, payload["prompt"], model, job_id=job_id)
             provider_usage_fields: dict[str, Any] = {}
             if model == "gpt_image":
                 provider_quote = image_quote(

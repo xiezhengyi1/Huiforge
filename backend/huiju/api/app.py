@@ -25,10 +25,13 @@ from ..core.config import (
 )
 from .middleware import security_headers
 from .routes.media import media_service, video_depth_service
+from .routes.storyboards import storyboard_service
+from .routes.video_workflows import video_workflow_service
 from .router import include_api_routes
 from ..runtime import relay
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 mimetypes.add_type("image/webp", ".webp")
 
 def _load_frontend_payloads() -> dict[str, tuple[bytes, str, str]]:
@@ -57,10 +60,14 @@ async def lifespan(_: FastAPI):
     await relay.start()
     if MEDIA_WORKER_ENABLED and relay.client is not None:
         await media_service.start(relay.client)
+        await storyboard_service.start()
+        await video_workflow_service.start()
     try:
         yield
     finally:
         if MEDIA_WORKER_ENABLED:
+            await video_workflow_service.stop()
+            await storyboard_service.stop()
             await video_depth_service.stop()
             await media_service.stop()
         await relay.stop()

@@ -67,7 +67,7 @@ FRONTEND_ASSET_PATHS = {
             "studio.css", "onboarding.css", "pricing.css", "profile.css", "profile-overrides.css",
             "theme-variant-base.css", "theme-indigo.css", "theme-cinnabar.css",
             "theme-monochrome-blue.css", "theme-monochrome-accent.css", "theme-global.css",
-            "theme-audit.css",
+            "theme-audit.css", "short-drama.css",
         )
     },
     **{
@@ -80,6 +80,7 @@ FRONTEND_ASSET_PATHS = {
     "js/core/api-client.js": FRONTEND_JS_DIR / "core" / "api-client.js",
     "js/features/generation/mode-rules.js": FRONTEND_JS_DIR / "features" / "generation" / "mode-rules.js",
     "js/features/workflow/schema.js": FRONTEND_JS_DIR / "features" / "workflow" / "schema.js",
+    "js/features/short-drama/controller.js": FRONTEND_JS_DIR / "features" / "short-drama" / "controller.js",
 }
 
 FRONTEND_ASSETS = frozenset(FRONTEND_ASSET_PATHS)
@@ -171,7 +172,7 @@ ARK_AGENT_BASE_URL = os.getenv(
     "ARK_AGENT_BASE_URL", SEEDREAM_BASE_URL or "https://ark.cn-beijing.volces.com/api/v3",
 ).rstrip("/")
 
-ARK_AGENT_MODEL = os.getenv("ARK_AGENT_MODEL", "doubao-seed-2-0-lite-260215")
+ARK_AGENT_MODEL = os.getenv("ARK_AGENT_MODEL", "doubao-seed-2-0-lite-260428")
 
 MAX_AGENT_TOOL_CALLS = bounded_env_int("HUIJU_AGENT_MAX_TOOL_CALLS", 6, 1, 10)
 

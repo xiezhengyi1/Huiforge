@@ -177,6 +177,8 @@ class VideoGenerationInput(BaseModel):
             raise ValueError("video_model_mode_mismatch")
         if self.model == "wan2.7-r2v-2026-06-12" and self.operation != "reference_to_video":
             raise ValueError("video_model_mode_mismatch")
+        if self.model in {"wan2.7-t2v-2026-06-12", "wan2.7-i2v-2026-04-25", "wan2.7-r2v-2026-06-12"} and self.resolution not in {"720P", "1080P"}:
+            raise ValueError("video_resolution_model_mismatch")
         if self.model == "minimax_h3_max":
             if self.operation not in {"text_to_video", "image_to_video"}:
                 raise ValueError("video_model_mode_mismatch")
@@ -215,6 +217,43 @@ class VideoGenerationInput(BaseModel):
             raise ValueError("video_duration_out_of_range")
         return self
 
+class StoryboardShotInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    prompt: str = Field(min_length=3, max_length=5000)
+    duration: int = Field(default=5, ge=2, le=30)
+
+
+class StoryboardGenerationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str = Field(default="我的分镜成片", min_length=1, max_length=60)
+    model: str = "wan2.7-t2v-2026-06-12"
+    resolution: Literal["480P", "720P", "768P", "1080P"] = "720P"
+    ratio: Literal["21:9", "16:9", "9:16", "1:1", "4:3", "3:4"] = "9:16"
+    shots: list[StoryboardShotInput] = Field(min_length=2, max_length=8)
+
+    @model_validator(mode="after")
+    def validate_shots(self) -> "StoryboardGenerationInput":
+        for shot in self.shots:
+            VideoGenerationInput(
+                model=self.model, resolution=self.resolution, ratio=self.ratio,
+                prompt=shot.prompt, duration=shot.duration,
+            )
+        return self
+
+
+class StoryboardComposeInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str = Field(default="我的分镜成片", min_length=1, max_length=60)
+    job_ids: list[str] = Field(min_length=2, max_length=8)
+
+    @field_validator("job_ids")
+    @classmethod
+    def validate_job_ids(cls, values: list[str]) -> list[str]:
+        if any(not re.fullmatch(r"[a-f0-9]{32}", value) for value in values):
+            raise ValueError("invalid_video_job_id")
+        return values
+
+
 class AudioTtsInput(BaseModel):
     """Owner-scoped non-realtime speech synthesis contract."""
 
@@ -240,6 +279,37 @@ class AudioTtsInput(BaseModel):
     reference_upload_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
     rights_confirmed: bool = False
 
+class VideoWorkflowInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    kind: Literal["viral-remake", "video-dubbing"]
+    source_upload_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
+    source_job_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
+    prompt: str = Field(default="", max_length=2000)
+    voice: str = Field(default="Cherry", pattern=r"^[a-zA-Z0-9_.-]{1,96}$")
+    language_type: Literal["Chinese", "English", "French", "German", "Russian", "Italian", "Spanish", "Portuguese", "Japanese", "Korean", "Auto"] = "Chinese"
+
+    @model_validator(mode="after")
+    def validate_source(self) -> "VideoWorkflowInput":
+        if bool(self.source_upload_id) == bool(self.source_job_id):
+            raise ValueError("exactly_one_video_source_required")
+        return self
+
+
+class VideoRemakeShot(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    prompt: str = Field(min_length=3, max_length=1000)
+    duration: int = Field(ge=2, le=15)
+
+
+class VideoRemakePlan(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str = Field(min_length=1, max_length=60)
+    summary: str = Field(min_length=1, max_length=500)
+    rhythm: str = Field(min_length=1, max_length=500)
+    dialogue: str = Field(max_length=2000)
+    shots: list[VideoRemakeShot] = Field(min_length=2, max_length=8)
+
+
 class ShortDramaSessionInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -249,7 +319,7 @@ class ShortDramaMessageInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     message: str = Field(min_length=1, max_length=12000)
-    auto_execute: bool = True
+    auto_execute: bool = False
 
 DEFAULT_ASSET_CATEGORIES: tuple[dict[str, str], ...] = (
     {"id": "characters", "name": "角色", "icon": "◎"},

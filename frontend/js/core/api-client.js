@@ -44,6 +44,7 @@ export async function fetchJson(url, options = {}, timeoutMs = API.timeoutMs) {
     if (!response.ok) {
       const error = new Error("request_failed");
       error.status = response.status;
+      error.body = body;
       error.retryAfter = response.headers.get("Retry-After");
       throw error;
     }

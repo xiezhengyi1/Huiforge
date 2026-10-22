@@ -684,6 +684,14 @@ async def capabilities(request: Request) -> dict[str, Any]:
         elif source == "ark_agent":
             ready = bool(ARK_AGENT_API_KEY and ARK_AGENT_BASE_URL and ARK_AGENT_MODEL)
             provider_configured = ready
+        elif source == "storyboard_video":
+            provider_configured = bool(ARK_AGENT_API_KEY and DASHSCOPE_API_KEY)
+            ready = bool(provider_configured and ARK_AGENT_BASE_URL and BAILIAN_BASE_URL and MEDIA_WORKER_ENABLED and shutil.which("ffmpeg") and shutil.which("ffprobe"))
+        elif source in {"viral_remake", "video_dubbing"}:
+            provider_configured = bool(DASHSCOPE_API_KEY and BAILIAN_BASE_URL)
+            if source == "viral_remake":
+                provider_configured = bool(provider_configured and ARK_AGENT_API_KEY and ARK_AGENT_BASE_URL and ARK_AGENT_MODEL)
+            ready = bool(provider_configured and MEDIA_WORKER_ENABLED and shutil.which("ffmpeg") and shutil.which("ffprobe"))
         elif source == "volcano":
             ready = bool(SEEDREAM_API_KEY and SEEDREAM_BASE_URL)
             provider_configured = ready

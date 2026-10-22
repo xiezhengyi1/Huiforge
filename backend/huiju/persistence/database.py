@@ -202,6 +202,23 @@ class UserDatabase:
                 );
                 CREATE INDEX IF NOT EXISTS idx_media_jobs_owner ON media_jobs(owner_id, created_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_media_jobs_active ON media_jobs(owner_id, kind, status);
+                CREATE TABLE IF NOT EXISTS storyboard_jobs (
+                    id TEXT PRIMARY KEY,
+                    owner_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    phase TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    quote_json TEXT NOT NULL,
+                    shots_json TEXT NOT NULL,
+                    output_job_id TEXT NOT NULL,
+                    error TEXT NOT NULL DEFAULT '',
+                    created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_storyboard_owner ON storyboard_jobs(owner_id, created_at DESC);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_storyboard_active_owner ON storyboard_jobs(owner_id)
+                    WHERE status IN ('queued','running');
                 CREATE TABLE IF NOT EXISTS short_drama_sessions (
                     id TEXT PRIMARY KEY,
                     owner_id TEXT NOT NULL,
@@ -210,6 +227,24 @@ class UserDatabase:
                     created_at REAL NOT NULL,
                     updated_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS video_workflow_jobs (
+                    id TEXT PRIMARY KEY,
+                    owner_id TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    phase TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    source_path TEXT NOT NULL,
+                    state_json TEXT NOT NULL,
+                    tts_job_id TEXT NOT NULL DEFAULT '',
+                    output_job_id TEXT NOT NULL,
+                    error TEXT NOT NULL DEFAULT '',
+                    created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_video_workflow_owner ON video_workflow_jobs(owner_id, created_at DESC);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_video_workflow_active_owner ON video_workflow_jobs(owner_id)
+                    WHERE status IN ('queued','running');
                 CREATE INDEX IF NOT EXISTS idx_short_drama_sessions_owner
                     ON short_drama_sessions(owner_id, updated_at DESC);
                 CREATE TABLE IF NOT EXISTS short_drama_messages (
@@ -597,6 +632,96 @@ class UserDatabase:
             )
         return cursor.rowcount == 1
 
+    def create_video_workflow_job(self, owner: str, job_id: str, kind: str, payload: dict[str, Any],
+                                  source_path: str, state: dict[str, Any], output_job_id: str) -> None:
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("SELECT id FROM video_workflow_jobs WHERE owner_id=? AND status IN ('queued','running')", (owner,)).fetchone():
+                raise ValueError("video_workflow_concurrency_limit")
+            connection.execute(
+                """INSERT INTO video_workflow_jobs
+                   (id,owner_id,kind,status,phase,payload_json,source_path,state_json,output_job_id,created_at,updated_at)
+                   VALUES(?,?,?,'queued','queued',?,?,?,?,?,?)""",
+                (job_id, owner, kind, json.dumps(payload, ensure_ascii=False), source_path,
+                 json.dumps(state, ensure_ascii=False), output_job_id, now, now),
+            )
+            connection.commit()
+
+    @staticmethod
+    def _video_workflow_record(row: sqlite3.Row) -> dict[str, Any]:
+        record = dict(row)
+        record["payload"] = json.loads(record.pop("payload_json"))
+        record["state"] = json.loads(record.pop("state_json"))
+        return record
+
+    def video_workflow_job(self, owner: str, job_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM video_workflow_jobs WHERE id=? AND owner_id=?", (job_id, owner)).fetchone()
+        return self._video_workflow_record(row) if row else None
+
+    def update_video_workflow_job(self, owner: str, job_id: str, *, status: str, phase: str,
+                                  state: dict[str, Any], tts_job_id: str, error: str = "") -> None:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """UPDATE video_workflow_jobs SET status=?,phase=?,state_json=?,tts_job_id=?,error=?,updated_at=?
+                   WHERE id=? AND owner_id=?""",
+                (status, phase, json.dumps(state, ensure_ascii=False), tts_job_id, error, time.time(), job_id, owner),
+            )
+
+    def recoverable_video_workflow_jobs(self) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            rows = connection.execute("SELECT * FROM video_workflow_jobs WHERE status IN ('queued','running') ORDER BY created_at").fetchall()
+        return [self._video_workflow_record(row) for row in rows]
+
+    def create_storyboard_job(
+        self, owner: str, job_id: str, title: str, payload: dict[str, Any],
+        quote: dict[str, Any], shots: list[dict[str, Any]], output_job_id: str,
+    ) -> None:
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            active = connection.execute(
+                "SELECT id FROM storyboard_jobs WHERE owner_id=? AND status IN ('queued','running')",
+                (owner,),
+            ).fetchone()
+            if active:
+                raise ValueError("storyboard_concurrency_limit")
+            connection.execute(
+                """INSERT INTO storyboard_jobs
+                   (id,owner_id,title,status,phase,payload_json,quote_json,shots_json,output_job_id,created_at,updated_at)
+                   VALUES(?,?,?,'queued','queued',?,?,?,?,?,?)""",
+                (job_id, owner, title, json.dumps(payload, ensure_ascii=False), json.dumps(quote, ensure_ascii=False),
+                 json.dumps(shots, ensure_ascii=False), output_job_id, now, now),
+            )
+            connection.commit()
+
+    @staticmethod
+    def _storyboard_record(row: sqlite3.Row) -> dict[str, Any]:
+        record = dict(row)
+        for key in ("payload", "quote", "shots"):
+            record[key] = json.loads(record.pop(key + "_json"))
+        return record
+
+    def storyboard_job(self, owner: str, job_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM storyboard_jobs WHERE id=? AND owner_id=?", (job_id, owner)).fetchone()
+        return self._storyboard_record(row) if row else None
+
+    def update_storyboard_job(self, owner: str, job_id: str, *, status: str, phase: str,
+                              shots: list[dict[str, Any]], error: str = "") -> None:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """UPDATE storyboard_jobs SET status=?,phase=?,shots_json=?,error=?,updated_at=?
+                   WHERE id=? AND owner_id=?""",
+                (status, phase, json.dumps(shots, ensure_ascii=False), error, time.time(), job_id, owner),
+            )
+
+    def recoverable_storyboard_jobs(self) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            rows = connection.execute("SELECT * FROM storyboard_jobs WHERE status IN ('queued','running') ORDER BY created_at").fetchall()
+        return [self._storyboard_record(row) for row in rows]
+
     def create_media_job(
         self, owner: str, job_id: str, kind: str, operation: str, model: str,
         prompt: str, parameters: dict[str, Any], status: str = "queued",
@@ -764,15 +889,26 @@ class UserDatabase:
                 (response_id[:200], time.time(), session_id, owner),
             )
 
+    def complete_short_drama_image_job(self, owner: str, job_id: str, images: list[dict[str, str]]) -> None:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """UPDATE short_drama_messages
+                   SET tool_json=json_set(tool_json, '$.result.status', 'completed', '$.result.images', json(?))
+                   WHERE owner_id=? AND role='tool'
+                     AND json_extract(tool_json, '$.name') IN ('generate_image','edit_image')
+                     AND json_extract(tool_json, '$.result.job_id')=?""",
+                (json.dumps(images, ensure_ascii=False, separators=(",", ":")), owner, job_id),
+            )
+
     def short_drama_messages(self, owner: str, session_id: str, limit: int = 100) -> list[dict[str, Any]]:
         with self._connect() as connection:
             rows = connection.execute(
                 """SELECT id,role,content,tool_json,created_at FROM short_drama_messages
-                   WHERE session_id=? AND owner_id=? ORDER BY created_at LIMIT ?""",
+                   WHERE session_id=? AND owner_id=? ORDER BY created_at DESC LIMIT ?""",
                 (session_id, owner, min(max(limit, 1), 200)),
             ).fetchall()
         result = []
-        for row in rows:
+        for row in reversed(rows):
             item = dict(row)
             with contextlib.suppress(ValueError, TypeError):
                 item["tool"] = json.loads(item.pop("tool_json"))
