@@ -138,6 +138,45 @@ def test_workflow_publish_requires_connected_acyclic_output(tmp_path: Path, monk
     assert response.json()["detail"] == "cyclic_workflow"
 
 
+def test_workflow_persists_5000_connected_nodes_and_rejects_5001(tmp_path: Path, monkeypatch):
+    database = UserDatabase(tmp_path / "users.sqlite3", tmp_path / "private")
+    monkeypatch.setattr(workflows.relay, "database", database)
+    client = TestClient(app)
+    nodes = [
+        {"id": f"node-{index}", "type": "image_generator", "category": "image", "x": 0, "y": 0, "config": {"prompt": "测试" * 300}}
+        for index in range(4999)
+    ]
+    nodes.append({"id": "node-4999", "type": "media_output", "category": "output", "x": 0, "y": 0})
+    edges = [
+        {"id": f"edge-{index}", "from_node": f"node-{index}", "to_node": f"node-{index + 1}", "from_port": "image",
+         "to_port": "image" if index == 4998 else "image1"}
+        for index in range(4999)
+    ]
+    graph = {"version": 6, "nodes": nodes, "edges": edges}
+
+    response = client.post("/api/v1/workflows", json={"name": "大型工作流", "graph": graph})
+    assert response.status_code == 200, response.text[:500]
+    record = response.json()["workflow"]
+    assert record["node_count"] == 5000
+    assert client.get(f"/api/v1/workflows/{record['id']}").json()["workflow"]["graph"] == record["graph"]
+    assert len(record["graph"]["edges"]) == 4999
+    assert record["graph"]["nodes"][4998]["config"]["prompt"] == "测试" * 300
+    summary = client.get("/api/v1/workflows").json()["items"][0]
+    assert summary["node_count"] == 5000
+    assert summary["media_types"] == ["图像"]
+    assert "graph" not in summary
+
+    # Workflows written before summaries were stored still appear in discovery.
+    with database._connect() as connection:
+        connection.execute("UPDATE workflows SET graph_summary_json = NULL")
+    assert client.get("/api/v1/workflows").json()["items"][0] == summary
+
+    oversized = {**graph, "nodes": [*nodes, {**nodes[0], "id": "node-5000"}]}
+    response = client.post("/api/v1/workflows", json={"name": "超过上限", "graph": oversized})
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "graph", "nodes"]
+
+
 def test_public_workflow_strips_private_input_metadata_but_keeps_distinct_ports(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(workflows.relay, "database", UserDatabase(tmp_path / "users.sqlite3", tmp_path / "private"))
     client = TestClient(app)
@@ -148,7 +187,8 @@ def test_public_workflow_strips_private_input_metadata_but_keeps_distinct_ports(
                 "input_type": "image", "url": f"/api/v1/private-media/asset/{'a' * 32}",
                 "asset_id": "private-asset", "prompt": "私人素材描述", "kind": "upload", "media_type": "image/webp",
             }},
-            {"id": "generator", "type": "image_generator", "category": "image", "x": 300, "y": 0, "config": {"prompt": "雨夜街景"}},
+            {"id": "generator", "type": "image_generator", "category": "image", "x": 300, "y": 0,
+             "width": 480, "height": 360, "config": {"prompt": "雨夜街景"}},
             {"id": "output", "type": "media_output", "category": "output", "x": 600, "y": 0, "config": {}},
         ],
         "edges": [
@@ -162,5 +202,7 @@ def test_public_workflow_strips_private_input_metadata_but_keeps_distinct_ports(
     workflow_id = response.json()["workflow"]["id"]
     public_graph = TestClient(app).get(f"/api/v1/workflows/{workflow_id}").json()["workflow"]["graph"]
     assert public_graph["nodes"][0]["config"] == {"input_type": "image"}
+    assert "width" not in public_graph["nodes"][0] and "height" not in public_graph["nodes"][0]
     assert public_graph["nodes"][1]["config"]["prompt"] == "雨夜街景"
+    assert (public_graph["nodes"][1]["width"], public_graph["nodes"][1]["height"]) == (480, 360)
     assert len(public_graph["edges"]) == 3

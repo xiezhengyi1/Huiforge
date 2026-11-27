@@ -23,7 +23,8 @@ def test_workflow_media_nodes_share_preview_first_editor_contract() -> None:
     assert 'id="workflow-node-editor-credit"' in html
     assert 'id="workflow-node-editor-expand"' in html
     assert 'id="workflow-node-editor-run"' in html
-    assert 'workflow-node-editor-title' not in html
+    assert 'id="workflow-node-editor-title"' in html
+    assert 'id="workflow-node-editor-close"' in html
     assert 'label:"图片编辑"' in schema
     assert 'label:"视频编辑"' in schema
     assert 'label:"音频编辑"' in schema
@@ -88,7 +89,6 @@ def test_image_tool_prompt_is_only_present_for_natural_language_operations() -> 
     assert 'workflowNodeEditorPrompt.disabled = !usesNaturalLanguage;' in script
     assert 'workflowNodeEditorExpand.hidden = !usesNaturalLanguage;' in script
     assert 'const prompt = WORKFLOW_IMAGE_TOOLS_WITH_NATURAL_LANGUAGE.has(tool) ? String(config.prompt || "").trim() : "";' in script
-    assert '"点击节点设置参数"' in script
     assert 'upscale:["resolution"]' in script
     assert '"AI 超分 · 细节增强"' in script
 

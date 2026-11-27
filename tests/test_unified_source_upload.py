@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HTML = (ROOT / "frontend" / "pages" / "studio.html").read_text(encoding="utf-8")
 SCRIPT = (ROOT / "frontend" / "js" / "app.js").read_text(encoding="utf-8")
 CSS = (ROOT / "frontend" / "css" / "studio.css").read_text(encoding="utf-8")
+THEME_AUDIT_CSS = (ROOT / "frontend" / "css" / "theme-audit.css").read_text(encoding="utf-8")
 DESIGN_REFRESH_CSS = (ROOT / "frontend" / "css" / "design-refresh.css").read_text(encoding="utf-8")
 THREE_MODULE = (ROOT / "frontend" / "js" / "vendor" / "three.module.js").read_text(encoding="utf-8")
 THREE_CORE = (ROOT / "frontend" / "js" / "vendor" / "three.core.js").read_text(encoding="utf-8")
@@ -21,12 +22,12 @@ def test_unified_media_uses_the_visible_source_instruction_as_its_prompt() -> No
     assert 'if (UNIFIED_MODES.has(activeMode)) return toolPromptInput?.value.trim() || promptInput.value.trim();' in SCRIPT
 
 
-def test_unified_image_prompt_matches_the_flat_reference_composer() -> None:
-    assert 'min-height: 196px !important' not in DESIGN_REFRESH_CSS
-    assert 'padding: 18px !important' not in DESIGN_REFRESH_CSS
-    assert 'min-height: 168px !important' in DESIGN_REFRESH_CSS
-    assert 'padding: 10px 2px !important' in DESIGN_REFRESH_CSS
-    assert 'background: transparent !important' in DESIGN_REFRESH_CSS
+def test_reference_composer_stacks_the_prompt_and_upload_on_a_compact_column() -> None:
+    grids = THEME_AUDIT_CSS.split(".image-tool-grid {", 1)[1].split("}", 1)[0]
+    assert "grid-template-columns: minmax(0,1fr)" in grids
+    textarea = THEME_AUDIT_CSS.split(".tool-command-panel textarea {", 1)[1].split("}", 1)[0]
+    assert "resize: vertical" in textarea
+    assert "border: 1px solid var(--tv-border)" in textarea
 
 
 def test_studio_account_controls_use_a_transparent_chrome() -> None:

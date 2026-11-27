@@ -26,8 +26,8 @@ from ..schemas import *
 router = APIRouter()
 
 def public_workflow(record: dict[str, Any], include_graph: bool = False) -> dict[str, Any]:
-    nodes = record.get("graph", {}).get("nodes", [])
-    node_types = {str(node.get("type", "")) for node in nodes}
+    summary = record["graph_summary"]
+    node_types = summary["node_types"]
     media_types: list[str] = []
     if any("video" in item for item in node_types):
         media_types.append("视频")
@@ -39,7 +39,7 @@ def public_workflow(record: dict[str, Any], include_graph: bool = False) -> dict
         media_types.append("综合")
     result = {
         "id": record["id"], "name": record["name"], "description": record.get("description", ""),
-        "author": record.get("author", "匿名创作者"), "node_count": len(nodes),
+        "author": record.get("author", "匿名创作者"), "node_count": summary["node_count"],
         "tags": record.get("tags", []), "media_types": media_types,
         "likes_count": int(record.get("likes_count", 0)),
         "comments_count": int(record.get("comments_count", 0)),
@@ -77,30 +77,40 @@ async def workflow_create(payload: WorkflowCreateInput, request: Request) -> dic
         raise HTTPException(status_code=429, detail="rate_limited")
     owner = owner_id(request)
     profile = relay.public_user(owner) if relay.database.user_exists(owner) else None
-    graph = payload.graph.model_dump(mode="json")
+    graph = payload.graph.model_dump(mode="json", exclude_none=True)
     node_ids = {node["id"] for node in graph["nodes"]}
     if len(node_ids) != len(graph["nodes"]):
         raise HTTPException(status_code=422, detail="duplicate_workflow_nodes")
     seen_edges: set[tuple[str, str, str, str]] = set()
+    successors: dict[str, list[str]] = {node_id: [] for node_id in node_ids}
+    predecessors: dict[str, list[str]] = {node_id: [] for node_id in node_ids}
+    indegree = dict.fromkeys(node_ids, 0)
     for edge in graph["edges"]:
-        signature = (edge["from_node"], edge["to_node"], edge["from_port"], edge["to_port"])
-        if edge["from_node"] == edge["to_node"] or not {edge["from_node"], edge["to_node"]}.issubset(node_ids) or signature in seen_edges:
+        source, target = edge["from_node"], edge["to_node"]
+        signature = (source, target, edge["from_port"], edge["to_port"])
+        if source == target or source not in node_ids or target not in node_ids or signature in seen_edges:
             raise HTTPException(status_code=422, detail="invalid_workflow_edges")
         seen_edges.add(signature)
-    pending = set(node_ids)
-    while pending:
-        ready = {node_id for node_id in pending if not any(edge["to_node"] == node_id and edge["from_node"] in pending for edge in graph["edges"])}
-        if not ready:
-            raise HTTPException(status_code=422, detail="cyclic_workflow")
-        pending -= ready
+        successors[source].append(target)
+        predecessors[target].append(source)
+        indegree[target] += 1
+    pending = [node_id for node_id, count in indegree.items() if count == 0]
+    for node_id in pending:
+        for target in successors[node_id]:
+            indegree[target] -= 1
+            if indegree[target] == 0:
+                pending.append(target)
+    if len(pending) != len(node_ids):
+        raise HTTPException(status_code=422, detail="cyclic_workflow")
     outputs = {node["id"] for node in graph["nodes"] if node["type"] in {"media_output", "text_output"}}
     capabilities = {node["id"] for node in graph["nodes"] if node["type"] not in {"media_input", "media_output", "text_output"}}
     upstream = set(outputs)
-    while True:
-        sources = upstream | {edge["from_node"] for edge in graph["edges"] if edge["to_node"] in upstream}
-        if sources == upstream:
-            break
-        upstream = sources
+    pending = list(outputs)
+    for node_id in pending:
+        for source in predecessors[node_id]:
+            if source not in upstream:
+                upstream.add(source)
+                pending.append(source)
     if not outputs or not upstream.intersection(capabilities):
         raise HTTPException(status_code=422, detail="workflow_output_disconnected")
     for node in graph["nodes"]:
@@ -116,7 +126,7 @@ async def workflow_create(payload: WorkflowCreateInput, request: Request) -> dic
     record = {
         "id": workflow_id, "owner": owner, "author": profile["display_name"] if profile else "匿名创作者",
         "name": payload.name, "description": payload.description, "tags": payload.tags,
-        "graph": graph, "created_at": time.time(),
+        "graph": graph, "graph_summary": relay.database.workflow_graph_summary(graph), "created_at": time.time(),
     }
     relay.database.create_workflow(record)
     return {"ok": True, "workflow": public_workflow(record, include_graph=True)}

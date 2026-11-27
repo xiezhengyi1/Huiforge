@@ -79,27 +79,34 @@ class RelayState:
         except (ValueError, TypeError):
             return False
 
-    def register_user(self, device_id: str, phone: str, password: str, display_name: str) -> str:
-        if self.database.phone_exists(phone):
-            raise ValueError("phone_exists")
+    def register_user(
+        self, device_id: str, contact: str, password: str, display_name: str, *, contact_type: str = "phone",
+    ) -> str:
+        duplicate = "email_exists" if contact_type == "email" else "phone_exists"
+        if self.database.contact_exists(contact):
+            raise ValueError(duplicate)
         old_owner = self.owner_for_device(device_id)
         try:
-            user_id = self.database.register_user(device_id, phone, self._password_hash(password), display_name)
+            user_id = self.database.register_user(
+                device_id, contact, self._password_hash(password), display_name, contact_type=contact_type,
+            )
         except sqlite3.IntegrityError as error:
-            raise ValueError("phone_exists") from error
-        self._migrate_runtime_owner(old_owner, user_id)
+            raise ValueError(duplicate) from error
+        if old_owner == device_id:
+            self._migrate_runtime_owner(old_owner, user_id)
         self.owner_cache[device_id] = user_id
         self.membership_cache.pop(user_id, None)
         return user_id
 
-    def login_user(self, device_id: str, phone: str, password: str) -> str:
-        match = self.database.login_user(device_id, phone)
+    def login_user(self, device_id: str, contact: str, password: str, *, contact_type: str = "phone") -> str:
+        match = self.database.login_user(device_id, contact, contact_type=contact_type)
         if not match or not self._password_matches(password, match[1]):
             raise ValueError("invalid_credentials")
         user_id = match[0]
         old_owner = self.owner_for_device(device_id)
         self.database.bind_session(device_id, user_id)
-        self._migrate_runtime_owner(old_owner, user_id)
+        if old_owner == device_id:
+            self._migrate_runtime_owner(old_owner, user_id)
         self.owner_cache[device_id] = user_id
         self.membership_cache.pop(user_id, None)
         return user_id

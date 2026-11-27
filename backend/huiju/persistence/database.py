@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+import hmac
 import json
 import sqlite3
 import threading
@@ -128,6 +129,16 @@ class UserDatabase:
                     created_at REAL NOT NULL,
                     updated_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS email_verifications (
+                    device_id TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    digest TEXT NOT NULL,
+                    sent_at REAL NOT NULL,
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY(device_id, email)
+                );
+                CREATE INDEX IF NOT EXISTS idx_email_verifications_sent ON email_verifications(sent_at);
+                CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email, sent_at);
                 CREATE TABLE IF NOT EXISTS wallets (
                     owner_id TEXT PRIMARY KEY,
                     daily INTEGER NOT NULL,
@@ -274,6 +285,7 @@ class UserDatabase:
                     name TEXT NOT NULL,
                     description TEXT NOT NULL DEFAULT '',
                     graph_json TEXT NOT NULL,
+                    graph_summary_json TEXT,
                     tags_json TEXT NOT NULL DEFAULT '[]',
                     likes_count INTEGER NOT NULL DEFAULT 0,
                     comments_count INTEGER NOT NULL DEFAULT 0,
@@ -344,6 +356,8 @@ class UserDatabase:
                 connection.execute("ALTER TABLE workflows ADD COLUMN comments_count INTEGER NOT NULL DEFAULT 0")
             if "uses_count" not in workflow_columns:
                 connection.execute("ALTER TABLE workflows ADD COLUMN uses_count INTEGER NOT NULL DEFAULT 0")
+            if "graph_summary_json" not in workflow_columns:
+                connection.execute("ALTER TABLE workflows ADD COLUMN graph_summary_json TEXT")
             connection.execute("INSERT OR IGNORE INTO meta(key,value) VALUES('schema_version','5')")
             connection.execute("UPDATE meta SET value='5' WHERE key='schema_version'")
 
@@ -364,50 +378,99 @@ class UserDatabase:
         with self._connect() as connection:
             return bool(connection.execute("SELECT 1 FROM users WHERE id=?", (user_id,)).fetchone())
 
-    def phone_exists(self, phone: str) -> bool:
+    def contact_exists(self, contact: str) -> bool:
         with self._connect() as connection:
-            return bool(connection.execute("SELECT 1 FROM users WHERE contact=? COLLATE NOCASE", (phone,)).fetchone())
+            return bool(connection.execute("SELECT 1 FROM users WHERE contact=? COLLATE NOCASE", (contact,)).fetchone())
 
-    def register_user(self, device_id: str, phone: str, password_hash: str, display_name: str) -> str:
+    def phone_exists(self, phone: str) -> bool:
+        return self.contact_exists(phone)
+
+    def reserve_email_code(self, device_id: str, email: str, digest: str, now: float) -> bool:
+        with self._lock, self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute("DELETE FROM email_verifications WHERE sent_at<=?", (now - 300,))
+            sent = connection.execute(
+                "SELECT 1 FROM email_verifications WHERE email=? AND sent_at>? LIMIT 1", (email, now - 60),
+            ).fetchone()
+            if sent:
+                return False
+            connection.execute(
+                "INSERT OR REPLACE INTO email_verifications(device_id,email,digest,sent_at,attempts) VALUES(?,?,?,?,0)",
+                (device_id, email, digest, now),
+            )
+            return True
+
+    def discard_email_code(self, device_id: str, email: str, digest: str) -> None:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                "DELETE FROM email_verifications WHERE device_id=? AND email=? AND digest=?", (device_id, email, digest),
+            )
+
+    def consume_email_code(self, device_id: str, email: str, digest: str, now: float) -> bool:
+        with self._lock, self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            parameters = (device_id, email)
+            row = connection.execute(
+                "SELECT digest,sent_at,attempts FROM email_verifications WHERE device_id=? AND email=?", parameters,
+            ).fetchone()
+            if not row or row["sent_at"] <= now - 300 or row["attempts"] >= 5:
+                return False
+            if not hmac.compare_digest(row["digest"], digest):
+                connection.execute(
+                    "UPDATE email_verifications SET attempts=attempts+1 WHERE device_id=? AND email=?", parameters,
+                )
+                return False
+            connection.execute("DELETE FROM email_verifications WHERE device_id=? AND email=?", parameters)
+            return True
+
+    def register_user(
+        self, device_id: str, contact: str, password_hash: str, display_name: str, *, contact_type: str = "phone",
+    ) -> str:
         user_id = uuid.uuid4().hex
-        old_owner = self.owner_for_device(device_id)
         now = time.time()
         with self._lock, self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             try:
+                existing_session = connection.execute("SELECT 1 FROM sessions WHERE device_id=?", (device_id,)).fetchone()
+                default_name = f"绘友{contact[-4:]}" if contact_type == "phone" else f"Creator {user_id[:4]}"
                 connection.execute(
                     """INSERT INTO users(id,contact,contact_type,password_hash,display_name,bio,avatar_path,created_at)
                        VALUES(?,?,?,?,?,'','',?)""",
-                    (user_id, phone, "phone", password_hash, display_name.strip() or f"绘友{phone[-4:]}", now),
+                    (user_id, contact, contact_type, password_hash, display_name.strip() or default_name, now),
                 )
                 connection.execute(
                     "INSERT OR REPLACE INTO sessions(device_id,user_id,created_at,updated_at) VALUES(?,?,?,?)",
                     (device_id, user_id, now, now),
                 )
-                self._migrate_owner_rows(connection, old_owner, user_id)
+                if not existing_session:
+                    self._migrate_owner_rows(connection, device_id, user_id)
                 connection.commit()
             except Exception:
                 connection.rollback()
                 raise
         return user_id
 
-    def login_user(self, device_id: str, phone: str) -> tuple[str, str] | None:
+    def login_user(self, device_id: str, contact: str, *, contact_type: str = "phone") -> tuple[str, str] | None:
         with self._connect() as connection:
-            row = connection.execute("SELECT id,password_hash FROM users WHERE contact=? COLLATE NOCASE", (phone,)).fetchone()
+            row = connection.execute(
+                "SELECT id,password_hash FROM users WHERE contact=? COLLATE NOCASE AND contact_type=?",
+                (contact, contact_type),
+            ).fetchone()
         if not row:
             return None
         return str(row["id"]), str(row["password_hash"])
 
     def bind_session(self, device_id: str, user_id: str) -> None:
-        old_owner = self.owner_for_device(device_id)
         now = time.time()
         with self._lock, self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            existing_session = connection.execute("SELECT 1 FROM sessions WHERE device_id=?", (device_id,)).fetchone()
             connection.execute(
                 "INSERT OR REPLACE INTO sessions(device_id,user_id,created_at,updated_at) VALUES(?,?,?,?)",
                 (device_id, user_id, now, now),
             )
-            self._migrate_owner_rows(connection, old_owner, user_id)
+            if not existing_session:
+                self._migrate_owner_rows(connection, device_id, user_id)
             connection.commit()
 
     def logout_user(self, device_id: str) -> None:
@@ -417,14 +480,17 @@ class UserDatabase:
     def public_user(self, user_id: str) -> dict[str, Any]:
         with self._connect() as connection:
             row = connection.execute(
-                "SELECT id,contact,display_name,bio,avatar_path,created_at FROM users WHERE id=?", (user_id,),
+                "SELECT id,contact,contact_type,display_name,bio,avatar_path,created_at FROM users WHERE id=?", (user_id,),
             ).fetchone()
         if not row:
             return {}
-        phone = str(row["contact"])
+        contact = str(row["contact"])
+        is_email = row["contact_type"] == "email"
+        local, _, domain = contact.partition("@")
         return {
             "user_id": str(row["id"]), "display_name": row["display_name"] or "绘域用户",
-            "phone_masked": f"{phone[:3]}****{phone[-4:]}" if len(phone) == 11 else "",
+            "phone_masked": f"{contact[:3]}****{contact[-4:]}" if not is_email and len(contact) == 11 else "",
+            "email_masked": f"{local[:1]}***@{domain}" if is_email else "",
             "bio": row["bio"] or "", "avatar_url": "/api/v1/users/avatar/content" if row["avatar_path"] else "",
             "created_at": row["created_at"],
         }
@@ -939,7 +1005,11 @@ class UserDatabase:
         }.get(sort, "(w.likes_count * 3 + w.comments_count * 2 + w.uses_count) DESC, w.created_at DESC")
         with self._connect() as connection:
             rows = connection.execute(
-                f"""SELECT w.*, EXISTS(
+                f"""SELECT w.id,w.owner_id,w.author,w.name,w.description,w.tags_json,
+                       w.likes_count,w.comments_count,w.uses_count,w.is_shared,w.created_at,
+                       w.graph_summary_json,
+                       CASE WHEN w.graph_summary_json IS NULL THEN w.graph_json END AS graph_json,
+                       EXISTS(
                        SELECT 1 FROM workflow_likes l WHERE l.workflow_id=w.id AND l.owner_id=?
                      ) AS liked_by_viewer
                      FROM workflows w
@@ -948,7 +1018,7 @@ class UserDatabase:
                      ) ORDER BY {order_by} LIMIT ?""",
                 (viewer, query, safe_query, safe_query, safe_query, safe_query, limit),
             ).fetchall()
-        return [self._workflow_record(row) for row in rows]
+        return [self._workflow_record(row, include_graph=False) for row in rows]
 
     def get_workflow(self, workflow_id: str, owner: str | None = None) -> dict[str, Any] | None:
         with self._connect() as connection:
@@ -962,11 +1032,18 @@ class UserDatabase:
         return self._workflow_record(row) if row else None
 
     @staticmethod
-    def _workflow_record(row: sqlite3.Row) -> dict[str, Any]:
+    def workflow_graph_summary(graph: dict[str, Any]) -> dict[str, Any]:
+        nodes = graph.get("nodes", [])
+        return {"node_count": len(nodes), "node_types": sorted({str(node.get("type", "")) for node in nodes})}
+
+    @classmethod
+    def _workflow_record(cls, row: sqlite3.Row, include_graph: bool = True) -> dict[str, Any]:
         keys = set(row.keys())
-        return {
+        graph = json.loads(row["graph_json"]) if row["graph_json"] else {}
+        summary = json.loads(row["graph_summary_json"]) if row["graph_summary_json"] else cls.workflow_graph_summary(graph)
+        record = {
             "id": row["id"], "owner": row["owner_id"], "author": row["author"], "name": row["name"],
-            "description": row["description"], "graph": json.loads(row["graph_json"]),
+            "description": row["description"], "graph_summary": summary,
             "tags": json.loads(row["tags_json"]) if "tags_json" in keys else [],
             "likes_count": int(row["likes_count"]) if "likes_count" in keys else 0,
             "comments_count": int(row["comments_count"]) if "comments_count" in keys else 0,
@@ -974,15 +1051,19 @@ class UserDatabase:
             "liked_by_viewer": bool(row["liked_by_viewer"]) if "liked_by_viewer" in keys else False,
             "is_shared": bool(row["is_shared"]), "created_at": row["created_at"],
         }
+        if include_graph:
+            record["graph"] = graph
+        return record
 
     def create_workflow(self, record: dict[str, Any]) -> None:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """INSERT INTO workflows(
-                     id,owner_id,author,name,description,graph_json,tags_json,is_shared,created_at
-                   ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                     id,owner_id,author,name,description,graph_json,graph_summary_json,tags_json,is_shared,created_at
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?)""",
                 (record["id"], record["owner"], record["author"], record["name"], record["description"],
                  json.dumps(record["graph"], ensure_ascii=False, separators=(",", ":")),
+                 json.dumps(record.get("graph_summary") or self.workflow_graph_summary(record["graph"])),
                  json.dumps(record.get("tags", []), ensure_ascii=False, separators=(",", ":")),
                  1 if record.get("is_shared", True) else 0, record["created_at"]),
             )

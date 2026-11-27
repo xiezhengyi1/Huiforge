@@ -85,44 +85,6 @@ html[data-studio-theme] .studio-page .studio-section { background: transparent !
 .studio-page .history-panel { border-color: var(--dr-line); border-radius: 18px; background: color-mix(in srgb, var(--tv-surface-raised) 90%, transparent); }
 .studio-page .result-card { border-radius: 14px; overflow: hidden; }
 
-/* unified_image 的真实主输入在工具命令区，不使用被隐藏的 #prompt。 */
-.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .image-tool-grid { gap: 14px; }
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel {
-  min-height: 168px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-prompt-field { min-height: 128px; }
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt {
-  min-height: 128px !important;
-  padding: 10px 2px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: var(--tv-text);
-  font-size: 14px;
-  line-height: 1.6;
-}
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] #tool-prompt::placeholder { color: var(--tv-text-muted); }
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus,
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus-visible {
-  border: 0 !important;
-  outline: 0 !important;
-  box-shadow: none !important;
-}
-html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .upload-drop {
-  align-self: stretch;
-  min-height: 132px;
-  padding: 14px;
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--tv-border) 88%, transparent);
-  background: color-mix(in srgb, var(--tv-surface-raised) 52%, transparent);
-}
-.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .upload-drop :is(b, small) { font-size: 11px; }
-
 /* 社区：将发布动作放到广场首屏，成功后沿用现有刷新链路立即显示。 */
 .studio-page .studio-discovery { margin-top: 34px; }
 .studio-page .discovery-switch { padding: 8px clamp(18px, 3vw, 38px); border-block: 1px solid var(--dr-line); background: color-mix(in srgb, var(--tv-surface-raised) 65%, transparent); backdrop-filter: blur(14px); }
@@ -243,35 +205,13 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
     color: var(--tv-on-primary) !important;
     box-shadow: 0 7px 16px var(--tv-primary-shadow) !important;
   }
-  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel {
-    min-height: 168px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt {
-    min-height: 128px !important;
-    padding: 10px 2px !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus,
-  html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel[data-mode="unified_image"] .tool-command-panel #tool-prompt:focus-visible {
-    border: 0 !important;
-    outline: 0 !important;
-    box-shadow: none !important;
-  }
   @media (min-width: 801px) {
     html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
       top: 14px !important;
       left: auto !important;
-      right: 210px !important;
+      right: 232px !important;
       width: max-content !important;
-      max-width: calc(100% - 230px) !important;
+      max-width: calc(100% - 252px) !important;
       transform: none !important;
     }
     html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions :is(button, .workflow-edge-style-control) {
@@ -288,7 +228,7 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
   }
   @media (max-width: 800px) {
     html[data-studio-theme] .studio-page.workflow-active .workflow-floating-actions {
-      top: 48px !important;
+      top: 10px !important;
       left: 10px !important;
       right: 10px !important;
       width: auto !important;
@@ -304,11 +244,11 @@ html[data-studio-theme] body.studio-page:not(.studio-has-output) .controls-panel
   .studio-page .workflow-canvas-context { top: 118px; }
 }
 @media (max-width: 800px) {
-  .studio-page .workflow-floating-actions :is(button, .workflow-edge-style-control) { min-width: 0; min-height: 40px; padding-inline: 3px; justify-content: center; white-space: nowrap; }
+  .studio-page .workflow-floating-actions :is(button, .workflow-edge-style-control) { min-width: 0; min-height: 34px; padding-inline: 3px; justify-content: center; white-space: nowrap; }
   .studio-page .workflow-edge-style-control > span { display: none; }
   .studio-page .workflow-edge-style-control select { width: 100%; max-width: 100%; }
-  .studio-page .workflow-canvas-context { top: 148px; left: 12px; right: 12px; }
-  .studio-page .workflow-canvas-context b { display: none; }
-  .studio-page .workflow-canvas-toolbar { top: 210px; left: 10px; }
-  .studio-page .workflow-viewport { margin-top: 256px; height: calc(100% - 256px); }
+  .studio-page .workflow-canvas-context { top: 108px; left: 178px; right: 12px; }
+  .studio-page .workflow-canvas-context span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .studio-page .workflow-canvas-toolbar { top: 100px; left: 10px; }
+  .studio-page .workflow-viewport { margin-top: 146px; height: calc(100% - 146px); }
 }

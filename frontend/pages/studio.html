@@ -3,17 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%231f8069'/%3E%3Cpath d='M8 9v14M24 9v14M8 16h16' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="icon" href="/static/ui/huiforge.svg" type="image/svg+xml" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://images.unsplash.com data: blob:; media-src 'self' blob: data:; connect-src 'self'; font-src 'self'; form-action 'self'" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="huiju-release" content="20260908-member-access-v41" />
-    <title>绘域 · 创作工作台</title>
-    <link rel="stylesheet" href="css/layout.css?v=20261011-workflow-v58" />
-    <link rel="stylesheet" href="css/theme.css?v=20260908-member-access-v41" />
+    <title>Huiforge · 创作工作台</title>
+    <link rel="stylesheet" href="css/layout.css?v=20261125-node-resize-v2" />
+    <link rel="stylesheet" href="css/theme.css?v=20261125-ui-polish-v3" />
     <link rel="stylesheet" href="css/onboarding.css?v=20260923-navigation-v45" />
-    <link rel="stylesheet" href="css/design-refresh.css?v=20261011-workflow-v58" />
+    <link rel="stylesheet" href="css/design-refresh.css?v=20261125-workflow-edit-v3" />
     <link rel="stylesheet" href="css/short-drama.css?v=20261021-video-workflows-v3" />
-    <script src="js/theme.js?v=20260908-member-access-v41">
+    <link rel="stylesheet" href="css/forge.css?v=20261125-ui-polish-v3" />
+    <script src="js/theme.js?v=20261124-forge-v2">
 </script>
   </head>
   <body class="studio-page" data-view="studio">
@@ -21,14 +22,15 @@
     <main>
       <section class="studio-section" id="studio" aria-labelledby="studio-title">
         <div class="studio-app">
-          <aside class="studio-sidebar" aria-label="创作工具栏">
+          <aside class="studio-sidebar" id="studio-sidebar" aria-label="创作工具栏">
             <div class="sidebar-head">
-<a class="sidebar-brand" href="index.html" aria-label="绘域首页">
-<span class="brand-mark" aria-hidden="true">H</span>
-<span>绘域</span>
+<a class="sidebar-brand" href="index.html" aria-label="Huiforge 首页">
+<span class="brand-mark" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#brand"></use></svg></span>
+<span class="forge-wordmark">Huiforge</span>
 </a>
-<button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="收起侧栏" aria-expanded="true">
-<span aria-hidden="true">‹</span>
+<button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="收起侧栏" title="收起侧栏" aria-controls="studio-sidebar" aria-expanded="true">
+<svg class="ui-icon sidebar-collapse-mark" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#brand"></use></svg>
+<svg class="ui-icon sidebar-collapse-panel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M9 5v14"/></svg>
 </button>
 </div>
             <div class="sidebar-search" id="sidebar-search">
@@ -36,7 +38,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.6 4.6"/></svg>
                 <input id="sidebar-search-input" type="search" placeholder="搜索功能或页面" aria-label="搜索功能或页面" autocomplete="off" aria-controls="sidebar-search-results" />
               </label>
-              <button class="sidebar-search-open" id="sidebar-search-open" type="button" aria-label="搜索功能" title="搜索功能">
+              <button class="sidebar-search-open" id="sidebar-search-open" type="button" aria-label="搜索功能" title="搜索功能" aria-controls="sidebar-search-input sidebar-search-results" aria-expanded="false">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.6 4.6"/></svg>
               </button>
               <div class="sidebar-search-results" id="sidebar-search-results" role="region" aria-label="功能搜索结果" aria-live="polite" hidden></div>
@@ -69,7 +71,7 @@
             </nav>
             <button class="sidebar-section-toggle" id="discover-toggle" type="button" aria-controls="discover-nav" aria-expanded="true">
 <b>发现</b>
-<span aria-hidden="true">⌄</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
 </button>
             <nav class="discover-nav" id="discover-nav" aria-label="发现更多内容">
               <a href="#studio-discovery" data-open-discovery="skills">
@@ -104,10 +106,8 @@
 </span> 模型说明</a>
             </nav>
             <div class="sidebar-bottom">
-<button class="feedback-button" id="feedback-button" type="button">
-<span aria-hidden="true">✎</span> 留言</button>
 <a class="sidebar-user-card" href="profile.html" aria-label="打开神秘画家的个人资料">
-<span class="sidebar-user-avatar" id="sidebar-user-avatar" aria-hidden="true">神</span>
+<span class="sidebar-user-avatar" id="sidebar-user-avatar" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#user"></use></svg></span>
 <b id="sidebar-user-name">神秘画家</b>
 </a>
 </div>
@@ -116,7 +116,12 @@
             <div class="studio-topbar" aria-label="账户状态">
 <p class="visually-hidden" id="mode-eyebrow">AI 生图工作台</p>
 <h1 class="visually-hidden" id="studio-title">把脑海中的画面说出来。</h1>
+<span class="studio-heading-label" aria-hidden="true"><span>工作台</span><span class="studio-workflow-title">工作流</span></span>
 <div class="topbar-actions">
+<button class="language-toggle studio-utility" data-language-toggle type="button" aria-label="Language" aria-haspopup="dialog"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg?v=20261125-ui-polish-v3#globe"></use></svg></button>
+<button class="feedback-button studio-utility" id="feedback-button" type="button" aria-label="留言" title="留言">
+<svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#edit"></use></svg>
+</button>
 <div class="theme-picker" id="theme-picker">
 <button class="theme-picker-trigger" id="theme-picker-trigger" type="button" aria-label="切换界面主题" aria-haspopup="true" aria-controls="theme-picker-menu" aria-expanded="false">
 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -127,11 +132,12 @@
 </svg>
 </button>
 <div class="theme-picker-menu" id="theme-picker-menu" role="radiogroup" aria-label="界面主题" hidden>
-<header>
-<strong>界面主题</strong>
-<small>仅改变色彩</small>
-</header>
-<button class="theme-option" type="button" role="radio" aria-checked="true" data-theme-option="jade">
+<header><strong>界面主题</strong></header>
+<button type="button" class="theme-option" role="radio" aria-checked="true" data-theme-option="forge">
+<span class="theme-swatches forge" aria-hidden="true"><i></i><i></i><i></i></span>
+<span class="theme-option-copy"><b>Huiforge</b></span>
+<svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#check"></use></svg></button>
+<button class="theme-option" type="button" role="radio" aria-checked="false" data-theme-option="jade">
 <span class="theme-swatches jade" aria-hidden="true">
 <i>
 </i>
@@ -142,7 +148,7 @@
 </span>
 <span class="theme-option-copy">
 <b>雾松墨绿</b>
-<small>浅雾背景 · 深松行动色</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -159,7 +165,7 @@
 </span>
 <span class="theme-option-copy">
 <b>墨蓝珊瑚</b>
-<small>深墨背景 · 钴蓝与珊瑚</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -176,7 +182,7 @@
 </span>
 <span class="theme-option-copy">
 <b>冰川钴蓝</b>
-<small>冷白背景 · 钴蓝与珊瑚</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -193,7 +199,7 @@
 </span>
 <span class="theme-option-copy">
 <b>瓷白石墨</b>
-<small>暖白背景 · 石墨与铜棕</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -210,7 +216,7 @@
 </span>
 <span class="theme-option-copy">
 <b>炭黑鼠尾草</b>
-<small>炭黑背景 · 鼠尾草与暖橙</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -227,7 +233,7 @@
 </span>
 <span class="theme-option-copy">
 <b>铁灰琥珀</b>
-<small>铁灰背景 · 琥珀与雾蓝</small>
+
 </span>
 <svg class="theme-option-check" viewBox="0 0 20 20" aria-hidden="true">
 <path d="m4 10 4 4 8-9"/>
@@ -236,7 +242,7 @@
 </div>
 </div>
 <a class="credits-button credits-link" href="pricing.html" aria-label="查看额度与会员">
-<span aria-hidden="true">✦</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#spark"></use></svg></span>
 <b id="credits-total">—</b>
 </a>
 </div>
@@ -246,15 +252,14 @@
 <div>
 <span>能力目录</span>
 <h2 id="capability-title">分类说明</h2>
-<p>每个入口都标明真实运行位置；缺少接口的功能会直接告诉你需要什么。</p>
 </div>
-<button id="capability-close" type="button" aria-label="关闭分类说明">×</button>
+<button id="capability-close" type="button" aria-label="关闭分类说明"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
 </header>
               <div class="capability-provider-strip" id="capability-provider-strip" aria-live="polite">
 </div>
               <div class="capability-toolbar">
 <label>
-<span aria-hidden="true">⌕</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg></span>
 <input id="capability-search" type="search" placeholder="搜索图片编辑、电商、视频或配音" />
 </label>
 <div class="capability-tabs" id="capability-tabs" role="tablist" aria-label="能力分类">
@@ -267,19 +272,24 @@
             </section>
             <div class="studio-grid" id="quick-workspace">
               <form class="controls-panel" id="generation-form" data-mode="unified_image" novalidate>
+                <nav class="studio-mode-switch" aria-label="创作模式">
+                  <button type="button" data-studio-mode="unified_image" aria-pressed="true">图片</button>
+                  <button type="button" data-studio-mode="edit" aria-pressed="false">编辑</button>
+                  <button type="button" data-studio-mode="unified_video" aria-pressed="false">视频</button>
+                  <button type="button" data-studio-mode="unified_audio" aria-pressed="false">配音</button>
+                </nav>
                 <div class="field-group prompt-group">
 <div class="active-capability-chip" id="active-capability-chip" data-mode="unified_image" role="status" aria-live="polite" title="AI 生图">
 <strong id="active-capability-name">AI 生图</strong>
 </div>
-<textarea id="prompt" name="prompt" minlength="3" placeholder="描述主体、场景、机位、光线与质感。例如：雨后旧城区，风衣女性回头，低机位中景，霓虹倒影，35mm 胶片，无文字水印。" required>
-</textarea>
+<textarea id="prompt" name="prompt" aria-label="提示词" minlength="3" placeholder="描述主体、场景、机位、光线与质感。例如：雨后旧城区，风衣女性回头，低机位中景，霓虹倒影，35mm 胶片，无文字水印。" required></textarea>
                   <div class="prompt-toolbar">
                     <div class="prompt-tools">
                       <span class="model-select-wrap">
                         <button type="button" id="model-select-trigger" class="model-select-trigger" aria-label="选择模型" aria-expanded="false">
                           <img id="model-select-icon" src="/icons/alibaba-ai.png" alt="" class="model-select-icon" />
                           <span id="model-select-label">正在加载模型…</span>
-                          <span class="model-select-chevron">▾</span>
+                          <span class="model-select-chevron" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
                         </button>
                         <div id="model-select-menu" class="model-select-menu" role="listbox" hidden>
 </div>
@@ -288,7 +298,7 @@
                       <span class="output-settings-wrap">
                         <button type="button" id="output-settings-trigger" class="output-settings-trigger">
                           <span id="output-settings-summary">1:1 · 720p · 1 张</span>
-<span class="model-select-chevron">▾</span>
+<span class="model-select-chevron" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
                         </button>
                         <div id="output-settings-menu" class="output-settings-menu" hidden>
                           <div class="output-settings-section" id="output-ratio-section">
@@ -379,7 +389,7 @@
                       </label>
                       <span class="toolbar-select-wrap" id="preset-select-wrap">
 <button type="button" id="preset-select-trigger" class="toolbar-select-trigger" aria-label="选择预设模板" aria-haspopup="listbox" aria-expanded="false">
-<span id="preset-select-label">不使用预设</span><span class="model-select-chevron">▾</span>
+<span id="preset-select-label">不使用预设</span><span class="model-select-chevron" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
 </button>
 <div id="preset-select-menu" class="toolbar-select-menu" role="listbox" aria-label="预设模板" hidden>
 </div>
@@ -389,7 +399,7 @@
 </span>
                       <span class="toolbar-select-wrap" id="style-select-wrap">
 <button type="button" id="style-select-trigger" class="toolbar-select-trigger" aria-label="选择画面风格" aria-haspopup="listbox" aria-expanded="false">
-<span id="style-select-label">自然写实</span><span class="model-select-chevron">▾</span>
+<span id="style-select-label">自然写实</span><span class="model-select-chevron" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
 </button>
 <div id="style-select-menu" class="toolbar-select-menu" role="listbox" aria-label="画面风格" hidden>
 </div>
@@ -402,7 +412,7 @@
 <button id="mask-brush-trigger" class="mask-brush-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mask-brush-popover">
 <span>画笔</span>
 <b id="mask-brush-summary">36 px</b>
-<i aria-hidden="true">⌄</i>
+<i aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></i>
 </button>
 <div class="mask-brush-popover" id="mask-brush-popover" role="dialog" aria-label="画笔大小" hidden>
 <div><span>画笔大小</span><output id="mask-brush-value">36 px</output></div>
@@ -410,13 +420,13 @@
 <div class="mask-brush-bounds" aria-hidden="true"><span>8 px</span><span>120 px</span></div>
 </div>
 </div>
-<button id="mask-clear" class="mask-clear-button" type="button" disabled><span aria-hidden="true">↺</span>清除</button>
-<button id="mask-focus-trigger" class="mask-focus-trigger" type="button" disabled><span aria-hidden="true">⛶</span>放大精修</button>
+<button id="mask-clear" class="mask-clear-button" type="button" disabled><span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#refresh"></use></svg></span>清除</button>
+<button id="mask-focus-trigger" class="mask-focus-trigger" type="button" disabled><span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#fit"></use></svg></span>放大精修</button>
 </div>
                       <div id="short-drama-controls" hidden>
                         <span class="toolbar-select-wrap drama-session-select">
                           <select class="toolbar-select-trigger" id="short-drama-sessions" aria-label="短剧会话"><option value="">新对话</option></select>
-                          <span class="model-select-chevron" aria-hidden="true">▾</span>
+                          <span class="model-select-chevron" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#chevron-down"></use></svg></span>
                         </span>
                         <button class="toolbar-history-button" id="short-drama-new" type="button" title="新建对话" aria-label="新建对话">新建对话</button>
                         <label for="short-drama-auto-execute" title="本条消息允许提交任务并消耗额度"><input id="short-drama-auto-execute" type="checkbox" />允许生成</label>
@@ -433,12 +443,12 @@
                     </div>
                     <div class="prompt-actions">
                       <button class="toolbar-history-button" id="history-trigger-button" type="button" aria-label="查看已生成记录" aria-expanded="false" aria-controls="history-panel">
-<span aria-hidden="true">◷</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#history"></use></svg></span>
 </button>
                       <button class="button button-primary generate-button" id="generate-button" type="submit">
 <span class="button-label">生成</span>
 <span class="generate-credit-cost" id="generate-credit-cost" aria-label="本次生成预计消耗 8 额度">
-<span aria-hidden="true">✦</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#spark"></use></svg></span>
 <b>8</b>
 </span>
 </button>
@@ -451,14 +461,14 @@
 <div class="image-tool-grid">
 <label class="upload-drop" for="source-image">
 <input id="source-image" type="file" accept="image/png,image/jpeg,image/webp" />
-<span aria-hidden="true">＋</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></span>
 <b id="source-action">选择需要处理的图片</b>
 <small id="source-file-help">PNG、JPG、WebP · 最大 15MB</small>
 </label>
 <div class="source-upload-surface video-workflow-source-panel" id="video-workflow-source-panel" hidden>
   <label class="upload-drop" for="video-workflow-source">
     <input id="video-workflow-source" type="file" accept="video/mp4,video/webm,video/quicktime" />
-    <span aria-hidden="true">↑</span>
+    <span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#upload"></use></svg></span>
     <b>选择源视频</b>
     <small>MP4、WebM、MOV</small>
   </label>
@@ -495,13 +505,11 @@
 </div>
 <canvas id="mask-canvas" aria-label="重绘区域画笔画布">
 </canvas>
-<p>着色区域会被重新生成，其余画面保持不变。</p>
 </section>
 <section class="camera-editor" id="camera-editor" hidden aria-label="多角度相机控制台">
 <div class="camera-stage-heading">
 <div>
 <b>拖动黑色摄像机调整机位</b>
-<span>正面为图片朝向的一侧；滚轮调整距离，方向键微调</span>
 </div>
 <output id="camera-prompt">front-right three-quarter view, elevated shot, medium shot</output>
 </div>
@@ -549,14 +557,13 @@
 <header class="mask-focus-header">
 <div class="mask-focus-heading">
 <b id="mask-focus-title">放大精修</b>
-<span>滚动查看细节，按住 Ctrl 滚轮缩放，涂抹会同步保留到原图。</span>
 </div>
 <div class="mask-focus-header-tools">
 <div class="mask-focus-toolbar-host" id="mask-focus-toolbar-host"></div>
 <div class="mask-zoom-controls" aria-label="画布缩放">
-<button id="mask-zoom-out" type="button" aria-label="缩小画布">−</button>
+<button id="mask-zoom-out" type="button" aria-label="缩小画布"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#minus"></use></svg></button>
 <output id="mask-zoom-value" aria-live="polite">100%</output>
-<button id="mask-zoom-in" type="button" aria-label="放大画布">＋</button>
+<button id="mask-zoom-in" type="button" aria-label="放大画布"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></button>
 <button id="mask-zoom-fit" type="button">适应窗口</button>
 </div>
 <button class="mask-focus-done" id="mask-focus-done" type="button">完成精修</button>
@@ -570,34 +577,31 @@
               <section class="results-panel" aria-labelledby="results-title">
 <div class="results-bar">
 <div>
-<p>本次创作</p>
-<h2 id="results-title">等待你的描述</h2>
+<h2 id="results-title">结果</h2>
 </div>
 <span class="status-pill" id="status-pill" data-state="idle">准备就绪</span>
 </div>
 <div class="result-stage" id="result-stage" aria-live="polite" aria-busy="false">
 <div class="result-placeholder" id="result-placeholder">
-<span class="spark" aria-hidden="true">✦</span>
-<strong>一个清晰的描述，正在等待发生。</strong>
-<p>生成的图像会显示在这里，并可直接下载。</p>
+<svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#image"></use></svg>
+<strong>暂无结果</strong>
 </div>
 <div class="result-grid" id="result-grid" hidden>
 </div>
 <div id="short-drama-tool-view" hidden>
-<button id="short-drama-refresh-jobs" type="button" title="刷新任务" aria-label="刷新任务">↻</button>
-<p id="short-drama-empty">把故事想法写下来，先从剧本和分镜开始。</p>
+<button id="short-drama-refresh-jobs" type="button" title="刷新任务" aria-label="刷新任务"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#refresh"></use></svg></button>
+<p id="short-drama-empty">暂无对话</p>
 <div id="short-drama-messages" role="log" aria-label="短剧对话与任务记录" aria-live="polite" aria-relevant="additions"></div>
 <p id="short-drama-status" role="status" hidden></p>
 <a id="short-drama-login" href="profile.html" hidden>前往个人中心登录</a>
 </div>
 <div id="video-workflow-tool-view" hidden>
-  <button id="video-workflow-refresh" type="button" title="刷新任务状态" aria-label="刷新任务状态">↻</button>
+  <button id="video-workflow-refresh" type="button" title="刷新任务状态" aria-label="刷新任务状态"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#refresh"></use></svg></button>
   <div id="video-workflow-content" aria-live="polite"></div>
   <p id="video-workflow-status" role="status" hidden></p>
   <a id="video-workflow-login" href="profile.html" hidden>前往个人中心登录</a>
 </div>
 </div>
-<p class="result-tip" id="result-tip">先确定创作目标，再补充场景、主体、构图、光色、材质和约束。</p>
 </section>
               <aside class="history-panel" id="history-panel" tabindex="-1" aria-labelledby="history-title" aria-hidden="true">
 <div class="history-heading">
@@ -606,15 +610,14 @@
 </div>
 <div class="history-actions">
 <button id="clear-history-button" type="button" hidden>清空</button>
-<button class="history-drawer-close" id="history-drawer-close" type="button" aria-label="关闭生成记录">×</button>
+<button class="history-drawer-close" id="history-drawer-close" type="button" aria-label="关闭生成记录"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
 <button class="history-toggle" id="history-toggle" type="button" aria-expanded="true" aria-controls="history-list" title="收起历史记录">收起</button>
 </div>
 </div>
-<p class="history-privacy">保留本浏览器生成过的全部图片链接、时间与提示词；滚动列表可查看全部记录。</p>
 <div class="history-list" id="history-list" aria-live="polite">
 </div>
 <div class="history-empty" id="history-empty">
-<span aria-hidden="true">◌</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#image"></use></svg></span>
 <strong>暂无记录</strong>
 <p>生成图片后会显示在这里</p>
 </div>
@@ -629,60 +632,56 @@
 <button type="button" role="tab" aria-selected="false" aria-controls="discovery-models" data-discovery-tab="models">模型说明</button>
 </div>
 <label class="discovery-search" id="discovery-search-wrap" hidden>
-<span aria-hidden="true">⌕</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg></span>
 <input id="discovery-search" type="search" maxlength="40" placeholder="搜索风格、场景或作品" />
 </label>
 </div>
               <section class="discovery-panel" id="discovery-skills" role="tabpanel" data-discovery-panel="skills">
                 <div class="skill-filters discovery-subnav" role="group" aria-label="技能分类">
-<button class="active" type="button" data-skill-filter="all">全部</button>
-<button type="button" data-skill-filter="commercial">商业</button>
-<button type="button" data-skill-filter="portrait">人像</button>
-<button type="button" data-skill-filter="character">角色</button>
-<button type="button" data-skill-filter="design">设计</button>
-<button type="button" data-skill-filter="scene">场景</button>
-<button type="button" data-skill-filter="edit">编辑</button>
+<button class="active" type="button" data-skill-filter="all" aria-pressed="true">全部</button>
+<button type="button" data-skill-filter="commercial" aria-pressed="false">商业</button>
+<button type="button" data-skill-filter="portrait" aria-pressed="false">人像</button>
+<button type="button" data-skill-filter="character" aria-pressed="false">角色</button>
+<button type="button" data-skill-filter="design" aria-pressed="false">设计</button>
+<button type="button" data-skill-filter="scene" aria-pressed="false">场景</button>
+<button type="button" data-skill-filter="edit" aria-pressed="false">编辑</button>
 </div>
                 <div class="skill-grid" id="skill-grid">
                   <button class="skill-card skill-card-featured" type="button" data-skill-mode="text" data-skill-prompt="高级商业产品摄影，一件质感精致的产品置于极简展台中央，柔和轮廓光与克制的反射，高级品牌广告构图，干净背景，高细节，无文字无水印。">
 <img class="skill-cover" src="/static/showcase/v167/skills/commercial-product.webp" alt="墨绿色香水瓶商业摄影示例" loading="lazy" />
-<span>01</span>
-<i aria-hidden="true">◈</i>
+<i aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#grid"></use></svg></i>
 <div>
 <b>商业产品图</b>
 <small>干净布光 · 品牌质感</small>
 </div>
-<em>开始创作 ↗</em>
+<em>开始创作 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></em>
 </button>
                   <button class="skill-card" type="button" data-skill-mode="text" data-skill-prompt="真人写实人像摄影，自然抓拍感，人物与镜头产生轻微互动，柔和侧光勾勒轮廓，胶片颗粒，层次丰富，细节真实，克制高级的色彩。">
 <img class="skill-cover" src="/static/showcase/v167/skills/editorial-portrait.webp" alt="米白与墨绿色时尚人像示例" loading="lazy" />
-<span>02</span>
-<i aria-hidden="true">◎</i>
+<i aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#user"></use></svg></i>
 <div>
 <b>质感人像</b>
 <small>自然抓拍 · 胶片氛围</small>
 </div>
-<em>使用技能 ↗</em>
+<em>使用模板 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></em>
 </button>
                   <button class="skill-card" type="button" data-skill-mode="multiangle">
 <img class="skill-cover" src="/static/showcase/v167/skills/multi-angle.webp" alt="环形摄影棚多角度拍摄示例" loading="lazy" />
-<span>03</span>
-<i aria-hidden="true">◒</i>
+<i aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#fit"></use></svg></i>
 <div>
 <b>多角度设定</b>
 <small>调节机位 · 保持主体一致</small>
 </div>
-<em>使用技能 ↗</em>
+<em>使用模板 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></em>
 </button>
                   <button class="skill-card" type="button" data-skill-mode="redraw">
 <img class="skill-cover" src="/static/showcase/v167/skills/local-redraw.webp" alt="人物肖像局部画笔重绘示例" loading="lazy" />
-<span>04</span>
-<i aria-hidden="true">◌</i>
+<i aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#image"></use></svg></i>
 <div>
 <b>局部重绘</b>
 <small>画笔蒙版 · 精准修改</small>
 </div>
-<em>使用技能 ↗</em>
+<em>使用模板 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></em>
 </button>
                 </div>
               </section>
@@ -690,7 +689,7 @@
                 <div class="plaza-search-tools discovery-subnav" aria-label="作品标签筛选">
                   <div class="plaza-tag-bar" id="plaza-tag-bar">
 </div>
-                  <div class="plaza-community-actions"><p id="plaza-search-status" role="status" aria-live="polite">为你推荐多种风格的作品</p><button id="plaza-open-history" type="button">发布我的作品 <span aria-hidden="true">↗</span></button></div>
+                  <div class="plaza-community-actions"><p id="plaza-search-status" role="status" aria-live="polite">为你推荐多种风格的作品</p><button id="plaza-open-history" type="button">发布我的作品 <span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></span></button></div>
                 </div>
                 <div class="plaza-preview-grid" aria-label="共绘作品">
                   <button class="plaza-preview-card plaza-ratio-4-3" type="button" data-plaza-media="image" data-plaza-model="GPT Image 2" data-gallery-tags="东方 静物 商业" data-plaza-user="清川" data-plaza-likes="326" data-plaza-prompt="东方静物摄影，青瓷茶壶与两只茶杯置于浅色石台，深绿松枝投下柔和影子，清晨自然侧光，真实釉面与克制留白，主体完整，无文字水印。">
@@ -842,7 +841,7 @@
 <li>支持中文在内的多语言文字与多种字体</li>
 <li>最多一次生成六张，最高输出 2048 × 2048</li>
 </ul>
-<a href="https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 ↗</a>
+<a href="https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></a>
 </div>
 <img src="/static/showcase/v167/skills/model-qwen.webp" alt="Qwen 图像模型适用的中文排版与视觉设计示例" loading="lazy" />
 </article>
@@ -880,7 +879,7 @@
 <li>支持角色连贯、风格统一的分镜和成套设计</li>
 <li>适合商业摄影、电商视觉和高完成度创意探索</li>
 </ul>
-<a href="https://www.volcengine.com/docs/82379/1829186" target="_blank" rel="noopener noreferrer">查看火山引擎官方说明 ↗</a>
+<a href="https://www.volcengine.com/docs/82379/1829186" target="_blank" rel="noopener noreferrer">查看火山引擎官方说明 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></a>
 </div>
 <img src="/static/showcase/v167/skills/model-seedream.webp" alt="Seedream 图像模型适用的商业视觉和组图示例" loading="lazy" />
 </article>
@@ -918,7 +917,7 @@
 <li>最多九张参考图，适合多主体融合与结构化编辑</li>
 <li>可生成角色一致的连续画面，衔接分镜与视频工作流</li>
 </ul>
-<a href="https://help.aliyun.com/zh/model-studio/image-model/" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 ↗</a>
+<a href="https://help.aliyun.com/zh/model-studio/image-model/" target="_blank" rel="noopener noreferrer">查看阿里云官方说明 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></a>
 </div>
 <img src="/static/showcase/v167/skills/model-wan.webp" alt="Wan 模型适用的连续分镜与高分辨率画面示例" loading="lazy" />
 </article>
@@ -949,7 +948,7 @@
             </section>
             <section class="capability-tool-workspace" id="capability-tool-workspace" aria-labelledby="capability-workspace-title" hidden>
               <header class="capability-workspace-head">
-<button id="capability-workspace-back" type="button" aria-label="返回主页面">←</button>
+<button id="capability-workspace-back" type="button" aria-label="返回工作台"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-left"></use></svg></button>
 <div>
 <p id="capability-workspace-eyebrow">
 </p>
@@ -1045,7 +1044,7 @@
                       </div>
                     </div>
                     <div id="local-tool-empty" role="button" tabindex="0" aria-label="选择图片">
-<span aria-hidden="true">＋</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></span>
 <b>点击或拖入图片</b>
 <div class="local-editor-source-actions">
 <button id="local-editor-open-local" type="button">本地图片</button>
@@ -1058,7 +1057,7 @@
 <div>
 <b id="local-editor-tool-title">尺寸</b>
 </div>
-<button id="local-editor-inspector-close" type="button" aria-label="收起设置">×</button>
+<button id="local-editor-inspector-close" type="button" aria-label="收起设置"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
 </div>
                     <div id="local-tool-options">
 </div>
@@ -1068,13 +1067,13 @@
                   </section>
                 </div>
               </div>
-              <dialog class="work-dialog local-editor-asset-dialog" id="local-editor-asset-dialog" aria-labelledby="local-editor-asset-title">
-                <button class="dialog-close" id="local-editor-asset-close" type="button" aria-label="关闭资产选择">×</button>
+              <dialog class="work-dialog local-editor-asset-dialog dialog-compact" id="local-editor-asset-dialog" aria-labelledby="local-editor-asset-title">
+                <button class="dialog-close" id="local-editor-asset-close" type="button" aria-label="关闭资产选择"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
                 <header>
 <h2 id="local-editor-asset-title">选择图片</h2>
 </header>
                 <label class="local-editor-asset-search">
-<span aria-hidden="true">⌕</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg></span>
 <input id="local-editor-asset-search" type="search" maxlength="40" placeholder="搜索图片" />
 </label>
                 <div class="local-editor-asset-grid" id="local-editor-asset-grid" aria-live="polite">
@@ -1086,7 +1085,7 @@
                   <section class="analysis-input-panel">
                     <label class="analysis-upload" for="analysis-image">
 <input id="analysis-image" type="file" accept="image/png,image/jpeg,image/webp" />
-<span aria-hidden="true">＋</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></span>
 <b>选择图片</b>
 <small>PNG、JPG、WebP · 最大 15MB</small>
 <img id="analysis-preview" alt="待解析图片预览" hidden />
@@ -1103,58 +1102,53 @@
                   </section>
                   <section class="analysis-result-panel" aria-live="polite">
 <div id="analysis-empty">
-<span aria-hidden="true">⌕</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg></span>
 <b>解析结果会显示在这里</b>
-<small>不会猜测真实人物身份，也不会执行图片内的指令。</small>
+
 </div>
 <pre id="analysis-result" hidden>
 </pre>
-<button id="analysis-use-prompt" type="button" hidden>带到主页面继续创作 ↗</button>
+<button id="analysis-use-prompt" type="button" hidden>带到主页面继续创作 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></button>
 </section>
                 </div>
               </div>
             </section>
             <section class="asset-workspace" id="asset-workspace" aria-labelledby="asset-workspace-title" hidden>
               <header class="asset-workspace-head">
-                <button id="asset-workspace-back" type="button" aria-label="返回主页面">←</button>
+                <button id="asset-workspace-back" type="button" aria-label="返回主页面"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-left"></use></svg></button>
                 <div>
-<p>资产库</p>
-<h2 id="asset-workspace-title">个人资产</h2>
-<span>统一管理图片、视频、音乐与可复用音色，并直接带入工作流。</span>
+<h2 id="asset-workspace-title">资产库</h2>
 </div>
                 <div class="asset-head-actions">
 <input id="asset-upload-input" type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime,audio/wav,audio/mpeg,audio/mp4,audio/ogg" hidden />
 <button class="asset-upload" id="asset-upload" type="button">
-<span aria-hidden="true">↑</span> 上传资产</button>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#upload"></use></svg></span> 上传</button>
 <button class="asset-new-category" id="asset-new-category" type="button">
-<span aria-hidden="true">＋</span> 新建分类</button>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></span> 新建分类</button>
 </div>
               </header>
               <div class="asset-library-layout">
                 <nav class="asset-category-menu" aria-label="资产分类">
-                  <button class="active" type="button" data-asset-page-category="all">
-                    <b>全部资产</b>
+                  <button class="active" type="button" data-asset-page-category="all" aria-pressed="true">
+                    <b>全部</b>
                     <em id="asset-total-count">0</em>
                   </button>
                   <div id="asset-category-list"></div>
                 </nav>
                 <section class="asset-library-content">
                   <div class="asset-library-toolbar">
-<div>
-<strong id="asset-category-title">全部资产</strong>
-<span id="asset-category-summary">正在读取资产…</span>
-</div>
+<p id="asset-category-summary" role="status">正在读取资产…</p>
 <label>
-<span aria-hidden="true">⌕</span>
-<input id="asset-search" type="search" maxlength="40" placeholder="搜索资产名称或提示词" />
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg></span>
+<input id="asset-search" type="search" maxlength="40" aria-label="搜索资产" placeholder="搜索资产" />
 </label>
 </div>
                   <div class="asset-page-grid" id="asset-page-grid" aria-live="polite">
 </div>
                   <div class="asset-page-empty" id="asset-page-empty" hidden>
-<span aria-hidden="true">◇</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#folder"></use></svg></span>
 <strong>这个分类还是空的</strong>
-<p>上传媒体或把生成结果加入资产，即可在工作流中长期复用。</p>
+
 </div>
                 </section>
               </div>
@@ -1163,9 +1157,9 @@
               <div class="workflow-layout">
                 <div class="workflow-canvas-shell" id="workflow-canvas-shell" tabindex="0" aria-label="无界、可平移缩放的工作流画布">
                   <input id="workflow-import-file" type="file" accept="application/json,.json" hidden />
-                  <div class="workflow-canvas-context"><b>工作流幕布</b><span id="workflow-draft-status" role="status">尚未保存 · 需手动保存，仅限本机浏览器</span></div>
+                  <div class="workflow-canvas-context"><span id="workflow-draft-status" role="status">尚未保存</span></div>
                   <div class="workflow-actions workflow-floating-actions">
-<button id="workflow-add-node" type="button" aria-controls="workflow-node-picker">添加节点</button>
+<button id="workflow-add-node" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="workflow-node-picker" aria-keyshortcuts="Shift+A" title="添加节点（Shift+A）">添加节点</button>
 <button id="workflow-new" type="button" title="新建空白工作流" aria-label="新建空白工作流">新建</button>
 <button id="workflow-import" type="button" title="导入工作流" aria-label="导入工作流">导入</button>
 <button id="workflow-fit" type="button" title="适配全部节点" aria-label="适配全部节点">适配</button>
@@ -1179,7 +1173,7 @@
 <option value="hidden">隐藏</option>
 </select>
 </label>
-<button class="workflow-run" id="workflow-run" type="button">运行 <span aria-hidden="true">✦</span>
+<button class="workflow-run" id="workflow-run" type="button">运行 <span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#spark"></use></svg></span>
 </button>
 </div>
                   <button class="workflow-edge-delete" id="workflow-edge-delete" type="button" hidden>删除连线</button>
@@ -1216,7 +1210,7 @@
 </button>
 </nav>
                   <aside class="scenario-library workflow-resource-drawer" id="workflow-resource-drawer" aria-label="工作流资源库" aria-hidden="true" hidden>
-                    <button class="workflow-resource-close" id="workflow-resource-close" type="button" aria-label="关闭资源面板">×</button>
+                    <button class="workflow-resource-close" id="workflow-resource-close" type="button" aria-label="关闭资源面板"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
                   <section class="workflow-library-panel" data-workflow-library-panel="scenes">
                     <header>
 <div>
@@ -1240,7 +1234,7 @@
 <div>
 <h3>创作者工作流</h3>
 </div>
-<button id="shared-workflow-refresh" type="button" aria-label="刷新共享工作流">↻</button>
+<button id="shared-workflow-refresh" type="button" aria-label="刷新共享工作流"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#refresh"></use></svg></button>
 </header>
                     <div class="shared-workflow-scopes" role="tablist" aria-label="工作流来源">
 <button class="active" type="button" data-workflow-scope="community">社区</button>
@@ -1255,7 +1249,7 @@
 <div>
 <h3>个人资产</h3>
 </div>
-<button id="workflow-assets-refresh" type="button" aria-label="刷新个人资产">↻</button>
+<button id="workflow-assets-refresh" type="button" aria-label="刷新个人资产"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#refresh"></use></svg></button>
 </header>
                     <div class="workflow-asset-filters" id="workflow-asset-filters" role="group" aria-label="个人资产分类">
 <button class="active" type="button" data-asset-filter="all">全部</button>
@@ -1266,10 +1260,10 @@
                   </section>
                   </aside>
                   <div class="workflow-canvas-toolbar">
-<button id="workflow-zoom-out" type="button" aria-label="缩小画布">−</button>
+<button id="workflow-hand-tool" type="button" aria-label="抓手工具" aria-pressed="false" aria-keyshortcuts="H V" title="抓手 H / 选择 V"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12V6a1.5 1.5 0 0 1 3 0v5-7a1.5 1.5 0 0 1 3 0v7-5a1.5 1.5 0 0 1 3 0v6-3a1.5 1.5 0 0 1 3 0v6a6 6 0 0 1-6 6h-1.5a5 5 0 0 1-3.9-1.9L5 14.5a1.6 1.6 0 0 1 2.4-2.1l1.6 1.5"/></svg></button>
+<button id="workflow-zoom-out" type="button" aria-label="缩小画布"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#minus"></use></svg></button>
 <output id="workflow-zoom-value">100%</output>
-<button id="workflow-zoom-in" type="button" aria-label="放大画布">＋</button>
-<span>拖动空白移动幕布 · 从输出点连到输入点 · 双击添加节点</span>
+<button id="workflow-zoom-in" type="button" aria-label="放大画布"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></button>
 </div>
                   <div class="workflow-viewport" id="workflow-viewport">
                     <div class="workflow-board" id="workflow-board">
@@ -1390,24 +1384,69 @@
                       </article>
                     </div>
                   </div>
-                  <div class="workflow-node-picker" id="workflow-node-picker" role="dialog" aria-modal="false" aria-labelledby="workflow-node-picker-title" hidden>
+                  <div class="workflow-marquee" id="workflow-marquee" aria-hidden="true" hidden></div>
+                  <svg class="workflow-snap-guides" id="workflow-snap-guides" aria-hidden="true" focusable="false" hidden>
+                    <line data-snap-guide="x" hidden></line>
+                    <line data-snap-guide="y" hidden></line>
+                  </svg>
+                  <div class="workflow-edit-bar" id="workflow-edit-bar" role="group" aria-label="画布编辑">
+                    <button id="workflow-undo" type="button" aria-label="撤销" title="撤销" disabled><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5-5 5 5 5M4 10h9a6 6 0 0 1 6 6v3"/></svg></button>
+                    <button id="workflow-redo" type="button" aria-label="重做" title="重做" disabled><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 5 5-5 5m5-5h-9a6 6 0 0 0-6 6v3"/></svg></button>
+                    <button id="workflow-paste-nodes" type="button" aria-label="粘贴节点" title="粘贴节点" disabled><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6H6a1 1 0 0 0-1 1v13h14V7a1 1 0 0 0-1-1h-3"/><rect x="9" y="3" width="6" height="5" rx="1"/></svg></button>
+                    <button id="workflow-minimap-toggle" type="button" aria-label="小地图" title="小地图" aria-expanded="false" aria-controls="workflow-minimap"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><rect x="11" y="10" width="6" height="5" rx="1"/><path d="M7 9h1m-1 5h1"/></svg></button>
+                    <div class="workflow-selection-actions" id="workflow-selection-actions" hidden>
+                      <output id="workflow-selection-count" aria-live="polite"></output>
+                      <button id="workflow-copy-nodes" type="button" aria-label="复制节点" title="复制节点"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
+                      <button id="workflow-duplicate-nodes" type="button" aria-label="复制副本" title="复制副本"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2m3-2h6m-3-3v6"/></svg></button>
+                      <button id="workflow-fit-selection" type="button" aria-label="聚焦选中节点" title="聚焦选中节点"><svg class="ui-icon" aria-hidden="true"><use href="/static/ui/icons-v1.svg#fit"></use></svg></button>
+                      <button id="workflow-arrange-toggle" type="button" aria-label="对齐与分布" title="对齐与分布" aria-expanded="false" aria-controls="workflow-arrange-panel" hidden><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16m4-14h10v4H8zm0 8h7v4H8z"/></svg></button>
+                      <button id="workflow-delete-nodes" type="button" aria-label="删除选中节点" title="删除选中节点"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16m-14 0 1 13h10l1-13M9 7V4h6v3m-5 3v7m4-7v7"/></svg></button>
+                    </div>
+                    <div class="workflow-arrange-panel" id="workflow-arrange-panel" role="group" aria-label="对齐与分布" hidden>
+                      <div class="workflow-arrange-grid" role="group" aria-label="对齐">
+                        <button type="button" data-workflow-arrange="left">左对齐</button>
+                        <button type="button" data-workflow-arrange="center">水平居中</button>
+                        <button type="button" data-workflow-arrange="right">右对齐</button>
+                        <button type="button" data-workflow-arrange="top">顶端对齐</button>
+                        <button type="button" data-workflow-arrange="middle">垂直居中</button>
+                        <button type="button" data-workflow-arrange="bottom">底端对齐</button>
+                      </div>
+                      <div class="workflow-arrange-grid workflow-distribute-actions" role="group" aria-label="等距分布">
+                        <button type="button" data-workflow-arrange="space-x">水平等距</button>
+                        <button type="button" data-workflow-arrange="space-y">垂直等距</button>
+                      </div>
+                    </div>
+                    <div class="workflow-minimap" id="workflow-minimap" hidden>
+                      <canvas id="workflow-minimap-canvas" width="180" height="112" tabindex="0" aria-label="小地图，使用方向键平移"></canvas>
+                      <div class="workflow-minimap-viewport" id="workflow-minimap-viewport" aria-hidden="true" hidden></div>
+                    </div>
+                  </div>
+                  <div class="workflow-node-picker" id="workflow-node-picker" role="dialog" aria-labelledby="workflow-node-picker-title" tabindex="-1" hidden>
                     <header>
-<div>
-<span>节点库</span>
-<h3 id="workflow-node-picker-title">添加工作流节点</h3>
-</div>
-<button id="workflow-node-picker-close" type="button" aria-label="关闭节点选择器"><svg class="workflow-svg-icon workflow-svg-icon-close" data-workflow-icon="close" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
-</header>
-                    <nav class="workflow-node-category-tabs" id="workflow-node-category-tabs" aria-label="节点分类" role="tablist">
+                      <h3 id="workflow-node-picker-title">添加节点</h3>
+                      <button id="workflow-node-picker-close" type="button" aria-label="关闭节点选择器"><svg class="ui-icon" data-workflow-icon="close" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
+                    </header>
+                    <label class="workflow-node-search">
+                      <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#search"></use></svg>
+                      <input id="workflow-node-search" type="search" placeholder="搜索节点" aria-label="搜索节点" autocomplete="off" />
+                    </label>
+                    <nav class="workflow-node-category-tabs" id="workflow-node-category-tabs" aria-label="节点分类">
 </nav>
                     <div class="workflow-node-groups" id="workflow-node-groups">
 </div>
-                    <p>按 <kbd>Esc</kbd> 关闭 · 节点会加入当前幕布</p>
                   </div>
                   <section class="workflow-node-editor" id="workflow-node-editor" role="dialog" aria-modal="false" aria-label="节点提示词与参数" hidden>
-                    <button class="workflow-node-editor-expand" id="workflow-node-editor-expand" type="button" aria-label="全屏编辑" aria-expanded="false" title="全屏编辑">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" /></svg>
-                    </button>
+                    <header class="workflow-node-editor-header">
+                      <strong id="workflow-node-editor-title">节点设置</strong>
+                      <div>
+                        <button class="workflow-node-editor-expand" id="workflow-node-editor-expand" type="button" aria-label="全屏编辑" aria-expanded="false" title="全屏编辑">
+                          <svg class="ui-icon" aria-hidden="true"><use href="/static/ui/icons-v1.svg#fit"></use></svg>
+                        </button>
+                        <button class="workflow-node-editor-close" id="workflow-node-editor-close" type="button" aria-label="关闭节点编辑" title="关闭节点编辑">
+                          <svg class="ui-icon" aria-hidden="true"><use href="/static/ui/icons-v1.svg#close"></use></svg>
+                        </button>
+                      </div>
+                    </header>
                     <label class="workflow-node-editor-prompt">
                       <span id="workflow-node-editor-prompt-label">提示词 / 处理要求</span>
                       <textarea id="workflow-node-editor-prompt" maxlength="4000" placeholder="描述希望生成或处理的内容"></textarea>
@@ -1425,8 +1464,8 @@
         </div>
       </section>
     </main>
-    <dialog class="work-dialog information-dialog" id="information-dialog" aria-labelledby="information-dialog-title">
-      <button class="dialog-close" id="information-dialog-close" type="button" aria-label="关闭内容面板">×</button>
+    <dialog class="work-dialog information-dialog dialog-compact" id="information-dialog" aria-labelledby="information-dialog-title">
+      <button class="dialog-close" id="information-dialog-close" type="button" aria-label="关闭内容面板"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <header>
 <p id="information-dialog-eyebrow">说明</p>
 <h2 id="information-dialog-title">创作指南</h2>
@@ -1436,19 +1475,17 @@
       <div class="information-dialog-body" id="information-dialog-body">
 </div>
     </dialog>
-    <dialog class="work-dialog workflow-share-dialog" id="workflow-share-dialog" aria-labelledby="workflow-share-dialog-title">
-      <button class="dialog-close" id="workflow-share-dialog-close" type="button" aria-label="关闭保存与分享">×</button>
+    <dialog class="work-dialog workflow-share-dialog dialog-compact" id="workflow-share-dialog" aria-labelledby="workflow-share-dialog-title">
+      <button class="dialog-close" id="workflow-share-dialog-close" type="button" aria-label="关闭保存与分享"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <div class="workflow-share-copy">
-<p>工作流</p>
 <h2 id="workflow-share-dialog-title">保存与分享工作流</h2>
-<span>保存会更新当前草稿，另存副本会创建独立版本。草稿仅在当前浏览器保存，不跨设备同步。发布会移除私人素材引用，复用者需重新选择素材。</span>
 </div>
       <label>工作流名称<input id="workflow-share-name" maxlength="40" value="我的图像工作流" />
 </label>
-      <label>一句话说明<textarea id="workflow-share-description" maxlength="120" placeholder="例如：适合护肤品白底主图，强调通透材质和自然接触影。">
+      <label>一句话说明<textarea id="workflow-share-description" maxlength="120">
 </textarea>
 </label>
-      <label>发现标签<input id="workflow-share-tags" maxlength="80" placeholder="例如：电商、人像、批量出图（最多 8 个）" />
+      <label>标签（最多 8 个）<input id="workflow-share-tags" maxlength="80" />
 </label>
       <div class="workflow-share-actions">
 <button id="workflow-save-local" type="button">保存到本机</button>
@@ -1467,7 +1504,7 @@
     <div class="workflow-toast" id="workflow-toast" role="status" aria-live="polite" hidden>
 </div>
     <dialog class="work-dialog history-dialog" id="history-dialog" aria-labelledby="history-dialog-title">
-      <button class="dialog-close" id="history-dialog-close" type="button" aria-label="关闭作品详情">×</button>
+      <button class="dialog-close" id="history-dialog-close" type="button" aria-label="关闭作品详情"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <img id="history-dialog-image" alt="已生成图像大图" />
       <div>
 <p id="history-dialog-time">
@@ -1479,24 +1516,23 @@
 <div class="history-dialog-actions">
 <button id="history-dialog-save-asset" type="button">加入资产</button>
 <button id="history-dialog-publish" type="button">发布到广场</button>
-<a id="history-dialog-use" href="studio.html">继续创作 ↗</a>
+<a id="history-dialog-use" href="studio.html">继续创作 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#arrow-up-right"></use></svg></a>
 </div>
 </div>
     </dialog>
-    <dialog class="work-dialog plaza-publish-dialog" id="plaza-publish-dialog" aria-labelledby="plaza-publish-title">
-      <button class="dialog-close" id="plaza-publish-close" type="button" aria-label="关闭发布作品">×</button>
+    <dialog class="work-dialog plaza-publish-dialog dialog-compact" id="plaza-publish-dialog" aria-labelledby="plaza-publish-title">
+      <button class="dialog-close" id="plaza-publish-close" type="button" aria-label="关闭发布作品"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <div class="workflow-share-copy">
-<p>共绘广场</p>
 <h2 id="plaza-publish-title">发布我的作品</h2>
 <span>作品会复制为公开版本，原始私有记录保持不变。</span>
 </div>
       <label>作品标题<input id="plaza-publish-name" maxlength="40" value="我的作品" /></label>
-      <label>发现标签<input id="plaza-publish-tags" maxlength="80" placeholder="例如：电影、人物、氛围（最多 8 个）" /></label>
+      <label>标签（最多 8 个）<input id="plaza-publish-tags" maxlength="80" /></label>
       <div class="workflow-share-actions"><button class="primary" id="plaza-publish-submit" type="button">发布到广场</button></div>
       <p class="workflow-share-status" id="plaza-publish-status" role="status"></p>
     </dialog>
     <dialog class="work-dialog asset-save-dialog" id="asset-save-dialog" aria-labelledby="asset-save-title">
-      <button class="dialog-close" id="asset-save-close" type="button" aria-label="关闭加入资产">×</button>
+      <button class="dialog-close" id="asset-save-close" type="button" aria-label="关闭加入资产"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <div class="asset-save-preview">
 <img id="asset-save-preview" alt="准备加入资产的图片" />
 <video id="asset-save-video" controls hidden>
@@ -1507,10 +1543,8 @@
 </span>
 </div>
       <form id="asset-save-form">
-        <p>加入资产</p>
-<h2 id="asset-save-title">保存到个人资产</h2>
-<span>命名并选择分类；音频还可标记为音色或音乐。</span>
-        <label>资产名称<input id="asset-save-name" name="name" maxlength="40" required placeholder="例如：女主角 · 雨夜造型" />
+        <h2 id="asset-save-title">保存到个人资产</h2>
+        <label>资产名称<input id="asset-save-name" name="name" maxlength="40" required />
 </label>
         <label>资产分类<select id="asset-save-category" name="category_id" required>
 </select>
@@ -1521,7 +1555,7 @@
 <option value="music">背景音乐</option>
 </select>
 </label>
-        <button class="asset-dialog-category" id="asset-dialog-new-category" type="button">＋ 新建分类</button>
+        <button class="asset-dialog-category" id="asset-dialog-new-category" type="button"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg> 新建分类</button>
         <p class="asset-save-status" id="asset-save-status" role="status">
 </p>
         <div>
@@ -1530,12 +1564,11 @@
 </div>
       </form>
     </dialog>
-    <dialog class="work-dialog asset-category-dialog" id="asset-category-dialog" aria-labelledby="asset-category-dialog-title">
-      <button class="dialog-close" id="asset-category-close" type="button" aria-label="关闭新建分类">×</button>
+    <dialog class="work-dialog asset-category-dialog dialog-compact" id="asset-category-dialog" aria-labelledby="asset-category-dialog-title">
+      <button class="dialog-close" id="asset-category-close" type="button" aria-label="关闭新建分类"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <form id="asset-category-form">
-<p>新分类</p>
 <h2 id="asset-category-dialog-title">新建资产分类</h2>
-<label>分类名称<input id="asset-category-name" maxlength="20" required placeholder="例如：世界观设定" />
+<label>分类名称<input id="asset-category-name" maxlength="20" required />
 </label>
 <p id="asset-category-status" role="status">
 </p>
@@ -1546,7 +1579,7 @@
 </form>
     </dialog>
     <dialog class="plaza-detail-dialog" id="plaza-detail-dialog" aria-labelledby="plaza-detail-title">
-      <button class="dialog-close" id="plaza-detail-close" type="button" aria-label="关闭作品详情">×</button>
+      <button class="dialog-close" id="plaza-detail-close" type="button" aria-label="关闭作品详情"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <div class="plaza-detail-image">
 <img id="plaza-detail-image" alt="共绘广场作品大图" />
 <video id="plaza-detail-video" controls playsinline preload="metadata" hidden></video>
@@ -1568,7 +1601,7 @@
 </blockquote>
         <div class="plaza-detail-actions">
 <button id="plaza-detail-like" type="button" aria-pressed="false">
-<span aria-hidden="true">♡</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#heart"></use></svg></span>
 <b id="plaza-detail-likes">0</b>
 </button>
 <button class="primary" id="plaza-detail-use" type="button">用这个灵感创作</button>
@@ -1576,7 +1609,7 @@
       </div>
     </dialog>
     <dialog class="workflow-community-dialog" id="workflow-community-dialog" aria-labelledby="workflow-community-title">
-      <button class="dialog-close" id="workflow-community-close" type="button" aria-label="关闭工作流详情">×</button>
+      <button class="dialog-close" id="workflow-community-close" type="button" aria-label="关闭工作流详情"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <div class="workflow-community-preview" id="workflow-community-preview" aria-label="工作流节点预览">
 </div>
       <div class="workflow-community-copy">
@@ -1629,14 +1662,14 @@
 </section>
       </div>
     </dialog>
-    <dialog class="feedback-dialog" id="feedback-dialog" aria-labelledby="feedback-dialog-title">
-      <button class="dialog-close" id="feedback-dialog-close" type="button" aria-label="关闭留言">×</button>
+    <dialog class="feedback-dialog dialog-compact" id="feedback-dialog" aria-labelledby="feedback-dialog-title">
+      <button class="dialog-close" id="feedback-dialog-close" type="button" aria-label="关闭留言"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#close"></use></svg></button>
       <form id="feedback-form">
         <div class="feedback-heading">
-<span aria-hidden="true">✎</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#edit"></use></svg></span>
 <div>
 <h2 id="feedback-dialog-title">告诉我们你的想法</h2>
-<p>问题、建议和想要的能力都会进入产品改进清单。</p>
+
 </div>
 </div>
         <label>留言分类<select id="feedback-category" name="category" required>
@@ -1648,14 +1681,14 @@
 <option value="other">其他</option>
 </select>
 </label>
-        <label>具体内容<textarea id="feedback-message" name="message" rows="7" maxlength="1000" required placeholder="请描述你遇到的情况、期望结果，以及复现步骤。">
+        <label>具体内容<textarea id="feedback-message" name="message" rows="7" maxlength="1000" required>
 </textarea>
 <small>
 <span id="feedback-count">0</span> / 1000</small>
 </label>
         <label class="feedback-screenshot" for="feedback-screenshot">
 <input id="feedback-screenshot" type="file" accept="image/png,image/jpeg,image/webp" />
-<span aria-hidden="true">＋</span>
+<span aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/static/ui/icons-v1.svg#plus"></use></svg></span>
 <div>
 <b id="feedback-screenshot-label">上传截图</b>
 <small>可选，PNG、JPG 或 WebP，最大 5MB</small>
@@ -1672,13 +1705,13 @@
     </dialog>
     <script src="js/catalog.js?v=20260908-member-access-v41" defer>
 </script>
-    <script type="module" src="js/app.js?v=20261021-video-workflows-v5">
+    <script type="module" src="js/app.js?v=20261125-ui-polish-v3">
 </script>
     <script src="js/onboarding-main.js?v=20260908-member-access-v41">
 </script>
     <script src="js/onboarding-workflow.js?v=20260908-member-access-v41">
 </script>
-    <script src="js/onboarding.js?v=20260923-navigation-v45">
+    <script src="js/onboarding.js?v=20261124-forge-v3">
 </script>
   </body>
 </html>

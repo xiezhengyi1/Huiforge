@@ -7,6 +7,8 @@ import hmac
 import io
 import json
 import re
+import secrets
+import smtplib
 import shutil
 import time
 import uuid
@@ -19,6 +21,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from ...catalog.models import *
 from ...core.config import *
+from ...providers.account_email import email_code_digest, email_registration_configured, send_verification_email
 from ..dependencies import *
 from ...runtime import *
 from ..schemas import *
@@ -109,6 +112,59 @@ async def users_login(payload: LoginInput, request: Request) -> dict[str, Any]:
     except ValueError as error:
         raise HTTPException(status_code=401, detail="invalid_credentials") from error
     return {"ok": True, "profile": relay.public_user(user_id)}
+
+@router.get("/api/v1/users/email/status")
+async def users_email_status() -> dict[str, Any]:
+    return {"configured": email_registration_configured()}
+
+
+@router.post("/api/v1/users/email/send")
+async def users_email_send(payload: EmailAddressInput, request: Request) -> dict[str, Any]:
+    if not email_registration_configured():
+        raise HTTPException(status_code=503, detail="email_not_configured")
+    if not relay.check_rate_limit(f"email-send:{client_ip(request)}"):
+        raise HTTPException(status_code=429, detail="rate_limited")
+    device = session_id(request)
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    digest = email_code_digest(device, payload.email, code)
+    if not relay.database.reserve_email_code(device, payload.email, digest, time.time()):
+        raise HTTPException(status_code=429, detail="rate_limited")
+    if not relay.database.contact_exists(payload.email):
+        try:
+            await asyncio.to_thread(send_verification_email, payload.email, code)
+        except (OSError, smtplib.SMTPException, ValueError) as error:
+            relay.database.discard_email_code(device, payload.email, digest)
+            raise HTTPException(status_code=503, detail="email_delivery_unavailable") from error
+    return {"ok": True, "cooldown": 60, "expires_in": 300}
+
+
+@router.post("/api/v1/users/email/register")
+async def users_email_register(payload: EmailRegisterInput, request: Request) -> dict[str, Any]:
+    if not email_registration_configured():
+        raise HTTPException(status_code=503, detail="email_not_configured")
+    if not relay.check_rate_limit(f"register:{client_ip(request)}"):
+        raise HTTPException(status_code=429, detail="rate_limited")
+    device = session_id(request)
+    digest = email_code_digest(device, payload.email, payload.code)
+    if not relay.database.consume_email_code(device, payload.email, digest, time.time()):
+        raise HTTPException(status_code=422, detail="invalid_email_code")
+    try:
+        user_id = relay.register_user(device, payload.email, payload.password, payload.display_name, contact_type="email")
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail="email_exists") from error
+    return {"ok": True, "profile": relay.public_user(user_id)}
+
+
+@router.post("/api/v1/users/email/login")
+async def users_email_login(payload: EmailLoginInput, request: Request) -> dict[str, Any]:
+    if not relay.check_rate_limit(f"login:{client_ip(request)}"):
+        raise HTTPException(status_code=429, detail="rate_limited")
+    try:
+        user_id = relay.login_user(session_id(request), payload.email, payload.password, contact_type="email")
+    except ValueError as error:
+        raise HTTPException(status_code=401, detail="invalid_credentials") from error
+    return {"ok": True, "profile": relay.public_user(user_id)}
+
 
 @router.post("/api/v1/users/logout")
 async def users_logout(request: Request) -> dict[str, bool]:

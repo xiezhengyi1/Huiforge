@@ -134,18 +134,17 @@ AGENT_TOOLS: list[dict[str, Any]] = [
         }, ["prompt","operation","model","upload_ids","resolution","ratio","duration"]),
     },
     {
-        "type": "function", "name": "edit_video", "description": "路由视频编辑、延展、风格化、口型同步、数字人和角色替换。上传编号必须属于当前用户；角色替换必须得到肖像权确认。",
+        "type": "function", "name": "edit_video", "description": "路由视频编辑、延展、风格化、口型同步和数字人。上传编号必须属于当前用户。",
         "strict": True,
         "parameters": _object({
             "prompt": {"type": "string", "minLength": 3, "maxLength": 4000},
-            "operation": {"type": "string", "enum": ["video_edit","video_extension","video_style","lip_sync","character_swap_video","digital_human"]},
-            "model": {"type": "string", "enum": ["wan2.7-videoedit","wan3.0-video","wan3.0-video-prime","wanx2.1-vace-plus","video-style-transform","videoretalk","wan2.2-animate-mix","wan2.2-s2v"]},
+            "operation": {"type": "string", "enum": ["video_edit","video_extension","video_style","lip_sync","digital_human"]},
+            "model": {"type": "string", "enum": ["wan2.7-videoedit","wan3.0-video","wan3.0-video-prime","wanx2.1-vace-plus","video-style-transform","videoretalk","wan2.2-s2v"]},
             "upload_ids": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "string", "pattern": "^[a-f0-9]{32}$"}},
             "resolution": {"type": "string", "enum": ["480P","720P","1080P"]},
             "duration": {"type": "integer", "minimum": 2, "maximum": 30},
             "style_id": {"type": "integer", "minimum": 0, "maximum": 7},
-            "rights_confirmed": {"type": "boolean"},
-        }, ["prompt","operation","model","upload_ids","resolution","duration","style_id","rights_confirmed"]),
+        }, ["prompt","operation","model","upload_ids","resolution","duration","style_id"]),
     },
     {
         "type": "function", "name": "synthesize_speech", "description": "提交中文配音异步任务。",
@@ -265,7 +264,7 @@ def _submit_image_edit(owner: str, arguments: dict[str, Any]) -> dict[str, Any]:
         )
     except ValueError as error:
         return {"ok": False, "error": str(error)}
-    job_payload["user_prompt"] = job_payload["prompt"]
+    job_payload["user_prompt"] = payload.prompt
     job_payload["prompt"] = tool_prompt_for(job_payload, presets[0]["prompt"])
     job_payload["kind"] = "tool"
     job_id = uuid.uuid4().hex
@@ -285,6 +284,8 @@ def _submit_image_edit(owner: str, arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def _submit_agent_video(owner: str, arguments: dict[str, Any], request: Request) -> dict[str, Any]:
+    if arguments.get("operation") == "character_swap_video" or arguments.get("model") == "wan2.2-animate-mix":
+        return {"ok": False, "error": "portrait_rights_confirmation_required"}
     payload = VideoGenerationInput(**arguments)
     if not media_service.configured_for_video(payload.model):
         return {"ok": False, "error": "video_provider_unavailable"}
@@ -458,6 +459,7 @@ async def _run_agent(
         request_body["previous_response_id"] = session["provider_response_id"]
     body = await _ark_response(request_body)
     tool_events: list[dict[str, Any]] = []
+    remaining_calls = MAX_AGENT_TOOL_CALLS
     for _ in range(MAX_AGENT_TOOL_CALLS):
         calls = [
             item for item in body.get("output", []) if isinstance(item, dict) and item.get("type") == "function_call"
@@ -471,9 +473,17 @@ async def _run_agent(
             try:
                 arguments = json.loads(call.get("arguments") or "{}")
             except (ValueError, TypeError):
-                arguments = {}
-            result = _execute_tool(owner, name, arguments, request) if auto_execute else {"ok": False, "status": "approval_required"}
-            event = {"name": name, "arguments": arguments, "result": result}
+                arguments = None
+            if not auto_execute:
+                result = {"ok": False, "status": "approval_required"}
+            elif remaining_calls == 0:
+                result = {"ok": False, "error": "tool_call_limit_reached"}
+            elif not isinstance(arguments, dict):
+                result = {"ok": False, "error": "invalid_arguments"}
+            else:
+                remaining_calls -= 1
+                result = _execute_tool(owner, name, arguments, request)
+            event = {"name": name, "arguments": arguments if isinstance(arguments, dict) else {}, "result": result}
             tool_events.append(event)
             relay.database.add_short_drama_message(owner, session["id"], "tool", "", event)
             outputs.append({"type": "function_call_output", "call_id": call_id, "output": json.dumps(result, ensure_ascii=False, separators=(",", ":"))})
@@ -483,8 +493,10 @@ async def _run_agent(
             "previous_response_id": body.get("id"),
             "input": outputs,
             "tools": AGENT_TOOLS,
-            "tool_choice": "auto" if auto_execute else "none",
+            "tool_choice": "auto" if auto_execute and remaining_calls else "none",
         })
+        if remaining_calls == 0:
+            break
     text = _response_text(body) or "任务已处理，请查看工具调用结果。"
     response_id = str(body.get("id") or "")
     if response_id:

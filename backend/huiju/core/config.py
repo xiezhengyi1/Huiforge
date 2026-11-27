@@ -67,14 +67,14 @@ FRONTEND_ASSET_PATHS = {
             "studio.css", "onboarding.css", "pricing.css", "profile.css", "profile-overrides.css",
             "theme-variant-base.css", "theme-indigo.css", "theme-cinnabar.css",
             "theme-monochrome-blue.css", "theme-monochrome-accent.css", "theme-global.css",
-            "theme-audit.css", "short-drama.css",
+            "theme-audit.css", "short-drama.css", "forge.css",
         )
     },
     **{
         f"js/{name}": FRONTEND_JS_DIR / name
         for name in (
             "app.js", "catalog.js", "onboarding.js", "onboarding-main.js",
-            "onboarding-workflow.js", "pricing.js", "profile.js", "theme.js",
+            "onboarding-workflow.js", "pricing.js", "profile.js", "theme.js", "home.js",
         )
     },
     "js/core/api-client.js": FRONTEND_JS_DIR / "core" / "api-client.js",
@@ -131,6 +131,9 @@ QWEN_IMAGE_REQUESTS_PER_MINUTE = bounded_env_int("QWEN_IMAGE_RATE_LIMIT_PER_MINU
 MAX_GENERATION_BODY_BYTES = 32 * 1024
 
 MAX_ACCOUNT_BODY_BYTES = 16 * 1024
+MAX_WORKFLOW_BODY_BYTES = 64 * 1024 * 1024
+MAX_WORKFLOW_NODES = 5000
+MAX_WORKFLOW_EDGES = MAX_WORKFLOW_NODES * 2
 
 MAX_UPLOAD_BODY_BYTES = bounded_env_int("RELAY_MAX_UPLOAD_BYTES", 15 * 1024 * 1024, 1_024, 25 * 1024 * 1024)
 
@@ -311,6 +314,13 @@ VOLC_SMS_TEMPLATE_ID = os.getenv("VOLC_SMS_TEMPLATE_ID", "")
 VOLC_SMS_USER_EXT_CODE = os.getenv("VOLC_SMS_USER_EXT_CODE", "")
 
 VOLC_SMS_SCENE = os.getenv("VOLC_SMS_SCENE", "注册验证码")
+SMTP_HOST = os.getenv("HUIJU_SMTP_HOST", "").strip()
+SMTP_FROM = os.getenv("HUIJU_SMTP_FROM", "").strip()
+SMTP_USER = os.getenv("HUIJU_SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("HUIJU_SMTP_PASSWORD", "")
+SMTP_SECURITY = os.getenv("HUIJU_SMTP_SECURITY", "starttls").strip().lower()
+SMTP_PORT = bounded_env_int("HUIJU_SMTP_PORT", 465 if SMTP_SECURITY == "ssl" else 587, 1, 65535)
+EMAIL_CODE_SECRET = os.getenv("HUIJU_EMAIL_CODE_SECRET", "")
 
 JOB_TTL_SECONDS = 15 * 60
 

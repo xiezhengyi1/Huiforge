@@ -1,6 +1,12 @@
+import { takeLaunchDraft } from "./core/launch-draft.js?v=20261124-forge-v1";
+import { uiIcon } from "./core/ui-icon.js?v=20261125-ui-polish-v3";
 import { API, fetchJson } from "./core/api-client.js?v=20261021-video-workflows-v4";
 import { createShortDramaController } from "./features/short-drama/controller.js?v=20261021-video-workflows-v4";
 import { createVideoWorkflowController } from "./features/video-workflows/controller.js?v=20261021-video-workflows-v4";
+import { listWorkflowDrafts, readWorkflowDraft, writeWorkflowDraft } from "./features/workflow/local-drafts.js?v=20261124-workflow-drafts-v2";
+import { findWorkflowEdgeSnap, indexWorkflowSnapEdges, planWorkflowArrangement } from "./features/workflow/layout.js?v=20261125-edge-snap-v1";
+import { locale, localeUrl, localizeUi, t } from "./core/locale.js?v=20261125-ui-polish-v3";
+import { confirmAction } from "./core/dialog.js?v=20261125-ui-polish-v3";
 import {
   AUDIO_MODES,
   AUDIO_REFERENCE_MODES,
@@ -29,7 +35,7 @@ import {
   WORKFLOW_VIDEO_REFERENCE_PORTS,
   WORKFLOW_VIDEO_TOOL_OPTIONS,
   workflowVideoReferenceLimit,
-} from "./features/workflow/schema.js?v=20260909-workflow-svg-v42";
+} from "./features/workflow/schema.js?v=20261124-workflow-audit-v1";
 
 // All first-paint consumers share one request.  Individual endpoints remain
 // as graceful fallbacks so a partial rollout never leaves the workspace blank.
@@ -41,6 +47,7 @@ const catalog = window.HUIJU_CATALOG?.styles && window.HUIJU_CATALOG?.presets
   ? window.HUIJU_CATALOG
   : { styles: [], presets: [] };
 const form = document.querySelector("#generation-form");
+const studioModeButtons = [...form.querySelectorAll("[data-studio-mode]")];
 const promptInput = document.querySelector("#prompt");
 const charCount = document.querySelector("#char-count");
 const generateButton = document.querySelector("#generate-button");
@@ -52,7 +59,6 @@ const resultPlaceholder = document.querySelector("#result-placeholder");
 const resultStage = document.querySelector("#result-stage");
 const statusPill = document.querySelector("#status-pill");
 const resultsTitle = document.querySelector("#results-title");
-const resultTip = document.querySelector("#result-tip");
 const presetSelect = document.querySelector("#preset-select");
 const styleSelect = document.querySelector("#style-select");
 const presetSelectTrigger = document.querySelector("#preset-select-trigger");
@@ -191,7 +197,6 @@ const assetCategoryList = document.querySelector("#asset-category-list");
 const assetPageGrid = document.querySelector("#asset-page-grid");
 const assetPageEmpty = document.querySelector("#asset-page-empty");
 const assetTotalCount = document.querySelector("#asset-total-count");
-const assetCategoryTitle = document.querySelector("#asset-category-title");
 const assetCategorySummary = document.querySelector("#asset-category-summary");
 const assetSearch = document.querySelector("#asset-search");
 const assetSaveDialog = document.querySelector("#asset-save-dialog");
@@ -299,6 +304,8 @@ let sourcePreviewUrls = [];
 let activeReferenceIndex = 0;
 const sourceStateByCapability = new Map();
 let sourceSaveVoiceButton = null;
+let sourceReplaceButton = null;
+let sourceClearButton = null;
 let promptReferenceMentions = [];
 let activeMentionRange = null;
 let activeMentionIndex = 0;
@@ -317,16 +324,27 @@ if (hasToolingUI && sourcePreviewShell && maskCanvas) {
     uploadDrop.before(sourceUploadSurface);
     sourceUploadSurface.append(uploadDrop, sourcePreviewShell);
     sourcePreviewShell.append(maskCanvas);
-    const replaceButton = document.createElement("button");
-    replaceButton.type = "button";
-    replaceButton.className = "source-replace-button";
-    replaceButton.textContent = "更换图片";
-    replaceButton.addEventListener("click", (event) => {
-      event.stopPropagation();
+    const previewActions = document.createElement("div");
+    previewActions.className = "source-preview-actions";
+    sourceReplaceButton = document.createElement("button");
+    sourceReplaceButton.type = "button";
+    sourceReplaceButton.className = "source-replace-button";
+    sourceReplaceButton.textContent = "更换图片";
+    sourceReplaceButton.addEventListener("click", () => sourceImageInput.click());
+    sourceClearButton = document.createElement("button");
+    sourceClearButton.type = "button";
+    sourceClearButton.className = "source-clear-button";
+    sourceClearButton.title = "移除上传的参考素材";
+    sourceClearButton.setAttribute("aria-label", sourceClearButton.title);
+    sourceClearButton.innerHTML = uiIcon("close");
+    sourceClearButton.hidden = true;
+    sourceClearButton.addEventListener("click", () => {
       sourceImageInput.value = "";
-      sourceImageInput.click();
+      updateSourcePreview();
+      sourceImageInput.focus();
     });
-    sourcePreviewShell.append(replaceButton);
+    previewActions.append(sourceReplaceButton, sourceClearButton);
+    sourcePreviewShell.append(previewActions);
     sourceSaveVoiceButton = document.createElement("button");
     sourceSaveVoiceButton.type = "button";
     sourceSaveVoiceButton.className = "source-save-voice-button";
@@ -336,7 +354,7 @@ if (hasToolingUI && sourcePreviewShell && maskCanvas) {
       event.stopPropagation();
       const file = sourceFiles[activeReferenceIndex];
       if (!file?.type?.startsWith("audio/")) return;
-      const confirmed = window.confirm("请确认：该声音属于本人，或已获得权利人的明确授权。确认后可保存为个人音色资产。");
+      const confirmed = await confirmAction("请确认：该声音属于本人，或已获得权利人的明确授权。确认后可保存为个人音色资产。", { title:"声音授权" });
       if (!confirmed) return;
       await openAssetSaveDialog({
         file, mediaType:file.type, assetType:"voice",
@@ -362,14 +380,14 @@ if (hasToolingUI && sourcePreviewShell && maskCanvas) {
   interactiveEditor = document.createElement("section");
   interactiveEditor.className = "interactive-editor";
   interactiveEditor.hidden = true;
-  interactiveEditor.innerHTML = '<div class="interactive-toolbar"><div><b>在参考图上点选或框选</b><span>坐标由后端按官方格式组装，不会写入输入框</span></div><div role="group" aria-label="标注工具"><button class="active" data-annotation-tool="point" type="button">点选</button><button data-annotation-tool="bbox" type="button">框选</button><button data-annotation-action="undo" type="button">撤销</button><button data-annotation-action="clear" type="button">清空</button></div></div><p class="annotation-summary">尚未添加标注</p>';
+  interactiveEditor.innerHTML = '<div class="interactive-toolbar"><div><b>在参考图上点选或框选</b></div><div role="group" aria-label="标注工具"><button class="active" data-annotation-tool="point" type="button">点选</button><button data-annotation-tool="bbox" type="button">框选</button><button data-annotation-action="undo" type="button">撤销</button><button data-annotation-action="clear" type="button">清空</button></div></div><p class="annotation-summary">尚未添加标注</p>';
   annotationSummary = interactiveEditor.querySelector(".annotation-summary");
   sourceImageGroup.append(interactiveEditor);
 
   layerModeNote = document.createElement("section");
   layerModeNote.className = "layer-mode-note";
   layerModeNote.hidden = true;
-  layerModeNote.innerHTML = '<span aria-hidden="true">▱</span><div><b>分层输出</b><p>输出完整底图与最多 16 个透明 PNG 图层，可逐层显隐、下载或加入资产。</p></div>';
+  layerModeNote.innerHTML = `${uiIcon("layers")}<div><b>分层输出</b><p>输出完整底图与最多 16 个透明 PNG 图层，可逐层显隐、下载或加入资产。</p></div>`;
   sourceImageGroup.append(layerModeNote);
 
   const promptField = toolPromptInput?.closest(".tool-prompt-field");
@@ -660,8 +678,8 @@ const MODE_COPY = {
     action: "生成图片",
     help: "不上传素材时按文字从零生成；上传一张或多张参考图后，改为在参考图基础上编辑或再创作，未描述的部分会尽量保持原样。",
     promptLabel: "画面描述",
-    placeholder: "描述主体、场景、机位、光线与质感；上传参考图后可改为描述要改变什么、保留什么。",
-    sourceAction: "选择参考图（选填，最多 10 张）",
+    placeholder: "描述你想生成的画面…",
+    sourceAction: "参考图",
   },
   unified_video: {
     eyebrow: "AI 生视频",
@@ -669,8 +687,8 @@ const MODE_COPY = {
     action: "生成视频",
     help: "不上传素材时按文字生成整段镜头；上传一张图片后，以它作为首帧驱动画面运动。需要首尾帧、多参考图、口型同步或数字人时，请从左侧对应能力进入。",
     promptLabel: "镜头描述",
-    placeholder: "例如：雨夜街角，风衣女性转身看向镜头，镜头缓慢推进，霓虹倒影流动，电影质感。",
-    sourceAction: "选择首帧图片（选填）",
+    placeholder: "描述镜头、动作和运镜…",
+    sourceAction: "首帧图片",
   },
   unified_audio: {
     eyebrow: "AI 配音",
@@ -679,38 +697,38 @@ const MODE_COPY = {
     help: "不上传素材时使用所选音色朗读文案；上传 10–20 秒清晰人声后，改用参考音色朗读新文案，样本仅用于本次临时复刻。",
     promptLabel: "配音文本",
     placeholder: "输入需要合成的旁白、对白或广告文案。",
-    sourceAction: "选择参考音频（选填，10–20 秒清晰人声）",
+    sourceAction: "参考音频",
   },
 };
 
 const CAPABILITY_MODE_ICONS = Object.freeze({
-  text: "✦",
-  edit: "◫",
-  redraw: "◌",
-  multiview: "▦",
-  multiangle: "◒",
-  panorama: "◎",
-  upscale: "↗",
-  cutout: "◇",
-  interactive: "⌖",
-  layers: "▱",
-  video_text: "▷",
-  video_image: "▶",
-  video_first_last: "◇",
-  video_reference: "◫",
-  video_edit: "✎",
-  video_extension: "↦",
-  video_style: "◈",
-  video_lip_sync: "◖",
-  video_character_swap: "⇄",
-  video_digital_human: "◉",
-  audio_tts: "◖",
-  audio_reference: "◖",
-  audio_custom_voice: "◖",
-  audio_image: "▣",
-  unified_image: "✦",
-  unified_video: "▶",
-  unified_audio: "◖",
+  text: "spark",
+  edit: "video",
+  redraw: "image",
+  multiview: "image",
+  multiangle: "fit",
+  panorama: "user",
+  upscale: "arrow-up-right",
+  cutout: "folder",
+  interactive: "image",
+  layers: "layers",
+  video_text: "image",
+  video_image: "video",
+  video_first_last: "folder",
+  video_reference: "video",
+  video_edit: "edit",
+  video_extension: "arrow-right",
+  video_style: "grid",
+  video_lip_sync: "audio",
+  video_character_swap: "refresh",
+  video_digital_human: "user",
+  audio_tts: "audio",
+  audio_reference: "audio",
+  audio_custom_voice: "audio",
+  audio_image: "image",
+  unified_image: "spark",
+  unified_video: "video",
+  unified_audio: "audio",
 });
 
 function updateActiveCapabilityIndicator(mode, capabilityId = "", labelOverride = "") {
@@ -737,6 +755,9 @@ function setStatus(label, state = "idle") {
 
 function setBusy(isBusy) {
   generateButton.disabled = isBusy;
+  if (sourceImageInput) sourceImageInput.disabled = isBusy;
+  if (sourceReplaceButton) sourceReplaceButton.disabled = isBusy;
+  if (sourceClearButton) sourceClearButton.disabled = isBusy;
   cancelButton.hidden = !isBusy;
   if (isBusy) cancelButton.disabled = false;
   resultStage.setAttribute("aria-busy", String(isBusy));
@@ -744,7 +765,7 @@ function setBusy(isBusy) {
 }
 
 function setError(message) {
-  formError.textContent = message;
+  formError.textContent = t(message);
   formError.hidden = !message;
 }
 
@@ -755,7 +776,7 @@ function createSessionTurn() {
   const identity = document.createElement("div");
   const icon = document.createElement("span");
   icon.setAttribute("aria-hidden", "true");
-  icon.textContent = CAPABILITY_MODE_ICONS[activeMode] || "✦";
+  icon.innerHTML = uiIcon(CAPABILITY_MODE_ICONS[activeMode] || "image");
   const name = document.createElement("strong");
   name.textContent = activeCapabilityName?.textContent || MODE_COPY[activeMode]?.eyebrow || "图像创作";
   identity.append(icon, name);
@@ -793,45 +814,28 @@ function failSessionTurn(message) {
   if (imageGrid) {
     const error = document.createElement("div");
     error.className = "session-turn-error";
-    error.innerHTML = `<span aria-hidden="true">!</span><div><strong>这次没有生成成功</strong><p>${escapeMarkup(message)}</p></div>`;
+    error.innerHTML = `${uiIcon("alert")}<div><strong>这次没有生成成功</strong><p>${escapeMarkup(message)}</p></div>`;
     imageGrid.replaceChildren(error);
   }
   activeSessionTurn = null;
 }
 
 function setPending() {
-  const previousComposerRect = form.getBoundingClientRect();
   document.body.classList.add("studio-has-output");
-  const nextComposerRect = form.getBoundingClientRect();
-  const offsetY = previousComposerRect.top - nextComposerRect.top;
-  const offsetX = previousComposerRect.left - nextComposerRect.left;
-  if (offsetX || offsetY) {
-    form.animate([
-      { transform: `translate(${offsetX}px, ${offsetY}px)` },
-      { transform: "translate(0, 0)" },
-    ], { duration: 620, easing: "cubic-bezier(.22,.78,.2,1)", fill: "both" });
-  }
   resultPlaceholder.hidden = true;
   resultPlaceholder.classList.add("is-pending");
   activeSessionTurn = createSessionTurn();
   resultsTitle.textContent = "会话记录";
-  resultTip.textContent = "同模型任务会连续处理；切换模型时会短暂等待。";
   setStatus("处理中", "working");
 }
 
 function setIdle() {
   if (document.body.matches(".short-drama-active, .video-workflow-active")) return;
   const hasSession = Boolean(resultGrid.querySelector(".session-turn"));
-  const needsSource = VIDEO_IMAGE_MODES.has(activeMode) || AUDIO_SOURCE_MODES.has(activeMode);
-  const isTextDriven = !needsSource && (activeMode === "text" || activeMode === "video_text" || isAudioMode());
-  const isMedia = isVideoMode() || isAudioMode();
   resultGrid.hidden = !hasSession;
   resultPlaceholder.hidden = hasSession;
   resultPlaceholder.classList.remove("is-pending");
-  resultPlaceholder.querySelector("strong").textContent = isTextDriven ? "一个清晰的描述，正在等待发生。" : "上传参考图，开始下一次创作。";
-  resultPlaceholder.querySelector("p").textContent = isMedia ? "生成的视频或音频会显示在这里，并可直接播放和下载。" : "生成的图像会显示在这里，并可直接下载。";
-  resultsTitle.textContent = hasSession ? "会话记录" : isTextDriven ? "等待你的描述" : "等待参考素材";
-  resultTip.textContent = isTextDriven ? "先确定创作目标，再补充主体、场景、镜头、节奏、声音或视觉约束。" : "参考素材只用于当前任务，具体改动由你输入的要求决定。";
+  resultsTitle.textContent = hasSession ? "会话记录" : "结果";
   setStatus("准备就绪");
 }
 
@@ -919,7 +923,7 @@ function writeHistory(entries) {
 }
 
 function formatHistoryTime(timestamp) {
-  return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
     .format(new Date(timestamp));
 }
 
@@ -1014,6 +1018,7 @@ const FALLBACK_ASSET_CATEGORIES = Object.freeze([
 let assetCategories = [...FALLBACK_ASSET_CATEGORIES];
 let assetItems = [];
 let activeAssetCategory = "all";
+let assetLibraryFailed = false;
 let pendingAssetCandidate = null;
 let pendingAssetPreviewUrl = "";
 
@@ -1046,6 +1051,7 @@ function renderAssetCategoryOptions(selectedId = "") {
     const option = document.createElement("option");
     option.value = category.id;
     option.textContent = category.name;
+    option.toggleAttribute("data-user-content", Boolean(category.custom));
     option.selected = category.id === selectedId;
     return option;
   }));
@@ -1075,12 +1081,13 @@ function createAssetMediaPreview(asset, compact = false) {
     const art = document.createElement("span");
     art.className = "asset-audio-art";
     art.setAttribute("aria-hidden", "true");
-    art.textContent = asset.assetType === "voice" ? "声" : asset.assetType === "music" ? "♫" : "≋";
+    art.innerHTML = uiIcon("audio");
     return art;
   }
   const image = document.createElement("img");
   image.src = asset.url;
   image.alt = asset.name;
+  image.setAttribute("data-user-content", "");
   image.loading = "lazy";
   image.referrerPolicy = "no-referrer";
   return image;
@@ -1098,22 +1105,24 @@ function renderAssetLibrary() {
     button.type = "button";
     button.dataset.assetPageCategory = category.id;
     button.classList.toggle("active", activeAssetCategory === category.id);
+    button.setAttribute("aria-pressed", String(activeAssetCategory === category.id));
     const name = document.createElement("b");
     name.textContent = category.name;
+    name.toggleAttribute("data-user-content", Boolean(category.custom));
     const count = document.createElement("em");
     count.textContent = String(counts[category.id] || 0);
     button.append(name, count);
     return button;
   }));
-  document.querySelector('[data-asset-page-category="all"]')?.classList.toggle("active", activeAssetCategory === "all");
+  const allCategory = document.querySelector('[data-asset-page-category="all"]');
+  allCategory?.classList.toggle("active", activeAssetCategory === "all");
+  allCategory?.setAttribute("aria-pressed", String(activeAssetCategory === "all"));
   const query = assetSearch?.value.trim().toLocaleLowerCase("zh-CN") || "";
   const visibleItems = assetItems.filter((item) => (
     (activeAssetCategory === "all" || item.categoryId === activeAssetCategory)
     && (!query || `${item.name} ${item.prompt}`.toLocaleLowerCase("zh-CN").includes(query))
   ));
-  const category = assetCategories.find((item) => item.id === activeAssetCategory);
-  assetCategoryTitle.textContent = category?.name || "全部资产";
-  assetCategorySummary.textContent = `${visibleItems.length} 项 · 可加入工作流继续创作`;
+  assetCategorySummary.textContent = assetLibraryFailed ? "资产服务暂时不可用" : `${visibleItems.length} 项`;
   const cards = visibleItems.map((asset) => {
     const article = document.createElement("article");
     article.className = "asset-page-card";
@@ -1137,9 +1146,15 @@ function renderAssetLibrary() {
     const copy = document.createElement("div");
     const title = document.createElement("strong");
     title.textContent = asset.name;
+    title.setAttribute("data-user-content", "");
     const meta = document.createElement("span");
     const categoryName = assetCategories.find((item) => item.id === asset.categoryId)?.name || "未分类";
-    meta.textContent = `${assetTypeLabel(asset)} · ${categoryName} · ${formatHistoryTime(asset.createdAt)}`;
+    const typeLabel = document.createElement("span");
+    typeLabel.textContent = assetTypeLabel(asset);
+    const categoryLabel = document.createElement("span");
+    categoryLabel.textContent = categoryName;
+    categoryLabel.toggleAttribute("data-user-content", assetCategories.some((category) => category.id === asset.categoryId && category.custom));
+    meta.append(typeLabel, " · ", categoryLabel, " · ", formatHistoryTime(asset.createdAt));
     copy.append(title, meta);
     const actions = document.createElement("footer");
     const workflow = document.createElement("button");
@@ -1152,10 +1167,14 @@ function renderAssetLibrary() {
     const download = document.createElement("a");
     download.href = asset.url;
     download.download = `huiju-asset-${asset.id}.${mediaDownloadExtension(asset)}`;
-    download.textContent = "下载";
+    download.setAttribute("aria-label", "下载");
+    download.title = "下载";
+    download.innerHTML = uiIcon("download");
     const publish = document.createElement("button");
     publish.type = "button";
-    publish.textContent = "发布广场";
+    publish.setAttribute("aria-label", "发布广场");
+    publish.title = "发布广场";
+    publish.innerHTML = uiIcon("share");
     publish.hidden = !["image", "video"].includes(asset.assetType);
     publish.addEventListener("click", () => openPlazaPublishDialog({
       url:asset.url, prompt:asset.prompt, model:"绘域", title:asset.name,
@@ -1163,20 +1182,28 @@ function renderAssetLibrary() {
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "asset-delete";
-    remove.textContent = "删除";
+    const setRemoveLabel = (label) => {
+      remove.setAttribute("aria-label", label);
+      remove.title = label;
+    };
+    setRemoveLabel("删除");
+    remove.innerHTML = uiIcon("trash");
     let confirmationTimer = 0;
     remove.addEventListener("click", async () => {
       if (!remove.classList.contains("is-confirming")) {
         remove.classList.add("is-confirming");
+        setRemoveLabel("再次删除");
         remove.textContent = "再次删除";
         confirmationTimer = window.setTimeout(() => {
           remove.classList.remove("is-confirming");
-          remove.textContent = "删除";
+          setRemoveLabel("删除");
+          remove.innerHTML = uiIcon("trash");
         }, 3200);
         return;
       }
       window.clearTimeout(confirmationTimer);
       remove.disabled = true;
+      setRemoveLabel("删除中");
       remove.textContent = "删除中";
       try {
         await fetchJson(`${API.assets}/${encodeURIComponent(asset.id)}`, { method: "DELETE" }, 8000);
@@ -1186,23 +1213,24 @@ function renderAssetLibrary() {
       } catch {
         remove.disabled = false;
         remove.classList.remove("is-confirming");
+        setRemoveLabel("重试删除");
         remove.textContent = "重试删除";
         showSidebarToast("删除失败，请稍后重试");
       }
     });
-    actions.append(workflow, download, remove);
-    actions.insertBefore(publish, download);
+    actions.append(workflow, publish, download, remove);
     article.append(preview, copy, actions);
     return article;
   });
   assetPageGrid.replaceChildren(...cards);
-  assetPageEmpty.hidden = cards.length > 0;
+  assetPageEmpty.hidden = assetLibraryFailed || cards.length > 0;
   assetPageGrid.hidden = cards.length === 0;
   renderAssetCategoryOptions(assetSaveCategory?.value || "");
 }
 
 async function loadAssetLibrary() {
   if (assetCategorySummary) assetCategorySummary.textContent = "正在读取资产…";
+  assetLibraryFailed = false;
   try {
     const { body } = await fetchJson(API.assets, { method: "GET" }, 7000);
     assetCategories = Array.isArray(body.categories) && body.categories.length ? body.categories : [...FALLBACK_ASSET_CATEGORIES];
@@ -1210,7 +1238,7 @@ async function loadAssetLibrary() {
   } catch {
     assetCategories = [...FALLBACK_ASSET_CATEGORIES];
     assetItems = [];
-    if (assetCategorySummary) assetCategorySummary.textContent = "资产服务暂时不可用";
+    assetLibraryFailed = true;
   }
   if (activeAssetCategory !== "all" && !assetCategories.some((item) => item.id === activeAssetCategory)) activeAssetCategory = "all";
   mentionAssetsLoaded = true;
@@ -1222,15 +1250,27 @@ function mentionToken(value, fallback = "素材") {
   return `@${compact || fallback}`;
 }
 
+function isImageReferenceFile(file) {
+  return !file.type.startsWith("video/") && !file.type.startsWith("audio/");
+}
+
+function uploadedImageNumbers(files) {
+  const numbers = new Map();
+  files.forEach((file, index) => {
+    if (isImageReferenceFile(file)) numbers.set(index, numbers.size + 1);
+  });
+  return numbers;
+}
+
 function promptReferenceCandidates() {
-  const uploads = sourceFiles.map((file, index) => ({
+  const uploads = [...uploadedImageNumbers(sourceFiles)].map(([index, number]) => ({
     key: `upload:${index}`,
     type: "upload",
     index,
-    name: `上传图 ${index + 1}`,
-    detail: file.name || `参考图片 ${index + 1}`,
+    name: `上传图 ${number}`,
+    detail: sourceFiles[index].name || `参考图片 ${number}`,
     url: sourcePreviewUrls[index] || "",
-    token: `@上传图${index + 1}`,
+    token: `@上传图${number}`,
   }));
   const assets = assetItems.filter((asset) => asset.assetType === "image").map((asset) => ({
     key: `asset:${asset.id}`,
@@ -1277,7 +1317,7 @@ function renderPromptMentionStrip() {
     const remove = document.createElement("button");
     remove.type = "button";
     remove.setAttribute("aria-label", `移除 ${reference.token}`);
-    remove.textContent = "×";
+    remove.innerHTML = uiIcon("close");
     remove.addEventListener("click", () => {
       toolPromptInput.value = toolPromptInput.value.replace(reference.token, "").replace(/ {2,}/g, " ");
       promptReferenceMentions = promptReferenceMentions.filter((item) => item.key !== reference.key);
@@ -1301,6 +1341,8 @@ function showMentionedAssetPreview(reference) {
     sourcePreview.hidden = false;
     sourcePreviewShell.hidden = false;
     sourceUploadSurface?.classList.add("has-preview");
+    if (sourceClearButton) sourceClearButton.hidden = true;
+    if (sourceReplaceButton) sourceReplaceButton.textContent = "更换图片";
   };
   sourcePreview.onerror = () => setError("这项资产暂时无法预览，请换一项资产。");
   sourcePreview.src = reference.url;
@@ -1465,6 +1507,17 @@ assetUploadInput?.addEventListener("change", () => {
   openAssetSaveDialog({ file, mediaType:file.type, assetType:family, suggestedName:file.name.replace(/\.[^.]+$/, "").slice(0, 40), prompt:"", kind:"upload" });
   assetUploadInput.value = "";
 });
+
+function uploadAssetFile(file, { name, category, type, prompt = "" }, signal) {
+  const payload = new FormData();
+  payload.append("media", file);
+  payload.append("name", name);
+  payload.append("category_id", category);
+  payload.append("asset_type", type);
+  payload.append("prompt", String(prompt).slice(0, 8000));
+  return fetchJson(API.assetUpload, { method:"POST", body:payload, signal }, 180000);
+}
+
 assetSaveForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!pendingAssetCandidate || !assetSaveName.value.trim() || !assetSaveCategory.value) return;
@@ -1475,13 +1528,11 @@ assetSaveForm?.addEventListener("submit", async (event) => {
     const assetType = pendingAssetCandidate.assetType === "audio" ? (assetSaveType?.value || "audio") : pendingAssetCandidate.assetType;
     let response;
     if (pendingAssetCandidate.file) {
-      const payload = new FormData();
-      payload.append("media", pendingAssetCandidate.file, pendingAssetCandidate.file.name || `asset.${mediaDownloadExtension(pendingAssetCandidate)}`);
-      payload.append("name", assetSaveName.value.trim());
-      payload.append("category_id", assetSaveCategory.value);
-      payload.append("asset_type", assetType);
-      payload.append("prompt", String(pendingAssetCandidate.prompt || ""));
-      response = await fetchJson(API.assetUpload, { method:"POST", body:payload }, 180000);
+      const blob = pendingAssetCandidate.file;
+      const file = blob instanceof File ? blob : new File([blob], `asset.${mediaDownloadExtension(pendingAssetCandidate)}`, { type:blob.type });
+      response = await uploadAssetFile(file, {
+        name:assetSaveName.value.trim(), category:assetSaveCategory.value, type:assetType, prompt:pendingAssetCandidate.prompt,
+      });
     } else {
       const sourceUrl = new URL(pendingAssetCandidate.url, window.location.origin);
       response = await fetchJson(API.assets, {
@@ -1538,7 +1589,7 @@ assetCategoryForm?.addEventListener("submit", async (event) => {
 
 assetNewCategory?.addEventListener("click", openAssetCategoryDialog);
 assetDialogNewCategory?.addEventListener("click", openAssetCategoryDialog);
-document.querySelector(".asset-category-rail")?.addEventListener("click", (event) => {
+document.querySelector(".asset-category-menu")?.addEventListener("click", (event) => {
   const button = event.target instanceof Element ? event.target.closest("[data-asset-page-category]") : null;
   if (!button) return;
   activeAssetCategory = button.dataset.assetPageCategory || "all";
@@ -1748,7 +1799,7 @@ function showImages(images) {
     const addAsset = document.createElement("button");
     addAsset.type = "button";
     addAsset.className = "result-asset-action";
-    addAsset.innerHTML = '<span aria-hidden="true">＋</span> 加入资产';
+    addAsset.innerHTML = `${uiIcon("plus")} 加入资产`;
     addAsset.addEventListener("click", () => openAssetSaveDialog({
       url,
       prompt: savedPrompt,
@@ -1786,7 +1837,6 @@ function showImages(images) {
   resultPlaceholder.classList.remove("is-pending");
   resultGrid.hidden = false;
   resultsTitle.textContent = "会话记录";
-  resultTip.textContent = isLayerResult ? "可逐层显隐、下载，或命名后加入个人资产。" : "每张图片都可以下载，或命名后加入个人资产长期复用。";
   setStatus("已完成");
   requestAnimationFrame(() => resultStage.scrollTo({ top: resultStage.scrollHeight, behavior: "smooth" }));
 }
@@ -1813,7 +1863,7 @@ function showMedia(result, kind) {
   download.innerHTML = '<span aria-hidden="true">↓</span> 下载';
   const saveAsset = document.createElement('button');
   saveAsset.type = 'button';
-  saveAsset.innerHTML = '<span aria-hidden="true">＋</span> 存入资产库';
+  saveAsset.innerHTML = `${uiIcon("plus")} 存入资产库`;
   saveAsset.addEventListener('click', () => openAssetSaveDialog({
     url, assetType:kind, mediaType:kind === 'video' ? 'video/mp4' : 'audio/wav',
     suggestedName:kind === 'video' ? '未命名视频' : '未命名音频',
@@ -1831,7 +1881,7 @@ function showMedia(result, kind) {
   }));
   const saveVoicePreset = document.createElement('button');
   saveVoicePreset.type = 'button';
-  saveVoicePreset.innerHTML = '<span aria-hidden="true">♫</span> 设为预设音色';
+  saveVoicePreset.innerHTML = `${uiIcon("audio")} 设为预设音色`;
   saveVoicePreset.addEventListener('click', () => openAssetSaveDialog({
     url, assetType:'voice', mediaType:'audio/wav',
     suggestedName:`生成音色 ${new Intl.DateTimeFormat('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date())}`,
@@ -1845,7 +1895,6 @@ function showMedia(result, kind) {
   resultPlaceholder.hidden = true;
   resultGrid.hidden = false;
   resultsTitle.textContent = '会话记录';
-  resultTip.textContent = kind === 'video' ? '视频已保存在你的私有生成记录中，可播放、下载或存入资产库。' : '配音可试听、下载、存入资产库，也可设为下拉框中的预设音色。';
   setStatus('已完成');
   requestAnimationFrame(() => resultStage.scrollTo({ top: resultStage.scrollHeight, behavior: 'smooth' }));
 }
@@ -1919,7 +1968,10 @@ function sourceCapabilityKey(mode = activeMode, capabilityId = selectedCapabilit
 }
 
 function cacheCurrentSourceState() {
-  if (!sourceFiles.length) return;
+  if (!sourceFiles.length) {
+    sourceStateByCapability.delete(sourceCapabilityKey());
+    return;
+  }
   sourceStateByCapability.set(sourceCapabilityKey(), {
     files:[...sourceFiles],
     previewUrls:sourcePreviewUrls.map((url) => url?.startsWith("blob:") ? "" : url),
@@ -1932,6 +1984,7 @@ function restoreCachedSourceState(key, maxFiles) {
   const cached = sourceStateByCapability.get(key);
   if (!cached?.files?.length) return;
   sourceFiles = cached.files.slice(0, maxFiles);
+  setSourceInputFiles(sourceFiles);
   sourcePreviewUrls = sourceFiles.map((file, index) => cached.previewUrls?.[index] || URL.createObjectURL(file));
   imageAnnotations = cached.annotations || [];
   activeReferenceIndex = Math.min(Number(cached.activeIndex || 0), sourceFiles.length - 1);
@@ -2007,6 +2060,13 @@ function showActiveReference(index) {
   activeReferenceIndex = index;
   sourcePreviewUrl = sourcePreviewUrls[index];
   const file = sourceFiles[index];
+  if (sourceClearButton) {
+    const count = sourceFiles.length;
+    const label = count > 1 ? `清空 ${count} 项参考素材` : "移除参考素材";
+    sourceClearButton.hidden = !file;
+    sourceClearButton.title = label;
+    sourceClearButton.setAttribute("aria-label", label);
+  }
   const isVideo = Boolean(file?.type?.startsWith("video/"));
   const isAudio = Boolean(file?.type?.startsWith("audio/"));
   syncCameraSourcePreview();
@@ -2078,7 +2138,7 @@ function renderReferenceStrip() {
       ? document.createElement("video")
       : isAudio ? document.createElement('span') : document.createElement("img");
     if (!isAudio) image.src = sourcePreviewUrls[index];
-    else { image.textContent = '♫'; image.className = 'reference-audio-icon'; }
+    else { image.innerHTML = uiIcon("audio"); image.className = 'reference-audio-icon'; }
     if (image instanceof HTMLVideoElement) { image.muted = true; image.preload = "metadata"; }
     image.setAttribute("aria-hidden", "true");
     const indexLabel = document.createElement("span");
@@ -2101,7 +2161,6 @@ function renderToolPresets(mode) {
     return option;
   }));
   if (presets.some((item) => item.id === previous)) toolPresetSelect.value = previous;
-  if (toolPromptInput) toolPromptInput.placeholder = "描述希望改变或保留的细节；系统会先应用任务预设。";
 }
 
 function configureToolPrompt(mode) {
@@ -2114,12 +2173,12 @@ function configureToolPrompt(mode) {
     ? { label:"音色描述", placeholder:"例如：温暖明亮的青年女声，咬字清晰，语速舒缓，带轻微微笑感。" }
     : mode === "audio_image"
     ? { label:"旁白文字（选填）", placeholder:"可选：输入旁白要求；留空则根据图片自动生成。" }
-    : { label:"编辑要求（选填）", placeholder:"描述希望改变或保留的细节；系统会先应用任务预设。" };
+    : { label:"编辑要求（选填）", placeholder:"描述要更改的内容…" };
   toolPromptLabel.textContent = audioCopy.label;
   toolPromptLabel.hidden = !AUDIO_SOURCE_MODES.has(mode);
   toolPromptInput.placeholder = audioCopy.placeholder;
   toolPromptInput.required = mode === "audio_reference" || mode === "audio_custom_voice";
-  toolPromptInput.setAttribute("aria-label", audioCopy.label);
+  toolPromptInput.setAttribute("aria-label", audioCopy.label || MODE_COPY[mode].promptLabel || "提示词");
   if (customVoicePreviewField) customVoicePreviewField.hidden = mode !== "audio_custom_voice";
   if (mode === "audio_custom_voice" && customVoicePreviewInput && !customVoicePreviewInput.value.trim()) {
     customVoicePreviewInput.value = DEFAULT_CUSTOM_VOICE_PREVIEW;
@@ -2191,10 +2250,8 @@ function setMode(mode, capabilityId = "", capabilityLabel = "") {
     maskBrushPopover.hidden = true;
     maskBrushTrigger.setAttribute("aria-expanded", "false");
   }
-  document.querySelectorAll('.generator-tab').forEach((tab) => {
-    const tabMode = tab.dataset.modeTab;
-    const active = tabMode === 'text' ? mode === 'text' : tabMode === 'edit' ? mode !== 'text' : false;
-    tab.classList.toggle('active', active);
+  studioModeButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(!capabilityId && button.dataset.studioMode === mode));
   });
   const copy = MODE_COPY[mode];
   updateActiveCapabilityIndicator(mode, capabilityId, capabilityLabel);
@@ -2220,9 +2277,7 @@ function setMode(mode, capabilityId = "", capabilityLabel = "") {
   const indicator = document.createElement("span");
   indicator.setAttribute("aria-hidden", "true");
   modeEyebrow.append(indicator, ` ${copy.eyebrow}`);
-  // Unified modes keep the ordinary prompt box; material is optional, so never demand it.
-  resultsTitle.textContent = unified || (!VIDEO_IMAGE_MODES.has(mode) && !AUDIO_SOURCE_MODES.has(mode)
-    && (VIDEO_MODES.has(mode) || AUDIO_MODES.has(mode) || mode === "text")) ? "等待你的描述" : "等待参考素材";
+  resultsTitle.textContent = "结果";
   document.querySelector("#studio-title").textContent = copy.title;
   if (promptHelp) promptHelp.textContent = copy.help;
   if (promptLabel) promptLabel.textContent = copy.promptLabel;
@@ -2258,8 +2313,8 @@ function setMode(mode, capabilityId = "", capabilityLabel = "") {
   const acceptsAudioReference = limits.audio;
   const acceptsImageReference = limits.image;
   const unifiedHelp = {
-    unified_image: "PNG、JPG、WebP · 选填，最多 10 张",
-    unified_video: "PNG、JPG、WebP · 选填，作为视频首帧",
+    unified_image: "PNG、JPG、WebP · 最多 10 张",
+    unified_video: "PNG、JPG、WebP",
     unified_audio: "WAV、MP3、M4A、OGG · 选填，建议 10–20 秒清晰人声",
   }[mode];
   if (sourceImageInput) sourceImageInput.accept = [
@@ -2867,7 +2922,7 @@ function modelOptionMarkup(id, model, available = true, reason = "") {
   const state = available ? "可用" : reason || "未启用";
   const isMediaModel = videoModelChoices.some((item) => item.id === id) || audioModelChoices.some((item) => item.id === id);
   const credit = unitCreditCost(id, "1k");
-  const creditMarkup = available && !isMediaModel ? `<span class="model-credit-cost" title="每张基础消耗 ${credit} 额度" aria-label="每张基础消耗 ${credit} 额度"><span aria-hidden="true">✦</span><b>${credit}</b></span>` : "";
+  const creditMarkup = available && !isMediaModel ? `<span class="model-credit-cost" title="每张基础消耗 ${credit} 额度" aria-label="每张基础消耗 ${credit} 额度">${uiIcon("spark")}<b>${credit}</b></span>` : "";
   return `<div class="model-select-item${available ? "" : " disabled"}" data-value="${escapeMarkup(id)}" data-label="${escapeMarkup(label)}" role="option" aria-disabled="${String(!available)}"><img src="${escapeMarkup(icon)}" alt="" /><span class="model-option-copy"><span class="model-option-heading"><b class="model-option-name">${escapeMarkup(label)}</b><span class="model-status-tags">${modelStatusTagsMarkup(id)}</span>${creditMarkup}</span><span class="model-option-meta">${modelBadgesMarkup(badges)}<small class="model-availability${available ? " available" : ""}">${escapeMarkup(state)}</small></span></span>${modelFavoriteMarkup(id)}</div>`;
 }
 
@@ -3085,8 +3140,8 @@ function updateCreditCost() {
     const rate = pricingData?.audio?.[model];
     const tier = pricingData?.member ? 'member' : 'public';
     const estimatedSeconds = activeMode === 'audio_image'
-      ? Math.max(15, estimatedAudioSeconds(promptInput?.value))
-      : estimatedAudioSeconds(promptInput?.value);
+      ? Math.max(15, estimatedAudioSeconds(currentPrompt()))
+      : estimatedAudioSeconds(currentPrompt());
     const total = estimatedSeconds * Number(rate?.[tier] || 2);
     const number = generateCreditCost.querySelector('b');
     if (number) number.textContent = String(total);
@@ -3170,6 +3225,10 @@ function placeFloatingMenu(menu, trigger) {
   if (!menu || !trigger) return;
   if (menu.parentElement !== document.body) document.body.append(menu);
   const viewportGap = 12;
+  const triggerGap = 7;
+  menu.style.position = 'fixed';
+  menu.style.inset = 'auto';
+  menu.style.maxWidth = `calc(100vw - ${viewportGap * 2}px)`;
   menu.style.maxHeight = '';
   const triggerRect = trigger.getBoundingClientRect();
   let menuRect = menu.getBoundingClientRect();
@@ -3178,20 +3237,17 @@ function placeFloatingMenu(menu, trigger) {
     Math.max(viewportGap, triggerRect.left),
     Math.max(viewportGap, window.innerWidth - width - viewportGap),
   );
-  const roomBelow = window.innerHeight - triggerRect.bottom - viewportGap;
-  const roomAbove = triggerRect.top - viewportGap;
+  const roomBelow = window.innerHeight - triggerRect.bottom - viewportGap - triggerGap;
+  const roomAbove = triggerRect.top - viewportGap - triggerGap;
   const openAbove = roomBelow < menuRect.height && roomAbove > roomBelow;
-  const availableHeight = Math.max(120, openAbove ? roomAbove : roomBelow);
+  const availableHeight = Math.min(420, Math.max(0, openAbove ? roomAbove : roomBelow));
   menu.style.maxHeight = `${Math.floor(availableHeight)}px`;
   menuRect = menu.getBoundingClientRect();
   const top = openAbove
-    ? Math.max(viewportGap, triggerRect.top - menuRect.height - 7)
-    : triggerRect.bottom + 7;
-  menu.style.position = 'fixed';
-  menu.style.inset = 'auto';
+    ? Math.max(viewportGap, triggerRect.top - menuRect.height - triggerGap)
+    : triggerRect.bottom + triggerGap;
   menu.style.left = `${Math.round(left)}px`;
   menu.style.top = `${Math.round(Math.max(viewportGap, top))}px`;
-  menu.style.maxWidth = `calc(100vw - ${viewportGap * 2}px)`;
 }
 
 function bindCompactMenus() {
@@ -3460,7 +3516,7 @@ async function uploadImageBlob(blob, filename, signal) {
 
 async function uploadReferenceMediaBlob(blob, filename, signal) {
   if (!(blob instanceof Blob)) throw new Error("upload_failed");
-  if (!blob.type.startsWith("video/") && !blob.type.startsWith("audio/")) return uploadImageBlob(blob, filename, signal);
+  if (isImageReferenceFile(blob)) return uploadImageBlob(blob, filename, signal);
   const body = new FormData();
   body.append("media", blob, filename);
   const response = await fetchJson(API.mediaUpload, { method: "POST", signal, body }, 120000);
@@ -3478,9 +3534,10 @@ async function uploadMediaPreviewBlob(blob, filename) {
 
 async function upgradeSourceMediaPreview(file, index) {
   const localUrl = sourcePreviewUrls[index];
+  const previewToken = sourcePreviewToken;
   try {
     const previewUrl = await uploadMediaPreviewBlob(file, file.name);
-    if (!previewUrl || sourceFiles[index] !== file) return;
+    if (!previewUrl || previewToken !== sourcePreviewToken || sourceFiles[index] !== file) return;
     if (localUrl?.startsWith("blob:")) URL.revokeObjectURL(localUrl);
     sourcePreviewUrls[index] = new URL(previewUrl, window.location.origin).href;
     if (activeReferenceIndex === index) showActiveReference(index);
@@ -3539,28 +3596,27 @@ async function uploadReferenceImages(signal, sourceAssetReference = null) {
 }
 
 async function uploadVideoImages(signal) {
-  const maximum = activeMode === 'video_first_last' ? 2
-    : activeMode === 'video_reference' ? 5
-    : ['video_edit','video_lip_sync'].includes(activeMode) ? 3
-    : ['video_character_swap','video_digital_human'].includes(activeMode) ? 2 : 1;
+  const maximum = sourceMediaLimits(activeMode).max;
   const uploadIds = [];
+  const files = sourceFiles.slice(0, maximum);
+  const imageNumbers = uploadedImageNumbers(files);
   const assetReferences = [];
-  for (const file of sourceFiles.slice(0, maximum)) {
+  for (const file of files) {
     uploadIds.push(await uploadReferenceMediaBlob(file, file.name, signal));
   }
   const selectedAssets = promptReferenceMentions.filter((item) => item.type === 'asset').slice(0, maximum - uploadIds.length);
   for (const reference of selectedAssets) {
     uploadIds.push(await uploadAssetMedia(reference, signal));
-    assetReferences.push({ ...reference, imageIndex: uploadIds.length });
+    assetReferences.push({ ...reference, imageIndex: imageNumbers.size + assetReferences.length + 1 });
   }
-  return { uploadIds, assetReferences };
+  return { uploadIds, assetReferences, imageNumbers };
 }
 
-function promptWithReferenceMap(assetReferences = []) {
+function promptWithReferenceMap(assetReferences = [], imageNumbers = uploadedImageNumbers(sourceFiles)) {
   const prompt = toolPromptInput?.value.trim() || "";
   const mappings = promptReferenceMentions.flatMap((reference) => {
-    if (reference.type === "upload" && reference.index < sourceFiles.length) {
-      return [`图 ${reference.index + 1} 对应 ${reference.token}`];
+    if (reference.type === "upload" && imageNumbers.has(reference.index)) {
+      return [`图 ${imageNumbers.get(reference.index)} 对应 ${reference.token}`];
     }
     if (reference.type === "asset") {
       const uploaded = assetReferences.find((item) => item.key === reference.key);
@@ -4109,25 +4165,29 @@ function updateCamera() {
   });
 }
 
+function setSourceInputFiles(files) {
+  const transfer = new DataTransfer();
+  for (const file of files) transfer.items.add(file);
+  sourceImageInput.files = transfer.files;
+}
+
 function updateSourcePreview() {
   if (!hasToolingUI) return;
-  const selectedFiles = [...(sourceImageInput.files || [])];
-  clearSourcePreview();
-  if (!selectedFiles.length) {
-    syncUnifiedRoute();
-    updateOutputSummary();
+  if (activeRequest) {
+    setSourceInputFiles(sourceFiles);
     return;
   }
+  const selectedFiles = [...sourceImageInput.files];
   const limits = sourceMediaLimits(activeMode);
   const maxFiles = limits.max;
-  sourceFiles = selectedFiles.slice(0, maxFiles);
+  const acceptedFiles = selectedFiles.slice(0, maxFiles);
   const acceptsVideo = limits.video;
   const acceptsAudio = limits.audio;
   const acceptsImage = limits.image;
   const supportedImage = (file) => acceptsImage && (/^image\/(png|jpeg|webp)$/.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name));
   const supportedVideo = (file) => acceptsVideo && (/^video\/(mp4|webm|quicktime)$/.test(file.type) || /\.(mp4|webm|mov)$/i.test(file.name));
   const supportedAudio = (file) => acceptsAudio && (/^audio\/(wav|x-wav|mpeg|mp4|ogg)$/.test(file.type) || /\.(wav|mp3|m4a|ogg)$/i.test(file.name));
-  const unsupported = sourceFiles.find((file) => !(supportedImage(file) || supportedVideo(file) || supportedAudio(file)));
+  const unsupported = acceptedFiles.find((file) => !(supportedImage(file) || supportedVideo(file) || supportedAudio(file)));
   if (unsupported) {
     const rule = sourceMediaRule(activeMode);
     setError(AUDIO_REFERENCE_MODES.has(activeMode) ? "请选择 WAV、MP3 或 M4A 格式的参考音频。"
@@ -4135,8 +4195,22 @@ function updateSourcePreview() {
       : acceptsAudio ? "请选择受支持的图片、视频或 WAV、MP3、M4A、OGG 音频。"
       : acceptsVideo ? "请选择 PNG、JPG、WebP、MP4、WebM 或 MOV 格式的参考素材。"
       : "请选择 PNG、JPG 或 WebP 格式的参考图。");
-    sourceImageInput.value = "";
-    sourceFiles = [];
+    setSourceInputFiles(sourceFiles);
+    return;
+  }
+
+  // Uploaded mentions belong to the old selection. Asset mentions stay linked.
+  if (sourceFiles.length && toolPromptInput) {
+    toolPromptInput.value = toolPromptInput.value.replace(/@上传图\d+/g, "");
+  }
+  clearSourcePreview();
+  sourceFiles = acceptedFiles;
+  if (selectedFiles.length !== acceptedFiles.length) setSourceInputFiles(acceptedFiles);
+  if (!sourceFiles.length) {
+    const assetReference = promptReferenceMentions.find((item) => item.type === "asset");
+    if (assetReference) showMentionedAssetPreview(assetReference);
+    setError("");
+    syncUnifiedRoute();
     updateOutputSummary();
     return;
   }
@@ -4299,10 +4373,10 @@ if (hasToolingUI) {
       if (sidebarToolTrigger) sidebarToolTrigger.setAttribute('aria-expanded', 'false');
     });
   });
-  document.querySelectorAll('.generator-tab').forEach((tab) => {
-    tab.addEventListener("click", () => {
-      if (tab.dataset.modeTab === "text") setMode("text");
-      else if (tab.dataset.modeTab === "edit") setMode("redraw");
+  studioModeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setSelectorContext("tool-zone");
+      setMode(button.dataset.studioMode);
     });
   });
 }
@@ -4314,46 +4388,42 @@ form.addEventListener("submit", async (event) => {
   // Unified modes hand off to the concrete route implied by the attachments. Every
   // branch below (and the upload helpers they call) then works off a real mode.
   const unifiedMode = UNIFIED_MODES.has(activeMode) ? activeMode : "";
-  if (unifiedMode && toolPromptInput) {
-    // The reference-based image route reads the tool prompt; mirror the main box into it.
-    toolPromptInput.value = promptInput.value.trim();
-  }
-  if (unifiedMode) activeMode = resolveUnifiedMode(unifiedMode);
-  // Safety net: the resolved route may need a different model family (t2v vs i2v,
-  // text-to-image vs edit). Never submit a model the route cannot honour.
-  const routeModels = modelChoicesForMode(activeMode);
-  if (routeModels.length && !routeModels.some((item) => item.id === modelSelect?.value && item.available)) {
-    const routeModel = routeModels.find((item) => item.available) || routeModels[0];
-    if (routeModel) setModelSelectValue(routeModel.id, routeModel.label);
-  }
+  const submitMode = unifiedMode ? resolveUnifiedMode(unifiedMode) : activeMode;
   const prompt = currentPrompt();
-  if ((activeMode === "text" || isVideoMode()) && prompt.length < 3) {
+  if ((submitMode === "text" || isVideoMode(submitMode)) && prompt.length < 3) {
     setError("请至少输入 3 个字符，描述一个清晰的画面。");
-    promptInput.focus();
+    (unifiedMode ? toolPromptInput : promptInput).focus();
     return;
   }
-  if (activeMode === "interactive" && !imageAnnotations.length) {
+  if (submitMode === "interactive" && !imageAnnotations.length) {
     setError("请先在参考图上点选目标或框选需要修改的区域。");
     return;
   }
-  if (isAudioMode() && activeMode !== 'audio_image' && !prompt.length) {
-    setError(activeMode === 'audio_custom_voice' ? '请输入音色描述。' : '请输入需要合成的配音文本。');
-    (AUDIO_SOURCE_MODES.has(activeMode) ? toolPromptInput : promptInput)?.focus();
+  if (isAudioMode(submitMode) && submitMode !== 'audio_image' && !prompt.length) {
+    setError(submitMode === 'audio_custom_voice' ? '请输入音色描述。' : '请输入需要合成的配音文本。');
+    (unifiedMode || AUDIO_SOURCE_MODES.has(submitMode) ? toolPromptInput : promptInput)?.focus();
     return;
   }
-  if (AUDIO_REQUIRED_SOURCE_MODES.has(activeMode) && !sourceFiles.length) {
-    setError(activeMode === 'audio_image' ? '请先上传需要配音的图片。' : '请先上传 10–20 秒清晰参考音频。');
+  if (AUDIO_REQUIRED_SOURCE_MODES.has(submitMode) && !sourceFiles.length) {
+    setError(submitMode === 'audio_image' ? '请先上传需要配音的图片。' : '请先上传 10–20 秒清晰参考音频。');
     sourceImageInput?.focus();
     return;
   }
-  if (VIDEO_IMAGE_MODES.has(activeMode)) {
-    const required = ['video_first_last','video_lip_sync','video_character_swap','video_digital_human'].includes(activeMode) ? 2 : 1;
+  if (VIDEO_IMAGE_MODES.has(submitMode)) {
+    const required = ['video_first_last','video_lip_sync','video_character_swap','video_digital_human'].includes(submitMode) ? 2 : 1;
     const available = sourceFiles.length + promptReferenceMentions.filter((item) => item.type === 'asset').length;
     if (available < required) {
-      setError(activeMode === 'video_first_last' ? '请依次上传首帧与尾帧两张图片。' : required === 2 ? '当前能力需要两项输入素材。' : '请先上传至少一项参考素材。');
+      setError(submitMode === 'video_first_last' ? '请依次上传首帧与尾帧两张图片。' : required === 2 ? '当前能力需要两项输入素材。' : '请先上传至少一项参考素材。');
       sourceImageInput?.focus();
       return;
     }
+  }
+  if (unifiedMode && toolPromptInput) toolPromptInput.value = prompt;
+  activeMode = submitMode;
+  const routeModels = modelChoicesForMode(submitMode);
+  if (routeModels.length && !routeModels.some((item) => item.id === modelSelect?.value && item.available)) {
+    const routeModel = routeModels.find((item) => item.available) || routeModels[0];
+    setModelSelectValue(routeModel.id, routeModel.label);
   }
   activeRequest = new AbortController();
   lastSubmittedPrompt = prompt;
@@ -4380,9 +4450,6 @@ form.addEventListener("submit", async (event) => {
         }),
       });
     } else if (isVideoMode()) {
-      const { uploadIds, assetReferences } = VIDEO_IMAGE_MODES.has(activeMode)
-        ? await uploadVideoImages(activeRequest.signal)
-        : { uploadIds: [], assetReferences: [] };
       const operation = ({
         video_text: 'text_to_video', video_image: 'image_to_video',
         video_first_last: 'first_last_to_video', video_reference: 'reference_to_video',
@@ -4392,14 +4459,17 @@ form.addEventListener("submit", async (event) => {
       })[activeMode];
       let rightsConfirmed = false;
       if (activeMode === 'video_character_swap') {
-        rightsConfirmed = window.confirm('请确认：您拥有上传人物图片和视频的肖像权及使用授权。确认后继续提交。');
+        rightsConfirmed = await confirmAction('请确认：您拥有上传人物图片和视频的肖像权及使用授权。确认后继续提交。', { title:'肖像授权', signal:activeRequest.signal });
         if (!rightsConfirmed) throw new Error('portrait_rights_confirmation_required');
       }
+      const { uploadIds, assetReferences, imageNumbers } = VIDEO_IMAGE_MODES.has(activeMode)
+        ? await uploadVideoImages(activeRequest.signal)
+        : { uploadIds: [], assetReferences: [] };
       response = await fetchJson(API.video, {
         method: 'POST', signal: activeRequest.signal,
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': newIdempotencyKey() },
         body: JSON.stringify({
-          prompt: VIDEO_IMAGE_MODES.has(activeMode) ? promptWithReferenceMap(assetReferences) : prompt,
+          prompt: VIDEO_IMAGE_MODES.has(activeMode) ? promptWithReferenceMap(assetReferences, imageNumbers) : prompt,
           operation,
           model: modelSelect?.value,
           upload_ids: uploadIds,
@@ -4427,7 +4497,7 @@ form.addEventListener("submit", async (event) => {
         if (!speechText) throw new Error('analysis_empty');
       }
       if (AUDIO_REFERENCE_MODES.has(activeMode) && sourceFiles.length) {
-        rightsConfirmed = window.confirm('请确认：参考音频是您本人的声音，或已获得权利人的明确授权。样本仅用于本次临时音色复刻。');
+        rightsConfirmed = await confirmAction('请确认：参考音频是您本人的声音，或已获得权利人的明确授权。样本仅用于本次临时音色复刻。', { title:'声音授权', signal:activeRequest.signal });
         if (!rightsConfirmed) throw new Error('voice_rights_confirmation_required');
         const referenceFile = sourceFiles[0];
         referenceUploadId = await uploadReferenceMediaBlob(referenceFile, referenceFile.name, activeRequest.signal);
@@ -4498,12 +4568,11 @@ form.addEventListener("submit", async (event) => {
     forgetPendingJob();
   } catch (error) {
     const wasCancelled = error.name === "AbortError";
-    const message = wasCancelled ? cancellationNotice : errorMessage(error);
+    const message = t(wasCancelled ? cancellationNotice : errorMessage(error));
     failSessionTurn(message);
     resultPlaceholder.hidden = Boolean(resultGrid.querySelector(".session-turn"));
     resultGrid.hidden = !resultPlaceholder.hidden;
     resultsTitle.textContent = "会话记录";
-    resultTip.textContent = wasCancelled ? "排队中的任务会被取消；已开始的推理无法安全中断。" : "我们不会自动重复提交生成请求。";
     setStatus(wasCancelled ? "已停止" : "未完成", wasCancelled ? "idle" : "error");
     setError(wasCancelled ? "" : message);
     if (wasCancelled || error.message === "generation_failed" || error.status === 404) forgetPendingJob();
@@ -4534,8 +4603,8 @@ if (historyToggle && studioGrid) {
   historyToggle.addEventListener("click", () => setHistoryCollapsed(!studioGrid.classList.contains("history-collapsed")));
 }
 if (clearHistoryButton) {
-  clearHistoryButton.addEventListener("click", () => {
-    if (!window.confirm("仅清除本浏览器中的已生成记录，不会删除服务器上的图片。是否继续？")) return;
+  clearHistoryButton.addEventListener("click", async () => {
+    if (!await confirmAction("仅清除本浏览器中的已生成记录，不会删除服务器上的图片。", { title:"清空历史记录", confirmLabel:"清空", destructive:true })) return;
     try {
       window.localStorage.removeItem(HISTORY_STORAGE_KEY);
     } catch {
@@ -4742,15 +4811,49 @@ bindSidebarSelectors();
 renderFallbackModelChoices();
 setupCatalog();
 setupToolbarSelectMenus();
-const requestedPreset = new URLSearchParams(window.location.search).get("preset");
+const launchParams = new URLSearchParams(window.location.search);
+const requestedPreset = launchParams.get("preset");
 const initialPreset = catalog?.presets?.find((preset) => preset.id === requestedPreset);
 if (initialPreset) applyPreset(initialPreset);
-const requestedPrompt = new URLSearchParams(window.location.search).get("prompt");
-if (requestedPrompt) promptInput.value = requestedPrompt;
+const requestedPrompt = launchParams.get("prompt") || (initialPreset ? promptInput.value : "");
+const requestedTool = launchParams.get("tool");
+if (hasToolingUI) setMode(TOOL_SELECTOR_CHOICES.some(([id]) => id === requestedTool) ? requestedTool : "unified_image");
+if (requestedPrompt) {
+  const promptField = UNIFIED_MODES.has(activeMode) ? toolPromptInput : promptInput;
+  if (promptField === toolPromptInput) promptInput.value = "";
+  promptField.value = requestedPrompt;
+  promptField.dispatchEvent(new Event("input", { bubbles: true }));
+}
 updatePromptMeta();
 renderHistory();
-const requestedTool = new URLSearchParams(window.location.search).get("tool");
-if (hasToolingUI) setMode(TOOL_SELECTOR_CHOICES.some(([id]) => id === requestedTool) ? requestedTool : "unified_image");
+
+const launchRatio = launchParams.get("aspect_ratio");
+const aspectRatioSelect = form.elements.aspect_ratio;
+if ([...aspectRatioSelect.options].some((option) => option.value === launchRatio && !option.disabled)) {
+  aspectRatioSelect.value = launchRatio;
+  updateOutputSummary();
+}
+
+const launchDraftId = Number(launchParams.get("draft"));
+if (Number.isSafeInteger(launchDraftId) && launchDraftId > 0) {
+  const draftMode = activeMode;
+  takeLaunchDraft(launchDraftId).then((draft) => {
+    if (!draft || draftMode !== activeMode) return;
+    const draftInput = draftMode === "text" ? promptInput : toolPromptInput;
+    if (draft.prompt && !draftInput.value.trim()) {
+      draftInput.value = draft.prompt;
+      draftInput.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (draft.file && !sourceImageInput.files.length) {
+      setSourceInputFiles([draft.file]);
+      updateSourcePreview();
+    }
+  }).catch(() => setError("无法读取首页草稿，请重新输入或选择参考图。")).finally(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("draft");
+    window.history.replaceState(window.history.state, "", url);
+  });
+}
 Promise.allSettled([loadPricing().then(loadModelAvailability), loadToolPresets()]).then(resumePendingJob);
 
 async function refreshCredits(fresh = false) {
@@ -4773,7 +4876,8 @@ async function refreshSidebarUser() {
     const onboardingIdentity = String(body?.profile?.user_id || body?.device_id || "anonymous-device");
     window.HuijuOnboardingIdentity = onboardingIdentity;
     window.dispatchEvent(new CustomEvent("huiju:onboarding-identity", { detail: { key: onboardingIdentity } }));
-    const displayName = String(body?.profile?.display_name || "神秘画家").trim().slice(0, 24) || "神秘画家";
+    const guestName = t("神秘画家");
+    const displayName = String(body?.profile?.display_name || guestName).trim().slice(0, 24) || guestName;
     if (nameNode) nameNode.textContent = displayName;
     if (avatarNode) avatarNode.textContent = displayName.slice(0, 1);
   } catch {
@@ -4871,7 +4975,7 @@ function renderCapabilityCards() {
     const icon = document.createElement("span");
     icon.className = "capability-card-icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = group.icon || "✦";
+    icon.innerHTML = capabilityItemIcon(item, group.id);
     const copy = document.createElement("span");
     copy.className = "capability-card-copy";
     const title = document.createElement("b");
@@ -4934,13 +5038,6 @@ function renderQuickAccessPins() {
   if (!quickAccessPins) return;
   const entries = quickAccessIds.map(capabilityEntryById).filter(Boolean);
   quickAccessIds = entries.map(({ item }) => item.id);
-  if (!entries.length) {
-    const hint = document.createElement("span");
-    hint.className = "quick-access-empty";
-    hint.textContent = "右键二级功能可固定到这里";
-    quickAccessPins.replaceChildren(hint);
-    return;
-  }
   quickAccessPins.replaceChildren(...entries.map(({ item, group }) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -4998,22 +5095,22 @@ function openSidebarPinMenu(itemId, clientX, clientY) {
 }
 
 const SIDEBAR_ARCHITECTURE = Object.freeze([
-  { id:"visual-creation", name:"图像创作", icon:"✦", sections:[
+  { id:"visual-creation", name:"图像创作", icon:"spark", sections:[
     ["开始创作", "drawing-models"], ["编辑与修复", "image-edit"], ["高级创作", "creative"],
   ]},
-  { id:"professional-scenes", name:"专业场景", icon:"◇", sections:[
+  { id:"professional-scenes", name:"专业场景", icon:"folder", sections:[
     ["电商", "commerce"], ["建筑与室内", "architecture"], ["人像", "portrait"], ["游戏与动漫", "game-anime"],
   ]},
-  { id:"video-creation", name:"视频创作", icon:"▶", sections:[
+  { id:"video-creation", name:"视频创作", icon:"video", sections:[
     ["生成", "ai-video"], ["处理", "video-tools"],
   ]},
-  { id:"narrative-production", name:"叙事制作", icon:"▤", sections:[
+  { id:"narrative-production", name:"叙事制作", icon:"video", sections:[
     ["短剧", "short-drama"], ["声音", "sound"],
   ]},
-  { id:"projects", name:"项目", icon:"⌘", sections:[
+  { id:"projects", name:"项目", icon:"workflow", sections:[
     ["工作内容", "workspace", new Set(["workflow-canvas", "personal-assets", "generation-history"])],
   ]},
-  { id:"help", name:"帮助", icon:"?", sections:[
+  { id:"help", name:"帮助", icon:"alert", sections:[
     ["使用与状态", "workspace", new Set(["api-platform", "tutorials", "changelog"])],
   ]},
 ]);
@@ -5050,7 +5147,10 @@ function renderSidebarSearch() {
       location:`${group.name} · ${item.sidebarSection}`, terms:`${group.name} ${item.sidebarSection}`,
     }))),
   ];
-  const matches = entries.filter((entry) => `${entry.name} ${entry.location} ${entry.terms}`.toLocaleLowerCase().includes(query));
+  const matches = entries.filter((entry) => {
+    const location = entry.location.split(" · ").map((part) => t(part)).join(" · ");
+    return `${t(entry.name)} ${location} ${entry.name} ${entry.location} ${entry.terms}`.toLocaleLowerCase().includes(query);
+  });
   if (!matches.length) {
     const empty = document.createElement("p");
     empty.className = "sidebar-search-empty";
@@ -5067,7 +5167,7 @@ function renderSidebarSearch() {
     const name = document.createElement("b");
     name.textContent = entry.name;
     const location = document.createElement("small");
-    location.textContent = entry.location;
+    location.textContent = entry.location.split(" · ").map((part) => t(part)).join(" · ");
     button.append(name, location);
     return button;
   }));
@@ -5077,16 +5177,28 @@ function closeSidebarSearch() {
   sidebarSearchInput.value = "";
   renderSidebarSearch();
   document.body.classList.remove("sidebar-search-mobile-open");
+  sidebarSearchOpen?.setAttribute("aria-expanded", "false");
 }
 
 sidebarSearchInput?.addEventListener("input", renderSidebarSearch);
 sidebarSearchInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") { closeSidebarSearch(); sidebarSearchInput.blur(); }
   if (event.key === "Enter") { event.preventDefault(); sidebarSearchResults.querySelector("button")?.click(); }
 });
+document.querySelector("#sidebar-search")?.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  event.stopPropagation();
+  const mobileOpen = document.body.classList.contains("sidebar-search-mobile-open");
+  closeSidebarSearch();
+  (mobileOpen ? sidebarSearchOpen : sidebarSearchInput)?.focus();
+});
 sidebarSearchOpen?.addEventListener("click", () => {
-  if (window.innerWidth <= 800) document.body.classList.add("sidebar-search-mobile-open");
-  else setSidebarCollapsed(false);
+  if (window.innerWidth <= 800) {
+    document.body.classList.add("sidebar-search-mobile-open");
+    sidebarSearchOpen.setAttribute("aria-expanded", "true");
+  } else {
+    setSidebarCollapsed(false);
+  }
   sidebarSearchInput.focus();
 });
 sidebarSearchResults?.addEventListener("click", (event) => {
@@ -5112,8 +5224,10 @@ function renderCapabilitySidebar() {
     trigger.type = "button";
     trigger.className = "capability-menu-trigger";
     trigger.dataset.capabilityGroup = group.id;
-    trigger.setAttribute("aria-expanded", String(group.id === activeSidebarCapabilityGroup));
-    trigger.innerHTML = `<span aria-hidden="true">${capabilityGroupIcon(group.id)}</span><b>${escapeMarkup(group.name)}</b><i aria-hidden="true">›</i>`;
+    trigger.title = group.name;
+    trigger.setAttribute("aria-label", group.name);
+    trigger.setAttribute("aria-expanded", String(group.id === activeSidebarCapabilityGroup && !document.body.classList.contains("sidebar-collapsed")));
+    trigger.innerHTML = `<span aria-hidden="true">${capabilityGroupIcon(group.id)}</span><b>${escapeMarkup(group.name)}</b><i aria-hidden="true">${uiIcon("chevron-down")}</i>`;
     const subnav = document.createElement("div");
     subnav.className = "capability-subnav";
     subnav.setAttribute("aria-label", `${group.name}二级能力`);
@@ -5481,19 +5595,23 @@ function openImageDubbingWorkflow(item) {
   closeCapabilityCenter();
   setWorkspaceView("workflow");
   window.setTimeout(() => {
+    const issue = workflowGraphLimitIssue(workflowBoard.querySelectorAll("[data-node-id]").length + 3, workflowEdges.length + 2);
+    if (issue) return showWorkflowToast(issue);
     const worldX = ((workflowViewport?.clientWidth || 1200) / 2 - workflowState.panX) / workflowState.zoom;
     const worldY = ((workflowViewport?.clientHeight || 720) / 2 - workflowState.panY) / workflowState.zoom;
-    const image = createDynamicWorkflowNode("media_input", worldX - 650, worldY - 140, "", { input_type:"image" });
-    const speech = createDynamicWorkflowNode("audio_generator", worldX - 235, worldY - 140, "", { ability:"image_dubbing", model:"doubao-tts-2.0" });
-    const output = createDynamicWorkflowNode("media_output", worldX + 175, worldY - 140, "", { output_type:"audio", format:"wav" });
+    const image = createDynamicWorkflowNode("media_input", worldX - 650, worldY - 140, "", { input_type:"image" }, workflowBoard, false);
+    const speech = createDynamicWorkflowNode("audio_generator", worldX - 235, worldY - 140, "", { ability:"image_dubbing", model:"doubao-tts-2.0" }, workflowBoard, false);
+    const output = createDynamicWorkflowNode("media_output", worldX + 175, worldY - 140, "", { output_type:"audio", format:"wav" }, workflowBoard, false);
     if (![image, speech, output].every(Boolean)) return showWorkflowToast("图片配音工作流创建失败");
     const connect = (fromNode, fromPort, toNode, toPort) => workflowEdges.push({
       id:`edge-${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`,
       from_node:fromNode.dataset.nodeId, from_port:fromPort,
       to_node:toNode.dataset.nodeId, to_port:toPort,
     });
+    const edgeStart = workflowEdges.length;
     connect(image, "image", speech, "image");
     connect(speech, "audio", output, "audio");
+    recordWorkflowStructure({ addedNodes:workflowPositionsInBoard([image, speech, output]), addedEdges:workflowEdges.slice(edgeStart) });
     updateWorkflowLines();
     syncWorkflowGenerationCredits(speech);
     showWorkflowToast(`已创建${item?.name || "图片配音"}工作流，选择图片后即可运行`);
@@ -5504,19 +5622,23 @@ function openReferenceAudioWorkflow(item) {
   closeCapabilityCenter();
   setWorkspaceView("workflow");
   window.setTimeout(() => {
+    const issue = workflowGraphLimitIssue(workflowBoard.querySelectorAll("[data-node-id]").length + 3, workflowEdges.length + 2);
+    if (issue) return showWorkflowToast(issue);
     const worldX = ((workflowViewport?.clientWidth || 1200) / 2 - workflowState.panX) / workflowState.zoom;
     const worldY = ((workflowViewport?.clientHeight || 720) / 2 - workflowState.panY) / workflowState.zoom;
-    const input = createDynamicWorkflowNode("media_input", worldX - 470, worldY - 140, "", { input_type:"audio" });
-    const speech = createDynamicWorkflowNode("audio_generator", worldX - 90, worldY - 140, "", { ability:"reference_audio", model:"qwen3-tts-flash" });
-    const output = createDynamicWorkflowNode("media_output", worldX + 300, worldY - 140, "", { output_type:"audio", format:"wav" });
+    const input = createDynamicWorkflowNode("media_input", worldX - 470, worldY - 140, "", { input_type:"audio" }, workflowBoard, false);
+    const speech = createDynamicWorkflowNode("audio_generator", worldX - 90, worldY - 140, "", { ability:"reference_audio", model:"qwen3-tts-flash" }, workflowBoard, false);
+    const output = createDynamicWorkflowNode("media_output", worldX + 300, worldY - 140, "", { output_type:"audio", format:"wav" }, workflowBoard, false);
     if (![input, speech, output].every(Boolean)) return showWorkflowToast("参考音频工作流创建失败");
     const connect = (fromNode, fromPort, toNode, toPort) => workflowEdges.push({
       id:`edge-${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`,
       from_node:fromNode.dataset.nodeId, from_port:fromPort,
       to_node:toNode.dataset.nodeId, to_port:toPort,
     });
+    const edgeStart = workflowEdges.length;
     connect(input, "audio", speech, "audio");
     connect(speech, "audio", output, "audio");
+    recordWorkflowStructure({ addedNodes:workflowPositionsInBoard([input, speech, output]), addedEdges:workflowEdges.slice(edgeStart) });
     updateWorkflowLines();
     syncWorkflowGenerationCredits(speech);
     showWorkflowToast(`已创建${item?.name || "参考音频配声"}工作流，请上传本人或已获授权的清晰人声`);
@@ -5580,16 +5702,15 @@ function activateCapabilityItem(item) {
     window.setTimeout(() => {
       const x = (workflowViewport?.clientWidth || 1200) / 2 - workflowState.panX;
       const y = (workflowViewport?.clientHeight || 720) / 2 - workflowState.panY;
-      createDynamicWorkflowNode(item.node_type, x / workflowState.zoom, y / workflowState.zoom, "", {
+      const node = createDynamicWorkflowNode(item.node_type, x / workflowState.zoom, y / workflowState.zoom, "", {
         capability_id:item.id,
         ...(item.model ? { model:item.model } : {}),
         ...(item.node_config || {}),
       });
-      updateWorkflowLines();
-      showWorkflowToast(`已添加${item.name}节点`);
+      if (node) showWorkflowToast(`已添加${item.name}节点`);
     }, 180);
   }
-  else if (item.action === "page" && /^[a-z0-9-]+\.html$/i.test(item.href || "")) window.location.assign(item.href);
+  else if (item.action === "page" && /^[a-z0-9-]+\.html$/i.test(item.href || "")) window.location.assign(localeUrl(item.href));
   else if (item.action === "capability") showCapabilityNotice(item.requires || "该功能需要补充服务端 API 后才能开放。");
 }
 
@@ -5598,7 +5719,9 @@ capabilityNav?.addEventListener("click", (event) => {
   if (groupButton) {
     const groupId = groupButton.dataset.capabilityGroup;
     const section = groupButton.closest(".capability-menu-group");
-    const willOpen = !section.classList.contains("is-open");
+    const collapsed = document.body.classList.contains("sidebar-collapsed");
+    const willOpen = collapsed || !section.classList.contains("is-open");
+    if (collapsed) setSidebarCollapsed(false);
     capabilityNav.querySelectorAll(".capability-menu-group").forEach((entry) => {
       const open = entry === section && willOpen;
       entry.classList.toggle("is-open", open);
@@ -5721,7 +5844,7 @@ function localToolOptionsMarkup(tool) {
   if (tool === "crop") return '<div class="crop-editor-controls"><div class="crop-angle-control"><button type="button" data-crop-action="rotate-left" title="向左旋转 90°" aria-label="向左旋转 90°">↶</button><label><span><b id="local-crop-angle-value">0°</b></span><input name="angle" type="range" min="-45" max="45" step="1" value="0" aria-label="微调旋转角度" /></label><button type="button" data-crop-action="rotate-right" title="向右旋转 90°" aria-label="向右旋转 90°">↷</button></div><div class="crop-inline-actions"><label class="crop-ratio-field"><span>比例</span><select name="ratio"><option value="free">自由</option><option value="1">1:1</option><option value="0.8">4:5</option><option value="0.75">3:4</option><option value="1.5">3:2</option><option value="1.7777778">16:9</option><option value="0.5625">9:16</option></select></label><button type="button" data-crop-action="flip-x" title="水平翻转" aria-label="水平翻转">⇄</button><button type="button" data-crop-action="flip-y" title="垂直翻转" aria-label="垂直翻转">⇅</button><button type="button" data-crop-action="reset" title="重置裁剪" aria-label="重置裁剪">重置</button></div></div>';
   if (tool === "convert") return '<label>格式<select name="format"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></label><label>质量<input name="quality" type="range" min="60" max="100" value="92" /></label>';
   if (tool === "watermark") return '<label>水印文字<input name="text" maxlength="80" value="绘域创作" /></label><label>位置<select name="position"><option value="bottom-right">右下</option><option value="bottom-left">左下</option><option value="center">居中</option></select></label><label>透明度<input name="opacity" type="range" min="10" max="100" value="55" /></label>';
-  if (tool === "collage") return '<button class="collage-add-images" type="button" data-collage-add-images><span aria-hidden="true">＋</span><b>添加图片</b><small>可继续选择或拖入图片，最多 12 张</small></button><p class="collage-image-status" data-collage-image-status role="status"></p><label>列数<select name="columns"><option value="1">1 列</option><option value="2" selected>2 列</option><option value="3">3 列</option><option value="4">4 列</option></select></label><label>间距<input name="gap" type="number" min="0" max="80" value="16" /></label>';
+  if (tool === "collage") return `<button class="collage-add-images" type="button" data-collage-add-images>${uiIcon("plus")}<b>添加图片</b><small>可继续选择或拖入图片，最多 12 张</small></button><p class="collage-image-status" data-collage-image-status role="status"></p><label>列数<select name="columns"><option value="1">1 列</option><option value="2" selected>2 列</option><option value="3">3 列</option><option value="4">4 列</option></select></label><label>间距<input name="gap" type="number" min="0" max="80" value="16" /></label>`;
   return "";
 }
 
@@ -6468,63 +6591,79 @@ if (discoverToggle && discoverNav) {
   });
 }
 
+const sidebarPreferenceKey = "huiju-sidebar-collapsed";
+const compactSidebarLayout = window.matchMedia("(min-width: 801px) and (max-width: 980px)");
+let sidebarPreference = null;
+try {
+  const saved = localStorage.getItem(sidebarPreferenceKey);
+  if (saved === "1" || saved === "0") sidebarPreference = saved === "1";
+} catch { /* Storage may be disabled. */ }
+
 function setSidebarCollapsed(collapsed) {
   document.body.classList.toggle("sidebar-collapsed", collapsed);
+  capabilityNav?.querySelectorAll(".capability-menu-trigger").forEach((button) => {
+    const open = !collapsed && button.closest(".capability-menu-group").classList.contains("is-open");
+    button.setAttribute("aria-expanded", String(open));
+  });
   if (!sidebarCollapse) return;
+  const label = collapsed ? "展开侧栏" : "收起侧栏";
   sidebarCollapse.setAttribute("aria-expanded", String(!collapsed));
-  sidebarCollapse.setAttribute("aria-label", collapsed ? "展开侧栏" : "收起侧栏");
+  sidebarCollapse.setAttribute("aria-label", label);
+  sidebarCollapse.title = label;
 }
 
-if (sidebarCollapse) {
-  let initiallyCollapsed = false;
-  try { initiallyCollapsed = localStorage.getItem("huiju-sidebar-collapsed") === "1"; } catch { /* Storage may be disabled. */ }
-  setSidebarCollapsed(initiallyCollapsed);
-  sidebarCollapse.addEventListener("click", () => {
-    const collapsed = !document.body.classList.contains("sidebar-collapsed");
-    setSidebarCollapsed(collapsed);
-    try { localStorage.setItem("huiju-sidebar-collapsed", collapsed ? "1" : "0"); } catch { /* Keep navigation functional. */ }
-  });
-}
+setSidebarCollapsed(sidebarPreference ?? compactSidebarLayout.matches);
+compactSidebarLayout.addEventListener("change", () => {
+  if (sidebarPreference === null && !document.body.classList.contains("workflow-active")) {
+    setSidebarCollapsed(compactSidebarLayout.matches);
+  }
+});
+sidebarCollapse?.addEventListener("click", () => {
+  sidebarPreference = !document.body.classList.contains("sidebar-collapsed");
+  setSidebarCollapsed(sidebarPreference);
+  try { localStorage.setItem(sidebarPreferenceKey, sidebarPreference ? "1" : "0"); } catch { /* Keep navigation functional. */ }
+});
 
 const SKILL_CATALOG = [
-  { name: "商业产品图", note: "干净布光 · 品牌质感", category: "commercial", mode: "text", icon: "◈", image: "commercial-product", prompt: "高级商业产品摄影，产品置于极简展台中央，柔和轮廓光与克制反射，高级品牌广告构图，真实材质，高细节，无文字无水印。" },
-  { name: "电商主视觉", note: "动势构图 · 商品聚焦", category: "commercial", mode: "text", icon: "◇", image: "ecommerce-poster", prompt: "高级电商视觉海报，产品悬浮在几何空间中，动势构图，强烈但克制的商业主视觉，留有排版空间，无文字无水印。" },
-  { name: "美妆质感图", note: "通透柔光 · 护肤广告", category: "commercial", mode: "text", icon: "✦", image: "beauty-cosmetics", prompt: "高级美妆广告摄影，护肤玻璃瓶与水滴花瓣置于石材上，通透柔光，细腻反射，商业视觉，无文字无水印。" },
-  { name: "食物广告", note: "自然光 · 食欲氛围", category: "commercial", mode: "text", icon: "◉", image: "food-advertising", prompt: "高级食物广告摄影，精致甜点与新鲜食材在温暖自然光下，层次丰富，食欲感强，无文字无水印。" },
-  { name: "珠宝微距", note: "奢华高光 · 材质细节", category: "commercial", mode: "text", icon: "◆", image: "jewelry-macro", prompt: "奢华珠宝微距摄影，现代首饰与透明水晶置于深色丝绒，细腻高光，极致材质，高级商业摄影，无文字无水印。" },
-  { name: "包装样机", note: "品牌陈列 · 纸张肌理", category: "commercial", mode: "text", icon: "▣", image: "packaging-mockup", prompt: "高级品牌包装样机，礼盒、纸袋与瓶罐组合陈列，真实纸张和印刷肌理，摄影棚柔光，无文字无标志无水印。" },
-  { name: "质感人像", note: "自然抓拍 · 胶片氛围", category: "portrait", mode: "text", icon: "◎", image: "editorial-portrait", prompt: "真人写实人像摄影，自然抓拍姿态，柔和侧光勾勒轮廓，胶片颗粒，真实皮肤质感，克制高级的色彩。" },
-  { name: "电影感人像", note: "情绪侧光 · 35mm胶片", category: "portrait", mode: "text", icon: "◐", image: "cinematic-portrait", prompt: "电影感成年人物肖像，雨夜窗边，冷暖侧光，35mm胶片颗粒，克制情绪，真实摄影，无文字无水印。" },
-  { name: "随手抓拍", note: "低像素 · 朦胧噪点", category: "portrait", mode: "text", icon: "⌁", image: "instant-snapshot", prompt: "低像素生活随手抓拍风格，前置摄像头视角，室内日常场景，明显噪点、轻微失焦和暧昧梦幻氛围，无文字无水印。" },
-  { name: "新中式写真", note: "东方留白 · 含蓄光影", category: "portrait", mode: "text", icon: "❋", image: "oriental-portrait", prompt: "新中式成年女性人像摄影，现代东方服装，简洁发饰，竹影与夕阳，含蓄高级，真实细节，无文字无水印。" },
-  { name: "商务形象照", note: "自然可信 · 专业棚拍", category: "portrait", mode: "text", icon: "◍", image: "business-headshot", prompt: "专业商务形象照，成年职场人物自然自信，简洁背景，柔和棚拍光，真实可信，高级企业摄影，无文字无水印。" },
-  { name: "多角度设定", note: "调节机位 · 主体一致", category: "character", mode: "multiangle", icon: "◒", image: "multi-angle", prompt: "保持参考主体身份、服装与比例一致，生成指定相机方位的专业角色画面，干净背景，真实光影，高细节。" },
-  { name: "角色设定表", note: "三视图 · 细节拆解", category: "character", mode: "text", icon: "⌘", image: "character-sheet", prompt: "专业原创角色设定表，包含正面全身、侧面、背面和局部细节，所有视角身份与服装完全一致，干净背景，无文字无水印。" },
-  { name: "动画角色", note: "电影赛璐璐 · 精致线条", category: "character", mode: "text", icon: "✧", image: "anime-character", prompt: "原创动画电影角色，清透赛璐璐上色，精致线条，富有层次的环境光，人物设计完整，无文字无水印。" },
-  { name: "表情设定", note: "同一角色 · 四种情绪", category: "character", mode: "text", icon: "☻", image: "expression-sheet", prompt: "原创角色表情设定，同一角色的开心、疑惑、惊讶和冷静四种面部表情整齐呈现，身份完全一致，干净背景，无文字。" },
-  { name: "电影分镜", note: "连续镜头 · 叙事节奏", category: "character", mode: "text", icon: "▤", image: "cinematic-storyboard", prompt: "电影分镜设计，同一人物和场景的远景、中景、近景与特写连续呈现，镜头衔接自然，电影摄影，高级叙事感，无文字。" },
-  { name: "手绘注解", note: "生活摄影 · 涂鸦装饰", category: "design", mode: "redraw", icon: "✎", image: "handwritten-notes", prompt: "观察参考图中的元素，用简洁手绘箭头、虚线、星星和小图形添加自然注解装饰，保留主体，杂志随手笔记感。" },
-  { name: "品牌主视觉", note: "玻璃材质 · 三维设计", category: "design", mode: "text", icon: "◫", image: "brand-key-visual", prompt: "高级品牌主视觉，半透明玻璃几何体在极简空间中悬浮流动，细腻反射，现代三维设计，无文字无水印。" },
-  { name: "界面概念图", note: "悬浮卡片 · 产品美学", category: "design", mode: "text", icon: "▦", image: "ui-concept", prompt: "未来感创意应用界面概念，多层半透明卡片悬浮在柔和空间，精致现代产品设计，不出现可读文字，无水印。" },
-  { name: "照片转插画", note: "真实融合 · 绘本质感", category: "design", mode: "redraw", icon: "◩", image: "illustration-conversion", prompt: "将参考照片自然转化为细腻绘本插画，保留主体轮廓、构图与关键特征，色彩干净，纸张肌理细腻。" },
-  { name: "水彩海报", note: "高级留白 · 水彩晕染", category: "design", mode: "text", icon: "❉", image: "watercolor-poster", prompt: "现代水彩艺术海报，抽象花卉和人物剪影，高级留白、自然水彩晕染和纸张肌理，无文字无水印。" },
-  { name: "室内设计", note: "空间材质 · 自然天光", category: "scene", mode: "text", icon: "▱", image: "interior-design", prompt: "高级现代室内设计，安静完整的居住空间，真实石材、原木与织物，自然天光，建筑摄影，无人物无文字。" },
-  { name: "建筑概念", note: "极简体块 · 环境融合", category: "scene", mode: "text", icon: "△", image: "architecture-concept", prompt: "现代建筑概念，极简美术馆位于薄雾自然景观，弧形结构与水面倒影，专业建筑可视化，无文字无水印。" },
-  { name: "360° 全景空间", note: "2:1 投影 · 无缝环视", category: "scene", mode: "panorama", icon: "◫", image: "panorama-scene", prompt: "将参考画面扩展为严格 2:1 等距柱状 360° 全景，水平视场 360°、垂直视场 180°，地平线居中，最左与最右边缘无缝衔接。" },
-  { name: "幻想概念", note: "史诗空间 · 超现实叙事", category: "scene", mode: "text", icon: "✺", image: "fantasy-concept", prompt: "史诗幻想概念艺术，云海上的东方宫殿与悬浮星球，广角大纵深，震撼而克制的电影氛围，无文字无水印。" },
-  { name: "局部重绘", note: "画笔蒙版 · 精准修改", category: "edit", mode: "redraw", icon: "◌", image: "local-redraw", prompt: "仅重绘画笔蒙版选中的区域，严格保留未选区域，修改内容与原图光线、透视、材质和颗粒自然融合。" },
-  { name: "重新布光", note: "保留人物 · 改变光线", category: "edit", mode: "redraw", icon: "☼", image: "photo-relighting", prompt: "保持参考图人物身份、构图与背景不变，将选中区域调整为高级电影侧光，阴影与轮廓光自然，肤色真实。" },
-  { name: "智能换装", note: "身份锁定 · 服装替换", category: "edit", mode: "redraw", icon: "♢", image: "outfit-change", prompt: "保持参考图人物身份、脸部、姿态和背景不变，仅替换选中区域的服装，剪裁自然，材质真实，光影完全匹配。" },
+  { name: "商业产品图", note: "干净布光 · 品牌质感", category: "commercial", mode: "text", icon: "grid", image: "commercial-product", prompt: "高级商业产品摄影，产品置于极简展台中央，柔和轮廓光与克制反射，高级品牌广告构图，真实材质，高细节，无文字无水印。" },
+  { name: "电商主视觉", note: "动势构图 · 商品聚焦", category: "commercial", mode: "text", icon: "folder", image: "ecommerce-poster", prompt: "高级电商视觉海报，产品悬浮在几何空间中，动势构图，强烈但克制的商业主视觉，留有排版空间，无文字无水印。" },
+  { name: "美妆质感图", note: "通透柔光 · 护肤广告", category: "commercial", mode: "text", icon: "spark", image: "beauty-cosmetics", prompt: "高级美妆广告摄影，护肤玻璃瓶与水滴花瓣置于石材上，通透柔光，细腻反射，商业视觉，无文字无水印。" },
+  { name: "食物广告", note: "自然光 · 食欲氛围", category: "commercial", mode: "text", icon: "user", image: "food-advertising", prompt: "高级食物广告摄影，精致甜点与新鲜食材在温暖自然光下，层次丰富，食欲感强，无文字无水印。" },
+  { name: "珠宝微距", note: "奢华高光 · 材质细节", category: "commercial", mode: "text", icon: "grid", image: "jewelry-macro", prompt: "奢华珠宝微距摄影，现代首饰与透明水晶置于深色丝绒，细腻高光，极致材质，高级商业摄影，无文字无水印。" },
+  { name: "包装样机", note: "品牌陈列 · 纸张肌理", category: "commercial", mode: "text", icon: "image", image: "packaging-mockup", prompt: "高级品牌包装样机，礼盒、纸袋与瓶罐组合陈列，真实纸张和印刷肌理，摄影棚柔光，无文字无标志无水印。" },
+  { name: "质感人像", note: "自然抓拍 · 胶片氛围", category: "portrait", mode: "text", icon: "user", image: "editorial-portrait", prompt: "真人写实人像摄影，自然抓拍姿态，柔和侧光勾勒轮廓，胶片颗粒，真实皮肤质感，克制高级的色彩。" },
+  { name: "电影感人像", note: "情绪侧光 · 35mm胶片", category: "portrait", mode: "text", icon: "image", image: "cinematic-portrait", prompt: "电影感成年人物肖像，雨夜窗边，冷暖侧光，35mm胶片颗粒，克制情绪，真实摄影，无文字无水印。" },
+  { name: "随手抓拍", note: "低像素 · 朦胧噪点", category: "portrait", mode: "text", icon: "audio", image: "instant-snapshot", prompt: "低像素生活随手抓拍风格，前置摄像头视角，室内日常场景，明显噪点、轻微失焦和暧昧梦幻氛围，无文字无水印。" },
+  { name: "新中式写真", note: "东方留白 · 含蓄光影", category: "portrait", mode: "text", icon: "image", image: "oriental-portrait", prompt: "新中式成年女性人像摄影，现代东方服装，简洁发饰，竹影与夕阳，含蓄高级，真实细节，无文字无水印。" },
+  { name: "商务形象照", note: "自然可信 · 专业棚拍", category: "portrait", mode: "text", icon: "image", image: "business-headshot", prompt: "专业商务形象照，成年职场人物自然自信，简洁背景，柔和棚拍光，真实可信，高级企业摄影，无文字无水印。" },
+  { name: "多角度设定", note: "调节机位 · 主体一致", category: "character", mode: "multiangle", icon: "fit", image: "multi-angle", prompt: "保持参考主体身份、服装与比例一致，生成指定相机方位的专业角色画面，干净背景，真实光影，高细节。" },
+  { name: "角色设定表", note: "三视图 · 细节拆解", category: "character", mode: "text", icon: "workflow", image: "character-sheet", prompt: "专业原创角色设定表，包含正面全身、侧面、背面和局部细节，所有视角身份与服装完全一致，干净背景，无文字无水印。" },
+  { name: "动画角色", note: "电影赛璐璐 · 精致线条", category: "character", mode: "text", icon: "image", image: "anime-character", prompt: "原创动画电影角色，清透赛璐璐上色，精致线条，富有层次的环境光，人物设计完整，无文字无水印。" },
+  { name: "表情设定", note: "同一角色 · 四种情绪", category: "character", mode: "text", icon: "user", image: "expression-sheet", prompt: "原创角色表情设定，同一角色的开心、疑惑、惊讶和冷静四种面部表情整齐呈现，身份完全一致，干净背景，无文字。" },
+  { name: "电影分镜", note: "连续镜头 · 叙事节奏", category: "character", mode: "text", icon: "video", image: "cinematic-storyboard", prompt: "电影分镜设计，同一人物和场景的远景、中景、近景与特写连续呈现，镜头衔接自然，电影摄影，高级叙事感，无文字。" },
+  { name: "手绘注解", note: "生活摄影 · 涂鸦装饰", category: "design", mode: "redraw", icon: "edit", image: "handwritten-notes", prompt: "观察参考图中的元素，用简洁手绘箭头、虚线、星星和小图形添加自然注解装饰，保留主体，杂志随手笔记感。" },
+  { name: "品牌主视觉", note: "玻璃材质 · 三维设计", category: "design", mode: "text", icon: "video", image: "brand-key-visual", prompt: "高级品牌主视觉，半透明玻璃几何体在极简空间中悬浮流动，细腻反射，现代三维设计，无文字无水印。" },
+  { name: "界面概念图", note: "悬浮卡片 · 产品美学", category: "design", mode: "text", icon: "image", image: "ui-concept", prompt: "未来感创意应用界面概念，多层半透明卡片悬浮在柔和空间，精致现代产品设计，不出现可读文字，无水印。" },
+  { name: "照片转插画", note: "真实融合 · 绘本质感", category: "design", mode: "redraw", icon: "image", image: "illustration-conversion", prompt: "将参考照片自然转化为细腻绘本插画，保留主体轮廓、构图与关键特征，色彩干净，纸张肌理细腻。" },
+  { name: "水彩海报", note: "高级留白 · 水彩晕染", category: "design", mode: "text", icon: "image", image: "watercolor-poster", prompt: "现代水彩艺术海报，抽象花卉和人物剪影，高级留白、自然水彩晕染和纸张肌理，无文字无水印。" },
+  { name: "室内设计", note: "空间材质 · 自然天光", category: "scene", mode: "text", icon: "layers", image: "interior-design", prompt: "高级现代室内设计，安静完整的居住空间，真实石材、原木与织物，自然天光，建筑摄影，无人物无文字。" },
+  { name: "建筑概念", note: "极简体块 · 环境融合", category: "scene", mode: "text", icon: "image", image: "architecture-concept", prompt: "现代建筑概念，极简美术馆位于薄雾自然景观，弧形结构与水面倒影，专业建筑可视化，无文字无水印。" },
+  { name: "360° 全景空间", note: "2:1 投影 · 无缝环视", category: "scene", mode: "panorama", icon: "video", image: "panorama-scene", prompt: "将参考画面扩展为严格 2:1 等距柱状 360° 全景，水平视场 360°、垂直视场 180°，地平线居中，最左与最右边缘无缝衔接。" },
+  { name: "幻想概念", note: "史诗空间 · 超现实叙事", category: "scene", mode: "text", icon: "image", image: "fantasy-concept", prompt: "史诗幻想概念艺术，云海上的东方宫殿与悬浮星球，广角大纵深，震撼而克制的电影氛围，无文字无水印。" },
+  { name: "局部重绘", note: "画笔蒙版 · 精准修改", category: "edit", mode: "redraw", icon: "image", image: "local-redraw", prompt: "仅重绘画笔蒙版选中的区域，严格保留未选区域，修改内容与原图光线、透视、材质和颗粒自然融合。" },
+  { name: "重新布光", note: "保留人物 · 改变光线", category: "edit", mode: "redraw", icon: "spark", image: "photo-relighting", prompt: "保持参考图人物身份、构图与背景不变，将选中区域调整为高级电影侧光，阴影与轮廓光自然，肤色真实。" },
+  { name: "智能换装", note: "身份锁定 · 服装替换", category: "edit", mode: "redraw", icon: "image", image: "outfit-change", prompt: "保持参考图人物身份、脸部、姿态和背景不变，仅替换选中区域的服装，剪裁自然，材质真实，光影完全匹配。" },
 ];
 
 const skillGrid = document.querySelector("#skill-grid");
 const AVAILABLE_SKILL_COVERS = new Set(SKILL_CATALOG.map((skill) => skill.image));
-function createSkillCard(skill, index) {
+function createSkillCard(skill) {
+  const label = t(skill.name);
   const button = document.createElement("button");
   button.className = "skill-card";
   button.type = "button";
   button.dataset.skillMode = skill.mode;
-  button.dataset.skillName = skill.name;
+  button.dataset.skillName = label;
   button.dataset.skillPrompt = skill.prompt;
   button.dataset.skillCategory = skill.category;
   const fallbackCover = {
@@ -6538,7 +6677,7 @@ function createSkillCard(skill, index) {
   const image = document.createElement("img");
   image.className = "skill-cover";
   image.src = `/static/showcase/v167/skills/${AVAILABLE_SKILL_COVERS.has(skill.image) ? skill.image : fallbackCover}.webp`;
-  image.alt = `${skill.name}技能示例`;
+  image.alt = t(`${skill.name}技能示例`, `${label} example`);
   image.loading = "lazy";
   image.addEventListener("error", () => {
     if (fallbackCover && image.dataset.fallbackApplied !== "1") {
@@ -6549,20 +6688,19 @@ function createSkillCard(skill, index) {
     image.remove();
     button.classList.add("cover-fallback");
   });
-  const number = document.createElement("span");
-  number.textContent = String(index + 1).padStart(2, "0");
   const icon = document.createElement("i");
   icon.setAttribute("aria-hidden", "true");
-  icon.textContent = skill.icon;
+  icon.innerHTML = uiIcon(skill.icon);
   const copy = document.createElement("div");
   const title = document.createElement("b");
-  title.textContent = skill.name;
+  title.textContent = label;
   const note = document.createElement("small");
-  note.textContent = skill.note;
+  note.textContent = t(skill.note);
   copy.append(title, note);
   const action = document.createElement("em");
-  action.textContent = "使用技能 ↗";
-  button.append(image, number, icon, copy, action);
+  action.append(`${t("使用模板")} `);
+  action.insertAdjacentHTML("beforeend", uiIcon("arrow-up-right"));
+  button.append(image, icon, copy, action);
   return button;
 }
 
@@ -6572,10 +6710,34 @@ function renderSkillCatalog(category = "all") {
   skillGrid.replaceChildren(...visibleSkills.map(createSkillCard));
 }
 
+const reducedDiscoveryMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+function animateDiscoveryEntrance(toolbar, grid) {
+  if (reducedDiscoveryMotion.matches || !Element.prototype.animate) return;
+  const cards = grid ? Array.from(grid.children).slice(0, 4) : [];
+  for (const element of [toolbar, ...cards]) {
+    if (!element) continue;
+    for (const animation of element.getAnimations()) {
+      if (animation.id === "discovery-entrance") animation.cancel();
+    }
+    const animation = element.animate(
+      [{ opacity: .78, transform: "translateY(5px)" }, { opacity: 1, transform: "translateY(0)" }],
+      { duration: 190, easing: "cubic-bezier(.2,.7,.25,1)" },
+    );
+    animation.id = "discovery-entrance";
+  }
+}
+
 renderSkillCatalog();
-document.querySelectorAll("[data-skill-filter]").forEach((filterButton) => filterButton.addEventListener("click", () => {
-  document.querySelectorAll("[data-skill-filter]").forEach((button) => button.classList.toggle("active", button === filterButton));
+const skillFilters = document.querySelectorAll("[data-skill-filter]");
+skillFilters.forEach((filterButton) => filterButton.addEventListener("click", () => {
+  if (filterButton.classList.contains("active")) return;
+  skillFilters.forEach((button) => {
+    const selected = button === filterButton;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
   renderSkillCatalog(filterButton.dataset.skillFilter);
+  animateDiscoveryEntrance(null, skillGrid);
 }));
 
 skillGrid?.addEventListener("click", (event) => {
@@ -6594,6 +6756,7 @@ skillGrid?.addEventListener("click", (event) => {
 });
 
 const discoveryTabs = [...document.querySelectorAll("[data-discovery-tab]")];
+const discoveryPanels = [...document.querySelectorAll("[data-discovery-panel]")];
 const discoverySearchWrap = document.querySelector("#discovery-search-wrap");
 
 function renderModelGuide(items, runtimeModels, tools) {
@@ -6624,13 +6787,15 @@ function renderModelGuide(items, runtimeModels, tools) {
 
 function showDiscovery(name, shouldScroll = false) {
   const next = ["skills", "plaza", "workflows", "models"].includes(name) ? name : "skills";
+  const nextPanel = discoveryPanels.find((panel) => panel.dataset.discoveryPanel === next);
+  const panelChanged = nextPanel?.hidden;
   discoveryTabs.forEach((tab) => {
     const selected = tab.dataset.discoveryTab === next;
     tab.classList.toggle("active", selected);
     tab.setAttribute("aria-selected", String(selected));
   });
-  document.querySelectorAll("[data-discovery-panel]").forEach((panel) => {
-    panel.hidden = panel.dataset.discoveryPanel !== next;
+  discoveryPanels.forEach((panel) => {
+    panel.hidden = panel !== nextPanel;
   });
   if (discoverySearchWrap) discoverySearchWrap.hidden = !["plaza", "workflows"].includes(next);
   if (discoverySearch) {
@@ -6639,10 +6804,23 @@ function showDiscovery(name, shouldScroll = false) {
   }
   if (next === "workflows") loadWorkflowDiscovery();
   else if (next === "plaza") loadCommunityPlaza();
-  if (shouldScroll) document.querySelector("#studio-discovery")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (shouldScroll) {
+    document.querySelector("#studio-discovery")?.scrollIntoView({
+      behavior: reducedDiscoveryMotion.matches ? "instant" : "smooth",
+      block: "start",
+    });
+  }
+  return panelChanged ? nextPanel : null;
 }
 
-discoveryTabs.forEach((tab) => tab.addEventListener("click", () => showDiscovery(tab.dataset.discoveryTab)));
+discoveryTabs.forEach((tab) => tab.addEventListener("click", () => {
+  const panel = showDiscovery(tab.dataset.discoveryTab);
+  if (!panel) return;
+  animateDiscoveryEntrance(
+    panel.querySelector(".discovery-subnav"),
+    panel.querySelector(".skill-grid, .plaza-preview-grid, .workflow-discovery-grid, .model-family-page:not([hidden])"),
+  );
+}));
 document.querySelectorAll("[data-open-discovery]").forEach((link) => link.addEventListener("click", (event) => {
   event.preventDefault();
   setWorkspaceView("quick");
@@ -7038,7 +7216,6 @@ plazaPreviewGrid?.addEventListener("click", (event) => {
   if (plazaDetailLikes) plazaDetailLikes.textContent = String(Number(card.dataset.plazaLikes || 0) + (activePlazaPostId ? 0 : liked ? 1 : 0));
   if (plazaDetailLike) plazaDetailLike.hidden = !activePlazaPostId;
   plazaDetailLike?.setAttribute("aria-pressed", String(liked));
-  if (plazaDetailLike?.firstElementChild) plazaDetailLike.firstElementChild.textContent = liked ? "♥" : "♡";
   plazaDetailDialog.showModal();
 });
 plazaDetailClose?.addEventListener("click", () => plazaDetailDialog?.close());
@@ -7056,7 +7233,6 @@ plazaDetailLike?.addEventListener("click", async () => {
   if (activePlazaPostId) {
     const { body } = await fetchJson(`${API.plaza}/${encodeURIComponent(activePlazaPostId)}/like`, { method:"POST" }, 6000);
     plazaDetailLike.setAttribute("aria-pressed", String(body.liked));
-    if (plazaDetailLike.firstElementChild) plazaDetailLike.firstElementChild.textContent = body.liked ? "♥" : "♡";
     if (plazaDetailLikes) plazaDetailLikes.textContent = String(body.likes_count);
     activePlazaCard.dataset.plazaLikes = String(body.likes_count);
     activePlazaCard.dataset.plazaLiked = String(body.liked);
@@ -7065,7 +7241,6 @@ plazaDetailLike?.addEventListener("click", async () => {
     return;
   }
   plazaDetailLike.setAttribute("aria-pressed", String(next));
-  if (plazaDetailLike.firstElementChild) plazaDetailLike.firstElementChild.textContent = next ? "♥" : "♡";
   if (plazaDetailLikes) plazaDetailLikes.textContent = String(Math.max(0, Number(plazaDetailLikes.textContent || 0) + (next ? 1 : -1)));
   const cardLikes = activePlazaCard?.querySelector(".plaza-card-likes span");
   if (cardLikes && plazaDetailLikes) cardLikes.textContent = plazaDetailLikes.textContent;
@@ -7094,6 +7269,11 @@ const workflowWorkspace = document.querySelector("#workflow-workspace");
 const workspaceButtons = [...document.querySelectorAll("[data-workspace-view]")];
 const workflowCanvasShell = document.querySelector("#workflow-canvas-shell");
 const workflowViewport = document.querySelector("#workflow-viewport");
+const workflowMarquee = document.querySelector("#workflow-marquee");
+const workflowSnapGuides = document.querySelector("#workflow-snap-guides");
+const workflowSnapLines = [...workflowSnapGuides.querySelectorAll("line")];
+let workflowGuideState = null;
+const workflowHandButton = document.querySelector("#workflow-hand-tool");
 const workflowBoard = document.querySelector("#workflow-board");
 const workflowLines = document.querySelector("#workflow-lines");
 const workflowPrompt = document.querySelector("#workflow-prompt");
@@ -7108,7 +7288,6 @@ const workflowSceneCover = document.querySelector("#workflow-scene-cover");
 const workflowSceneName = document.querySelector("#workflow-scene-name");
 const workflowSceneNote = document.querySelector("#workflow-scene-note");
 const mobileWorkspaceToggle = document.querySelector("#mobile-workspace-toggle");
-let restoreSidebarAfterWorkflow = null;
 
 const SCENE_WORKFLOWS = Object.freeze([
   { name:"商业产品主图", note:"干净棚拍 · 准确材质", category:"commercial", preset:"product-studio", cover:"commercial-product" },
@@ -7148,28 +7327,43 @@ const SCENE_WORKFLOWS = Object.freeze([
   { name:"微缩世界", note:"移轴微距 · 手工模型", category:"design", preset:"trend-miniature-diorama", cover:"watercolor-poster" },
 ]);
 
-const frozenAnimations = new WeakMap();
-function freezeTransform(element, transform) {
-  if (!element?.animate) return;
-  let animation = frozenAnimations.get(element);
-  if (!animation) {
-    animation = element.animate([{ transform }, { transform }], { duration: 1000, fill: "both" });
-    animation.pause();
-    frozenAnimations.set(element, animation);
-  } else {
-    animation.effect.setKeyframes([{ transform }, { transform }]);
-  }
-  animation.currentTime = 500;
-}
-
 const workflowState = { zoom: .82, panX: 34, panY: 34 };
+const WORKFLOW_LOCAL_IMAGE_TOOLS = new Set(["resize", "rotate", "crop", "collage", "watermark", "convert"]);
+const WORKFLOW_MAX_NODES = 5000;
+const WORKFLOW_MAX_EDGES = WORKFLOW_MAX_NODES * 2;
+const WORKFLOW_MAX_JSON_BYTES = 64 * 1024 * 1024;
+const WORKFLOW_CULL_MIN_NODES = 48;
+const WORKFLOW_CULL_MARGIN = 160;
+const WORKFLOW_NODE_ESTIMATED_WIDTH = 460;
+const WORKFLOW_NODE_ESTIMATED_HEIGHT = 760;
+const WORKFLOW_NODE_SIZE_LIMITS = { width:[240, 1120], height:[160, 1400] };
+const WORKFLOW_MAX_WIRE_BEND = 240;
+const workflowCanvasNodeSizes = new WeakMap();
+let workflowViewportSize = { width:0, height:0 };
+let workflowCanvasNodes = new Map();
+let workflowCanvasEdges = [];
+let workflowVisibleNodes = new Set();
+let workflowIndexedChildCount = 0;
+let workflowViewportNeedsRedraw = false;
+let workflowViewportNeedsFit = true;
+let workflowInitialFocusNode = null;
+
+function workflowGraphLimitIssue(nodeCount, edgeCount) {
+  if (nodeCount > WORKFLOW_MAX_NODES || edgeCount > WORKFLOW_MAX_EDGES) {
+    return `工作流最多支持 ${WORKFLOW_MAX_NODES} 个节点和 ${WORKFLOW_MAX_EDGES} 条连线`;
+  }
+  return "";
+}
 function applyWorkflowTransform() {
   if (!workflowBoard) return;
-  freezeTransform(workflowBoard, `translate(${workflowState.panX}px, ${workflowState.panY}px) scale(${workflowState.zoom})`);
+  workflowBoard.style.transform = `translate(${workflowState.panX}px, ${workflowState.panY}px) scale(${workflowState.zoom})`;
   if (workflowViewport) {
-    workflowViewport.style.setProperty("--canvas-grid-size", `${24 * workflowState.zoom}px`);
-    workflowViewport.style.setProperty("--canvas-pan-x", `${workflowState.panX}px`);
-    workflowViewport.style.setProperty("--canvas-pan-y", `${workflowState.panY}px`);
+    const gridSize = `${Math.max(12, 24 * workflowState.zoom)}px`;
+    workflowViewport.style.backgroundSize = `${gridSize} ${gridSize}`;
+    workflowViewport.style.backgroundPosition = `${workflowState.panX}px ${workflowState.panY}px`;
+    updateWorkflowViewport();
+    updateWorkflowMinimapViewport();
+    renderWorkflowSnapGuides();
   }
   if (workflowZoomValue) workflowZoomValue.textContent = `${Math.round(workflowState.zoom * 100)}%`;
   if (activeWorkflowEditorNode) positionWorkflowNodeEditor(activeWorkflowEditorNode);
@@ -7178,28 +7372,62 @@ function applyWorkflowTransform() {
 function positionWorkflowNode(node) {
   const x = Number(node.dataset.x || 0);
   const y = Number(node.dataset.y || 0);
-  freezeTransform(node, `translate(${x}px, ${y}px)`);
+  node.style.transform = `translate(${x}px, ${y}px)`;
+  const record = workflowCanvasNodes.get(node.dataset.nodeId);
+  if (record?.node === node) {
+    record.x = x;
+    record.y = y;
+  }
 }
 
-function updateWorkflowLines() {
-  if (!workflowLines) return;
-  const pairs = {
-    "scene-prompt": ["scene", "prompt"],
-    "prompt-style": ["prompt", "style"],
-    "style-output": ["style", "output"],
+function workflowNodeBounds(node) {
+  const size = workflowBoard.hasAttribute("data-workflow-cull") && !workflowVisibleNodes.has(node)
+    ? workflowCanvasNodeSizes.get(node)
+    : { width:node.offsetWidth, height:node.offsetHeight };
+  return {
+    x:Number(node.dataset.x) || 0,
+    y:Number(node.dataset.y) || 0,
+    width:size?.width || WORKFLOW_NODE_ESTIMATED_WIDTH,
+    height:size?.height || WORKFLOW_NODE_ESTIMATED_HEIGHT,
   };
-  Object.entries(pairs).forEach(([id, names]) => {
-    const from = document.querySelector(`[data-workflow-node="${names[0]}"]`);
-    const to = document.querySelector(`[data-workflow-node="${names[1]}"]`);
-    const path = workflowLines.querySelector(`[data-link="${id}"]`);
-    if (!from || !to || !path) return;
-    const x1 = Number(from.dataset.x) + from.offsetWidth;
-    const y1 = Number(from.dataset.y) + from.offsetHeight / 2;
-    const x2 = Number(to.dataset.x);
-    const y2 = Number(to.dataset.y) + to.offsetHeight / 2;
-    const bend = Math.max(70, Math.abs(x2 - x1) * .45);
-    path.setAttribute("d", `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`);
-  });
+}
+
+function workflowNodeSize(node) {
+  const size = {};
+  for (const axis of ["width", "height"]) {
+    if (node.dataset[axis]) size[axis] = Number(node.dataset[axis]);
+  }
+  return size;
+}
+
+function setWorkflowNodeSize(node, size) {
+  let changed = false;
+  for (const axis of ["width", "height"]) {
+    const value = size[axis];
+    const [min, max] = WORKFLOW_NODE_SIZE_LIMITS[axis];
+    const pixels = Number.isFinite(value) ? String(Math.max(min, Math.min(max, Math.round(value)))) : undefined;
+    if (node.dataset[axis] === pixels) continue;
+    const property = axis === "height" ? "min-height" : axis;
+    if (pixels) {
+      node.dataset[axis] = pixels;
+      node.style.setProperty(property, `${pixels}px`);
+    } else {
+      delete node.dataset[axis];
+      node.style.removeProperty(property);
+    }
+    changed = true;
+  }
+  if (!changed) return false;
+  const { width, height } = workflowNodeSize(node);
+  if (width || height) {
+    workflowCanvasNodeSizes.set(node, {
+      width:width ?? WORKFLOW_NODE_ESTIMATED_WIDTH,
+      height:height ?? WORKFLOW_NODE_ESTIMATED_HEIGHT,
+    });
+  } else {
+    workflowCanvasNodeSizes.delete(node);
+  }
+  return true;
 }
 
 function renderWorkflowStyles() {
@@ -7269,11 +7497,19 @@ function setWorkspaceView(view) {
   const wasWorkflow = document.body.classList.contains("workflow-active");
   const wasCapability = document.body.classList.contains("capability-tool-active");
   if (workflow && !wasWorkflow && window.innerWidth > 800) {
-    restoreSidebarAfterWorkflow = document.body.classList.contains("sidebar-collapsed");
     setSidebarCollapsed(true);
-  } else if (!workflow && wasWorkflow && restoreSidebarAfterWorkflow !== null) {
-    setSidebarCollapsed(restoreSidebarAfterWorkflow);
-    restoreSidebarAfterWorkflow = null;
+  } else if (!workflow && wasWorkflow) {
+    setSidebarCollapsed(sidebarPreference ?? compactSidebarLayout.matches);
+  }
+  if (!workflow && wasWorkflow) {
+    finishWorkflowPan();
+    finishWorkflowMarquee();
+    showWorkflowSnapGuides(null);
+    workflowSpaceHeld = false;
+    setWorkflowHandTool(false);
+    closeWorkflowNodePicker({ restoreFocus:false });
+    setWorkflowArrangeOpen(false);
+    setWorkflowMinimapOpen(false);
   }
   document.body.classList.toggle("workflow-active", workflow);
   document.body.classList.toggle("capability-tool-active", capability);
@@ -7293,7 +7529,7 @@ function setWorkspaceView(view) {
     mobileWorkspaceToggle.classList.toggle("active", workflow);
     mobileWorkspaceToggle.setAttribute("aria-pressed", String(workflow));
     mobileWorkspaceToggle.setAttribute("aria-label", workflow ? "返回快速创作" : "打开工作流幕布");
-    mobileWorkspaceToggle.querySelector("span").textContent = workflow ? "⌂" : "⌘";
+    mobileWorkspaceToggle.querySelector("span").innerHTML = uiIcon(workflow ? "home" : "workflow");
   }
   if (workflow) {
     modeEyebrow.replaceChildren();
@@ -7305,7 +7541,9 @@ function setWorkspaceView(view) {
       applyWorkflowTransform();
       updateWorkflowLines();
       window.setTimeout(() => {
-        if (document.body.classList.contains("workflow-active")) fitWorkflowCanvas();
+        if (workflowViewportNeedsFit && document.body.classList.contains("workflow-active")) {
+          fitWorkflowCanvas({ focusNode:workflowInitialFocusNode });
+        }
       }, 320);
     });
   } else if (assets) {
@@ -7328,22 +7566,50 @@ function setWorkspaceView(view) {
   }));
 }
 
-function fitWorkflowCanvas() {
-  if (!workflowViewport) return;
-  const nodes = [...(workflowBoard?.querySelectorAll("[data-node-id]") || [])];
-  if (!nodes.length) return;
-  const compactCanvas = workflowViewport.clientWidth <= 520;
-  const margin = compactCanvas ? 24 : 64;
-  const minX = Math.min(...nodes.map((node) => Number(node.dataset.x) || 0));
-  const minY = Math.min(...nodes.map((node) => Number(node.dataset.y) || 0));
-  const maxX = Math.max(...nodes.map((node) => (Number(node.dataset.x) || 0) + node.offsetWidth));
-  const maxY = Math.max(...nodes.map((node) => (Number(node.dataset.y) || 0) + node.offsetHeight));
+function workflowSelectionViewport() {
+  const view = workflowViewport.getBoundingClientRect();
+  const zoomBar = workflowHandButton.closest(".workflow-canvas-toolbar").getBoundingClientRect();
+  const actions = workflowCanvasShell.querySelector(".workflow-floating-actions").getBoundingClientRect();
+  const editBar = workflowEditBar.getBoundingClientRect();
+  const top = Math.max(0, zoomBar.bottom - view.top, actions.bottom - view.top);
+  const bottom = Math.min(view.height, editBar.top - view.top);
+  return bottom > top + 80
+    ? { width:view.width, top, height:bottom - top }
+    : { width:view.width, top:0, height:view.height };
+}
+
+function fitWorkflowCanvas({ focusNode = null, selection = null } = {}) {
+  if (!workflowViewport?.clientWidth || !workflowViewport.clientHeight) return;
+  workflowViewportNeedsFit = false;
+  if (focusNode?.offsetWidth && workflowViewport.clientWidth <= 520) {
+    const zoom = Math.min(.9, (workflowViewport.clientWidth - 36) / focusNode.offsetWidth);
+    workflowState.zoom = zoom;
+    workflowState.panX = 18 - Number(focusNode.dataset.x) * zoom;
+    workflowState.panY = 28 - Number(focusNode.dataset.y) * zoom;
+    applyWorkflowTransform();
+    return;
+  }
+  const nodes = selection || new Set(workflowBoard.querySelectorAll("[data-node-id]"));
+  if (!nodes.size) return;
+  const viewport = selection ? workflowSelectionViewport() : { width:workflowViewport.clientWidth, top:0, height:workflowViewport.clientHeight };
+  const margin = viewport.width <= 520 ? 12 : (selection ? 24 : 64);
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const node of nodes) {
+    const { x, y, width, height } = workflowNodeBounds(node);
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + width);
+    maxY = Math.max(maxY, y + height);
+  }
   const width = Math.max(320, maxX - minX);
   const height = Math.max(240, maxY - minY);
-  const fittedZoom = Math.min(1.15, (workflowViewport.clientWidth - margin * 2) / width, (workflowViewport.clientHeight - margin * 2) / height);
-  workflowState.zoom = Math.max(compactCanvas ? .32 : .18, fittedZoom);
-  workflowState.panX = (workflowViewport.clientWidth - width * workflowState.zoom) / 2 - minX * workflowState.zoom;
-  workflowState.panY = (workflowViewport.clientHeight - height * workflowState.zoom) / 2 - minY * workflowState.zoom;
+  const fittedZoom = Math.min(1.15, (viewport.width - margin * 2) / width, (viewport.height - margin * 2) / height);
+  workflowState.zoom = Math.max(.18, fittedZoom);
+  workflowState.panX = (viewport.width - width * workflowState.zoom) / 2 - minX * workflowState.zoom;
+  workflowState.panY = viewport.top + (viewport.height - height * workflowState.zoom) / 2 - minY * workflowState.zoom;
   applyWorkflowTransform();
 }
 
@@ -7369,11 +7635,6 @@ function workflowTopologicalOrder() {
   }
   if (ordered.length !== nodes.length) throw new Error("workflow_cycle");
   return ordered;
-}
-
-function workflowIncomingValue(values, nodeId, portName) {
-  const edge = workflowEdges.find((item) => item.to_node === nodeId && item.to_port === portName);
-  return edge ? values.get(`${edge.from_node}:${edge.from_port}`) : undefined;
 }
 
 async function workflowImageBlob(value, signal) {
@@ -7444,31 +7705,85 @@ function setWorkflowOutputState(message, detail = "") {
   });
 }
 
-function renderWorkflowOutput(node, images, prompt) {
+const workflowOutputUrls = new WeakMap();
+
+function releaseWorkflowOutput(node) {
+  for (const url of workflowOutputUrls.get(node) || []) URL.revokeObjectURL(url);
+  workflowOutputUrls.delete(node);
+}
+
+async function workflowImageDownload(value, format, signal) {
+  const mime = { png:"image/png", jpg:"image/jpeg", webp:"image/webp" }[format];
+  const source = await workflowImageBlob(value, signal);
+  if (source.type === mime) return source;
+  const bitmap = await createImageBitmap(source);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d", { alpha:format !== "jpg" });
+    if (format === "jpg") {
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    context.drawImage(bitmap, 0, 0);
+    const blob = await workflowCanvasBlob(canvas, format);
+    if (blob.type !== mime) throw new Error("workflow_format_unavailable");
+    return blob;
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function renderWorkflowOutput(node, value, config, prompt, signal) {
   const preview = node.querySelector("[data-workflow-output-preview]");
-  const urls = (Array.isArray(images) ? images : []).map((item) => safeImageUrl(item?.url || item)).filter(Boolean).slice(0, 4);
-  if (!preview || !urls.length) throw new Error("missing_images");
+  const sources = value?.file ? [value] : (Array.isArray(value?.images) ? value.images.slice(0, 4) : [value]);
+  if (!preview || !sources.some(Boolean)) throw new Error("workflow_output_missing");
+  const format = ["png", "jpg", "webp"].includes(config.format) ? config.format : "png";
+  const stamp = Date.now();
+  const files = [];
+  for (const source of sources) {
+    const blob = await workflowImageDownload(source, format, signal);
+    const name = `huiju-workflow-${stamp}-${files.length + 1}.${format}`;
+    files.push(new File([blob], name, { type:blob.type }));
+  }
+  signal.throwIfAborted();
+  releaseWorkflowOutput(node);
+  const urls = files.map((file) => URL.createObjectURL(file));
+  workflowOutputUrls.set(node, urls);
   const gallery = document.createElement("div");
   gallery.className = "workflow-output-gallery";
   urls.forEach((url, index) => {
     const link = document.createElement("a");
     link.href = url;
-    link.download = `huiju-workflow-${Date.now()}-${index + 1}.${imageExtension(url)}`;
+    link.download = files[index].name;
     const image = document.createElement("img");
     image.src = url;
-    image.alt = `工作流输出 ${index + 1}`;
+    image.alt = t(`工作流输出 ${index + 1}`, `Workflow image ${index + 1}`);
     link.append(image);
     gallery.append(link);
   });
   const note = document.createElement("small");
-  note.textContent = `${urls.length} 张 · 点击下载`;
+  note.textContent = t(`${urls.length} 张 · 点击下载`, "Select an image to download");
   preview.replaceChildren(gallery, note);
   preview.classList.remove("is-running");
-  const saveControl = node.querySelector('[data-node-field="save_history"]');
-  const saveMode = saveControl instanceof HTMLInputElement && saveControl.type === "checkbox"
-    ? (saveControl.checked ? "auto" : "manual")
-    : (saveControl?.value || "auto");
-  if (saveMode === "auto") saveHistory(urls, Date.now(), prompt);
+  if (config.save_history !== "auto" && config.save_history !== true) return;
+  const status = document.createElement("small");
+  status.setAttribute("role", "status");
+  status.textContent = t("正在保存到个人资产…");
+  preview.append(status);
+  let saved = 0;
+  for (const file of files) {
+    try {
+      await uploadAssetFile(file, { name:file.name, category:"references", type:"image", prompt }, signal);
+      saved += 1;
+    } catch {
+      if (signal.aborted) throw signal.reason;
+    }
+  }
+  if (saved) await loadAssetLibrary();
+  status.textContent = saved === files.length ? t("已保存到个人资产")
+    : t(`已保存 ${saved}/${files.length} 张。其余图片仍可下载。`, `Saved ${saved} of ${files.length} images. Downloads are still available.`);
 }
 
 function renderWorkflowTextOutput(node, text) {
@@ -7526,16 +7841,15 @@ function workflowCanvasBlob(canvas, format = "png", quality = .92) {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("canvas_export_failed")), mime, quality));
 }
 
-async function runWorkflowClientImageTool(type, node, values, signal) {
-  const config = workflowNodeConfig(node);
+async function runWorkflowClientImageTool(type, nodeId, config, incomingValue, signal) {
   const unifiedEditor = type === "image_editor";
   if (unifiedEditor) type = ({
     collage:"collage", resize:"resize_image", rotate:"rotate_image",
     crop:"crop_image", convert:"convert_image", watermark:"watermark_image",
   })[config.operation || config.tool] || "resize_image";
   const inputs = type === "collage"
-    ? ["image1", "image2", "image3", "image4"].map((port) => workflowIncomingValue(values, node.dataset.nodeId, port)).filter(Boolean)
-    : [workflowIncomingValue(values, node.dataset.nodeId, unifiedEditor ? "image1" : "image")].filter(Boolean);
+    ? ["image1", "image2", "image3", "image4"].map((port) => incomingValue(nodeId, port)).filter(Boolean)
+    : [incomingValue(nodeId, unifiedEditor ? "image1" : "image")].filter(Boolean);
   if (!inputs.length) throw new Error("workflow_image_missing");
   const bitmaps = [];
   for (const input of inputs) bitmaps.push(await workflowBitmap(input, signal));
@@ -7656,14 +7970,12 @@ function workflowEncodeWav(channels, sampleRate) {
   return new Blob([buffer], { type:"audio/wav" });
 }
 
-async function runWorkflowClientAudioTool(node, values, signal) {
-  const source = workflowIncomingValue(values, node.dataset.nodeId, "audio");
+async function runWorkflowClientAudioTool(source, config, signal) {
   if (!source) throw new Error("workflow_audio_missing");
   const blob = await workflowMediaBlob(source, signal);
   const context = new (window.AudioContext || window.webkitAudioContext)();
   try {
     const decoded = await context.decodeAudioData(await blob.arrayBuffer());
-    const config = workflowNodeConfig(node);
     const tool = config.tool || "trim";
     const start = tool === "trim" ? Math.max(0, Math.min(decoded.duration, Number(config.start || 0))) : 0;
     const requestedEnd = Number(config.end || 0);
@@ -7706,8 +8018,32 @@ async function runWorkflow(targetNodeId = "") {
     });
   }
   const activeNodes = supported.filter((node) => activeIds.has(node.dataset.nodeId));
+  const nodeConfigs = new Map(activeNodes.map((node) => [node.dataset.nodeId, workflowNodeConfig(node)]));
+  const portraitSwap = activeNodes.some((node) => node.dataset.nodeType === "video_tool" &&
+    nodeConfigs.get(node.dataset.nodeId).tool === "character_swap_video");
+  const voiceClone = activeNodes.some((node) => node.dataset.nodeType === "audio_generator" &&
+    ["reference_audio", "custom_voice"].includes(nodeConfigs.get(node.dataset.nodeId).ability) &&
+    workflowEdges.some((edge) => edge.to_node === node.dataset.nodeId && edge.to_port === "audio"));
+  const graphRevision = workflowGraphRevision;
+  if (portraitSwap && !await confirmAction("请确认您拥有本次工作流所用人物图片和视频的肖像权及使用授权。", { title:"肖像授权" })) return;
+  const voiceRightsConfirmed = voiceClone && await confirmAction("请确认本次工作流使用的参考音频是您本人的声音，或已获得权利人的明确授权。", { title:"声音授权" });
+  if ((voiceClone && !voiceRightsConfirmed) || activeRequest || graphRevision !== workflowGraphRevision) return;
   activeRequest = new AbortController();
   const values = new Map();
+  const incomingEdges = workflowEdges.slice();
+  const incomingValue = (nodeId, portName) => {
+    const edge = incomingEdges.find((item) => item.to_node === nodeId && item.to_port === portName);
+    return edge ? values.get(`${edge.from_node}:${edge.from_port}`) : undefined;
+  };
+  for (const node of activeNodes) {
+    if (node.dataset.nodeType !== "media_input") continue;
+    const nodeId = node.dataset.nodeId;
+    const config = nodeConfigs.get(nodeId);
+    const inputType = ["image", "video", "audio"].includes(config.input_type) ? config.input_type : "image";
+    const state = workflowNodeImageStates.get(nodeId);
+    const url = state?.url || (inputType === "image" ? workflowImageUrlForNode(node) : "");
+    if (state?.file || url) values.set(`${nodeId}:${inputType}`, { ...state, url });
+  }
   let workflowPromptText = "";
   setBusy(true);
   const targetRunButton = targetNode?.querySelector("[data-workflow-run-node]");
@@ -7723,19 +8059,13 @@ async function runWorkflow(targetNodeId = "") {
     for (const node of activeNodes) {
       const type = node.dataset.nodeType;
       const nodeId = node.dataset.nodeId;
-      const config = workflowNodeConfig(node);
-      if (type === "media_input") {
-        const inputType = ["image", "video", "audio"].includes(config.input_type) ? config.input_type : "image";
-        const state = workflowNodeImageStates.get(nodeId);
-        const url = state?.url || (inputType === "image" ? workflowImageUrlForNode(node) : "");
-        if (state?.file || url) values.set(`${nodeId}:${inputType}`, { ...state, url });
-        continue;
-      }
+      const config = nodeConfigs.get(nodeId);
+      if (type === "media_input") continue;
       if (type === "image_generator") {
         const prompt = String(config.prompt || "").trim();
         if (prompt.length < 3) throw new Error("workflow_prompt_missing");
         workflowPromptText = prompt;
-        const references = ["image1", "image2"].map((port) => workflowIncomingValue(values, nodeId, port)).filter(Boolean);
+        const references = ["image1", "image2"].map((port) => incomingValue(nodeId, port)).filter(Boolean);
         setWorkflowOutputState("正在运行 AI 生图", config.model || "qwen_image");
         let response;
         if (!references.length) {
@@ -7752,14 +8082,13 @@ async function runWorkflow(targetNodeId = "") {
       }
       if (type === "image_tool") {
         const tool = config.tool || "edit";
-        const localTools = new Set(["resize","rotate","crop","collage","watermark","convert"]);
-        if (localTools.has(tool)) {
+        if (WORKFLOW_LOCAL_IMAGE_TOOLS.has(tool)) {
           setWorkflowOutputState(`正在运行${WORKFLOW_IMAGE_TOOL_OPTIONS.find(([id]) => id === tool)?.[1] || "图像工具"}`, "浏览器本地处理");
-          const result = await runWorkflowClientImageTool("image_editor", node, values, activeRequest.signal);
+          const result = await runWorkflowClientImageTool("image_editor", nodeId, config, incomingValue, activeRequest.signal);
           values.set(`${nodeId}:image`, result);
           continue;
         }
-        const imageValue = workflowIncomingValue(values, nodeId, "image1");
+        const imageValue = incomingValue(nodeId, "image1");
         if (!imageValue) throw new Error("workflow_image_missing");
         const prompt = WORKFLOW_IMAGE_TOOLS_WITH_NATURAL_LANGUAGE.has(tool) ? String(config.prompt || "").trim() : "";
         if (prompt) workflowPromptText = prompt;
@@ -7780,7 +8109,7 @@ async function runWorkflow(targetNodeId = "") {
         workflowPromptText = prompt;
         const selectedOperation = config.mode || "text_to_video";
         const mediaPorts = selectedOperation === "text_to_video" ? [] : selectedOperation === "first_last_to_video" ? WORKFLOW_VIDEO_REFERENCE_PORTS.slice(0, 2) : WORKFLOW_VIDEO_REFERENCE_PORTS;
-        const mediaValues = mediaPorts.map((port) => workflowIncomingValue(values, nodeId, port)).filter(Boolean);
+        const mediaValues = mediaPorts.map((port) => incomingValue(nodeId, port)).filter(Boolean);
         const required = selectedOperation === "text_to_video" ? 0 : selectedOperation === "first_last_to_video" ? 2 : 1;
         if (mediaValues.length < required) throw new Error("workflow_image_missing");
         const referenceLimit = workflowVideoReferenceLimit(config.model || "wan2.7-t2v-2026-06-12", selectedOperation);
@@ -7798,7 +8127,7 @@ async function runWorkflow(targetNodeId = "") {
       }
       if (type === "video_tool") {
         const tool = config.tool || "video_edit";
-        const videoValue = workflowIncomingValue(values, nodeId, "video");
+        const videoValue = incomingValue(nodeId, "video");
         const localTools = new Set(["extract_frame","enhance_video","trim_video","crop_video"]);
         if (localTools.has(tool)) {
           if (!videoValue) throw new Error("workflow_video_missing");
@@ -7849,7 +8178,7 @@ async function runWorkflow(targetNodeId = "") {
         const selectedVideoToolModel = config.model || route.model;
         const uploadIds = [];
         for (const port of route.ports) {
-          const value = workflowIncomingValue(values, nodeId, port);
+          const value = incomingValue(nodeId, port);
           if (value) uploadIds.push(await uploadWorkflowReference(value, activeRequest.signal));
         }
         if (uploadIds.length < (["lip_sync","character_swap_video","digital_human"].includes(tool) ? 2 : 1)) throw new Error(["lip_sync","digital_human"].includes(tool) ? "workflow_audio_missing" : "workflow_video_missing");
@@ -7861,14 +8190,14 @@ async function runWorkflow(targetNodeId = "") {
             : basePrompt;
         setWorkflowOutputState(`正在运行${WORKFLOW_VIDEO_TOOL_OPTIONS.find(([id]) => id === tool)?.[1] || "视频工具"}`, selectedVideoToolModel);
         const duration = tool === "segment_reshoot" ? Math.max(2, Number(config.end_time || 5) - Number(config.start_time || 0)) : Number(config.duration || 5);
-        const response = await fetchJson(API.video, { method:"POST", signal:activeRequest.signal, headers:{ "Content-Type":"application/json", "Idempotency-Key":newIdempotencyKey() }, body:JSON.stringify({ prompt, operation, model:selectedVideoToolModel, upload_ids:uploadIds, ratio:"16:9", resolution:config.resolution || "720P", duration:selectedVideoToolModel === "wanx2.1-vace-plus" ? 5 : duration, style_id:Number(config.style_id || 0), rights_confirmed:tool === "character_swap_video" && config.consent === "required" }) }, 90000);
+        const response = await fetchJson(API.video, { method:"POST", signal:activeRequest.signal, headers:{ "Content-Type":"application/json", "Idempotency-Key":newIdempotencyKey() }, body:JSON.stringify({ prompt, operation, model:selectedVideoToolModel, upload_ids:uploadIds, ratio:"16:9", resolution:config.resolution || "720P", duration:selectedVideoToolModel === "wanx2.1-vace-plus" ? 5 : duration, style_id:Number(config.style_id || 0), rights_confirmed:tool === "character_swap_video" && portraitSwap }) }, 90000);
         const result = await resolveWorkflowJob(response, activeRequest.signal);
         values.set(`${nodeId}:video`, { url:result.url });
         continue;
       }
       if (type === "audio_generator") {
         const ability = config.ability || "text_dubbing";
-        let text = String(workflowIncomingValue(values, nodeId, "text") || config.text || "").trim();
+        let text = String(incomingValue(nodeId, "text") || config.text || "").trim();
         let instructions = "";
         if (ability === "custom_voice") {
           instructions = String(config.voice_description || "").trim();
@@ -7876,7 +8205,7 @@ async function runWorkflow(targetNodeId = "") {
           text = String(config.preview_text || DEFAULT_CUSTOM_VOICE_PREVIEW).trim() || DEFAULT_CUSTOM_VOICE_PREVIEW;
         }
         if (ability === "image_dubbing") {
-          const imageValue = workflowIncomingValue(values, nodeId, "image");
+          const imageValue = incomingValue(nodeId, "image");
           if (!imageValue) throw new Error("workflow_image_missing");
           setWorkflowOutputState("正在生成图片旁白", "图片理解 · 配音");
           const uploadId = await uploadWorkflowImage(imageValue, activeRequest.signal);
@@ -7889,9 +8218,9 @@ async function runWorkflow(targetNodeId = "") {
         }
         if (!text) throw new Error("workflow_prompt_missing");
         const speechModel = ability === "custom_voice" ? "qwen3-tts-instruct-flash" : (config.model || "doubao-tts-2.0");
-        const reference = ["reference_audio","custom_voice"].includes(ability) ? workflowIncomingValue(values, nodeId, "audio") : null;
+        const reference = ["reference_audio","custom_voice"].includes(ability) ? incomingValue(nodeId, "audio") : null;
         if (ability === "reference_audio" && !reference) throw new Error("workflow_audio_missing");
-        if (reference && config.consent !== "confirmed") throw new Error("workflow_voice_rights_missing");
+        if (reference && !voiceRightsConfirmed) throw new Error("workflow_voice_rights_missing");
         const referenceUploadId = reference ? await uploadWorkflowReference(reference, activeRequest.signal) : null;
         const response = await fetchJson(API.audioTts, { method:"POST", signal:activeRequest.signal, headers:{ "Content-Type":"application/json", "Idempotency-Key":newIdempotencyKey() }, body:JSON.stringify({ text, model:speechModel, voice:config.voice || (speechModel === "doubao-tts-2.0" ? "zh_female_vv_uranus_bigtts" : "Cherry"), language_type:config.language_type || "Auto", instructions, speed_ratio:Number(config.speed_ratio || 1), emotion:config.emotion || "", emotion_scale:4, format:"wav", sample_rate:24000, ...(referenceUploadId ? { reference_upload_id:referenceUploadId, rights_confirmed:true } : {}) }) }, 90000);
         const result = await resolveWorkflowJob(response, activeRequest.signal);
@@ -7900,20 +8229,18 @@ async function runWorkflow(targetNodeId = "") {
       }
       if (type === "audio_tool") {
         setWorkflowOutputState("正在运行音频工具", "浏览器本地处理");
-        values.set(`${nodeId}:audio`, await runWorkflowClientAudioTool(node, values, activeRequest.signal));
+        values.set(`${nodeId}:audio`, await runWorkflowClientAudioTool(incomingValue(nodeId, "audio"), config, activeRequest.signal));
         continue;
       }
       if (type === "text_output") {
-        renderWorkflowTextOutput(node, workflowIncomingValue(values, nodeId, "text"));
+        renderWorkflowTextOutput(node, incomingValue(nodeId, "text"));
         continue;
       }
       if (type === "media_output") {
         const outputType = ["image", "video", "audio"].includes(config.output_type) ? config.output_type : "image";
-        const outputValue = workflowIncomingValue(values, nodeId, outputType);
+        const outputValue = incomingValue(nodeId, outputType);
         if (outputType === "image") {
-          const images = outputValue?.images || (outputValue?.url ? [{ url:outputValue.url }] : []);
-          if (!images.length) throw new Error("workflow_output_missing");
-          renderWorkflowOutput(node, images, workflowPromptText);
+          await renderWorkflowOutput(node, outputValue, config, workflowPromptText, activeRequest.signal);
         } else {
           renderWorkflowMediaOutput(node, outputValue, outputType);
         }
@@ -7944,6 +8271,7 @@ async function runWorkflow(targetNodeId = "") {
     else if (error.message === "redraw_mask_required") showWorkflowToast("请在重绘节点的原图上涂抹重绘区域");
     else if (error.message === "workflow_audio_missing") showWorkflowToast("口型同步节点需要同时连接人物视频与人声音频");
     else if (error.message === "workflow_voice_rights_missing") showWorkflowToast("请先确认参考声音属于本人，或已获得权利人明确授权");
+    else if (error.message === "workflow_format_unavailable") showWorkflowToast("工作流图片导出格式不可用，请更换格式后重试");
     else if (error.status === 401) showWorkflowToast("视频与音频生成需要先登录，以保护用量与个人资产");
     else showWorkflowToast(error.name === "AbortError" ? "已停止工作流" : "工作流未完成，请检查节点设置与服务状态");
     setWorkflowOutputState("运行未完成", "检查连线、输入和节点参数");
@@ -7956,7 +8284,10 @@ async function runWorkflow(targetNodeId = "") {
   }
 }
 
-workspaceButtons.forEach((button) => button.addEventListener("click", () => setWorkspaceView(button.dataset.workspaceView)));
+workspaceButtons.forEach((button) => button.addEventListener("click", () => {
+  setWorkspaceView(button.dataset.workspaceView);
+  if (button.dataset.workspaceView === "workflow") workflowCanvasShell?.focus({ preventScroll:true });
+}));
 mobileWorkspaceToggle?.addEventListener("click", () => setWorkspaceView(document.body.classList.contains("workflow-active") ? "quick" : "workflow"));
 toolNavItems.forEach((item) => item.addEventListener("click", () => setWorkspaceView("quick")));
 document.querySelectorAll("[data-scene-filter]").forEach((button) => button.addEventListener("click", () => {
@@ -7967,7 +8298,11 @@ scenarioList?.addEventListener("click", (event) => {
   const card = event.target instanceof Element ? event.target.closest(".scenario-card") : null;
   if (!card) return;
   const scene = SCENE_WORKFLOWS.find((item) => item.preset === card.dataset.scenePreset);
-  if (scene) selectWorkflowScenario(scene);
+  if (scene) {
+    activeWorkflowScenePreset = scene.preset;
+    selectWorkflowScenario(scene);
+    markWorkflowEdited();
+  }
 });
 [workflowRatio, workflowResolution].forEach((select) => select?.addEventListener("change", updateWorkflowOutputSummary));
 document.querySelector("#workflow-run")?.addEventListener("click", () => runWorkflow());
@@ -7978,12 +8313,6 @@ document.querySelector("#workflow-zoom-out")?.addEventListener("click", () => { 
 const WORKFLOW_STRUCTURAL_NODE_TYPES = new Set([
   "media_input", "media_output", "text_output",
 ]);
-function resetWorkflowNodes() {
-  clearWorkflowConnectionState();
-  selectedWorkflowEdgeId = "";
-  loadWorkflowGraph(defaultWorkflowGraph());
-}
-
 let workflowTransformFrame = 0;
 function scheduleWorkflowTransform() {
   if (workflowTransformFrame) return;
@@ -7994,21 +8323,33 @@ function scheduleWorkflowTransform() {
 }
 
 let workflowNodeMoveFrame = 0;
-let pendingWorkflowNodeMove = null;
+let pendingWorkflowNodeDrag = null;
+const pendingWorkflowNodeMoves = new Map();
 function flushWorkflowNodeMove() {
   if (workflowNodeMoveFrame) cancelAnimationFrame(workflowNodeMoveFrame);
   workflowNodeMoveFrame = 0;
-  const pending = pendingWorkflowNodeMove;
-  pendingWorkflowNodeMove = null;
-  if (!pending) return;
-  pending.node.dataset.x = String(pending.x);
-  pending.node.dataset.y = String(pending.y);
-  positionWorkflowNode(pending.node);
-  if (activeWorkflowEditorNode === pending.node) positionWorkflowNodeEditor(pending.node);
-  refreshWorkflowLineGeometry();
+  const updateDrag = pendingWorkflowNodeDrag;
+  pendingWorkflowNodeDrag = null;
+  updateDrag?.();
+  const moved = [];
+  for (const [node, { x, y }] of pendingWorkflowNodeMoves) {
+    if (node.parentElement !== workflowBoard || (Number(node.dataset.x) === x && Number(node.dataset.y) === y)) continue;
+    node.dataset.x = String(x);
+    node.dataset.y = String(y);
+    positionWorkflowNode(node);
+    moved.push(node.dataset.nodeId);
+  }
+  pendingWorkflowNodeMoves.clear();
+  if (!moved.length) return;
+  updateWorkflowViewport();
+  if (moved.includes(activeWorkflowEditorNode?.dataset.nodeId)) positionWorkflowNodeEditor(activeWorkflowEditorNode);
+  refreshWorkflowLineGeometry(moved);
 }
 function scheduleWorkflowNodeMove(node, x, y) {
-  pendingWorkflowNodeMove = { node, x, y };
+  pendingWorkflowNodeMoves.set(node, { x, y });
+  queueWorkflowNodeMove();
+}
+function queueWorkflowNodeMove() {
   if (workflowNodeMoveFrame) return;
   workflowNodeMoveFrame = requestAnimationFrame(flushWorkflowNodeMove);
 }
@@ -8016,102 +8357,238 @@ function scheduleWorkflowNodeMove(node, x, y) {
 document.querySelectorAll("[data-workflow-node]").forEach((node) => {
   positionWorkflowNode(node);
   bindWorkflowNodeEditorActivation(node);
-  const handle = node.querySelector("header");
-  handle?.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const startX = event.clientX;
-    const startY = event.clientY;
-    const originX = Number(node.dataset.x);
-    const originY = Number(node.dataset.y);
-    let dragged = false;
-    node.classList.add("is-dragging");
-    handle.setPointerCapture(event.pointerId);
-    const move = (moveEvent) => {
-      if (!dragged && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 4) return;
-      dragged = true;
-      const nextX = originX + (moveEvent.clientX - startX) / workflowState.zoom;
-      const nextY = originY + (moveEvent.clientY - startY) / workflowState.zoom;
-      scheduleWorkflowNodeMove(
-        node,
-        Math.max(-50000, Math.min(50000, nextX)),
-        Math.max(-50000, Math.min(50000, nextY)),
-      );
-    };
-    const end = (upEvent) => {
-      flushWorkflowNodeMove();
-      updateWorkflowLines();
-      if (dragged) {
-        node.dataset.suppressEditorClick = "true";
-        requestAnimationFrame(() => { delete node.dataset.suppressEditorClick; });
-      }
-      node.classList.remove("is-dragging");
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", end);
-      handle.removeEventListener("pointercancel", end);
-      if (handle.hasPointerCapture(upEvent.pointerId)) handle.releasePointerCapture(upEvent.pointerId);
-    };
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", end);
-    handle.addEventListener("pointercancel", end, { once:true });
-  });
+  bindWorkflowNodeDrag(node);
 });
 
+const workflowCanvasFields = "input, textarea, select, [contenteditable], audio, video, canvas";
+let workflowHandTool = false;
+let workflowSpaceHeld = false;
+let workflowPanGesture = null;
+let workflowSelectedNodes = new Set();
+let workflowMarqueeGesture = null;
+let workflowMarqueeFrame = 0;
+let workflowMarqueeDragged = false;
+
+function setWorkflowNodeSelection(next) {
+  const countChanged = workflowSelectedNodes.size !== next.size;
+  for (const node of workflowSelectedNodes) {
+    if (!next.has(node)) node.removeAttribute("data-workflow-selected");
+  }
+  for (const node of next) {
+    if (!workflowSelectedNodes.has(node)) node.setAttribute("data-workflow-selected", "");
+  }
+  workflowSelectedNodes = next;
+  if (countChanged) updateWorkflowEditControls();
+}
+
+function drawWorkflowMarquee(gesture) {
+  if (!gesture.candidates) return;
+  const { viewport, shell, startX, startY, x, y, candidates } = gesture;
+  const left = Math.min(startX, Math.max(viewport.left, x));
+  const top = Math.min(startY, Math.max(viewport.top, y));
+  const right = Math.max(startX, Math.min(viewport.right, x));
+  const bottom = Math.max(startY, Math.min(viewport.bottom, y));
+  workflowMarquee.style.transform = `translate(${left - shell.left}px, ${top - shell.top}px)`;
+  workflowMarquee.style.width = `${right - left}px`;
+  workflowMarquee.style.height = `${bottom - top}px`;
+  workflowMarquee.hidden = false;
+  const next = new Set(gesture.append ? gesture.previous : []);
+  for (const [node, rect] of candidates) {
+    if (rect.right > left && rect.left < right && rect.bottom > top && rect.top < bottom) next.add(node);
+  }
+  setWorkflowNodeSelection(next);
+}
+
+function finishWorkflowMarquee(event) {
+  const gesture = workflowMarqueeGesture;
+  if (!gesture || (event && event.pointerId !== gesture.id)) return;
+  workflowMarqueeGesture = null;
+  cancelAnimationFrame(workflowMarqueeFrame);
+  workflowMarqueeFrame = 0;
+  if (event?.type === "pointerup") {
+    if (gesture.candidates) {
+      workflowMarqueeDragged = true;
+      gesture.x = event.clientX;
+      gesture.y = event.clientY;
+      drawWorkflowMarquee(gesture);
+    } else if (!gesture.append) setWorkflowNodeSelection(new Set());
+  } else setWorkflowNodeSelection(gesture.previous);
+  workflowMarquee.hidden = true;
+  if (workflowViewport.hasPointerCapture(gesture.id)) workflowViewport.releasePointerCapture(gesture.id);
+}
+
+function setWorkflowHandTool(active) {
+  workflowHandTool = active;
+  workflowHandButton?.setAttribute("aria-pressed", String(active));
+  workflowViewport?.classList.toggle("is-hand-tool", active || workflowSpaceHeld);
+}
+
+function finishWorkflowPan(pointerId = workflowPanGesture?.id) {
+  if (!workflowPanGesture || workflowPanGesture.id !== pointerId) return;
+  workflowPanGesture = null;
+  workflowViewport.classList.remove("is-panning");
+  if (workflowViewport.hasPointerCapture(pointerId)) workflowViewport.releasePointerCapture(pointerId);
+  if (workflowTransformFrame) {
+    cancelAnimationFrame(workflowTransformFrame);
+    workflowTransformFrame = 0;
+    applyWorkflowTransform();
+  }
+}
+
 workflowViewport?.addEventListener("pointerdown", (event) => {
-  const target = event.target instanceof Element ? event.target : null;
-  if (event.button !== 0 || target?.closest(".workflow-node,.workflow-node-editor,.workflow-canvas-toolbar")) return;
-  closeWorkflowNodeEditor();
+  if (!event.isPrimary || workflowPanGesture || workflowMarqueeGesture || !(event.target instanceof Element) ||
+      event.target.closest(`${workflowCanvasFields}, .workflow-node-editor`) ||
+      (event.button === 0 && event.target.closest(".workflow-node-resize"))) return;
+  workflowMarqueeDragged = false;
+  const canvasBackground = !event.target.closest(".workflow-node, [data-link]");
+  const handActive = workflowHandTool || workflowSpaceHeld;
+  const wantsPan = event.button === 1 || (event.button === 0 && (handActive || (canvasBackground && event.pointerType === "touch")));
+  if (!wantsPan) {
+    if (event.button === 0 && canvasBackground) {
+      closeWorkflowNodeEditor();
+      workflowCanvasShell.focus({ preventScroll:true });
+      event.preventDefault();
+      workflowMarqueeGesture = {
+        id:event.pointerId, startX:event.clientX, startY:event.clientY,
+        x:event.clientX, y:event.clientY, append:event.shiftKey,
+        previous:workflowSelectedNodes, candidates:null,
+        viewport:workflowViewport.getBoundingClientRect(), shell:workflowCanvasShell.getBoundingClientRect(),
+      };
+      workflowViewport.setPointerCapture(event.pointerId);
+    }
+    return;
+  }
   event.preventDefault();
-  window.getSelection()?.removeAllRanges();
-  const startX = event.clientX;
-  const startY = event.clientY;
-  const originX = workflowState.panX;
-  const originY = workflowState.panY;
+  event.stopPropagation();
+  closeWorkflowNodePicker({ restoreFocus:false });
+  if (selectedWorkflowEdgeId) hideWorkflowEdgeDeleteButton();
+  workflowCanvasShell.focus({ preventScroll:true });
+  workflowPanGesture = {
+    id:event.pointerId, x:event.clientX, y:event.clientY, panX:workflowState.panX, panY:workflowState.panY,
+    dismissEditorOnTap:canvasBackground && event.pointerType === "touch",
+  };
   workflowViewport.classList.add("is-panning");
   workflowViewport.setPointerCapture(event.pointerId);
-  const preventSelection = (selectionEvent) => selectionEvent.preventDefault();
-  document.addEventListener("selectstart", preventSelection);
-  const move = (moveEvent) => {
-    moveEvent.preventDefault();
-    workflowState.panX = originX + moveEvent.clientX - startX;
-    workflowState.panY = originY + moveEvent.clientY - startY;
-    scheduleWorkflowTransform();
-  };
-  const end = (upEvent) => {
-    if (workflowTransformFrame) {
-      cancelAnimationFrame(workflowTransformFrame);
-      workflowTransformFrame = 0;
-      applyWorkflowTransform();
+}, { capture:true });
+workflowViewport?.addEventListener("pointermove", (event) => {
+  const marquee = workflowMarqueeGesture;
+  if (marquee?.id === event.pointerId) {
+    marquee.x = event.clientX;
+    marquee.y = event.clientY;
+    if (!marquee.candidates) {
+      if (Math.hypot(marquee.x - marquee.startX, marquee.y - marquee.startY) < 4) return;
+      if (pendingWorkflowSource) clearWorkflowConnectionState();
+      const nodes = workflowBoard.hasAttribute("data-workflow-cull")
+        ? workflowVisibleNodes
+        : [...workflowBoard.children].filter((node) => node.dataset.nodeId);
+      marquee.candidates = [...nodes].map((node) => [node, node.getBoundingClientRect()]);
     }
-    workflowViewport.classList.remove("is-panning");
-    document.removeEventListener("selectstart", preventSelection);
-    workflowViewport.removeEventListener("pointermove", move);
-    workflowViewport.removeEventListener("pointerup", end);
-    workflowViewport.removeEventListener("pointercancel", end);
-    workflowViewport.removeEventListener("lostpointercapture", end);
-    if (workflowViewport.hasPointerCapture(upEvent.pointerId)) workflowViewport.releasePointerCapture(upEvent.pointerId);
-  };
-  workflowViewport.addEventListener("pointermove", move);
-  workflowViewport.addEventListener("pointerup", end);
-  workflowViewport.addEventListener("pointercancel", end, { once:true });
-  workflowViewport.addEventListener("lostpointercapture", end, { once:true });
+    if (!workflowMarqueeFrame) {
+      workflowMarqueeFrame = requestAnimationFrame(() => {
+        workflowMarqueeFrame = 0;
+        drawWorkflowMarquee(marquee);
+      });
+    }
+    return;
+  }
+  const gesture = workflowPanGesture;
+  if (!gesture || gesture.id !== event.pointerId) return;
+  workflowState.panX = gesture.panX + event.clientX - gesture.x;
+  workflowState.panY = gesture.panY + event.clientY - gesture.y;
+  scheduleWorkflowTransform();
+});
+workflowViewport?.addEventListener("pointerup", (event) => {
+  finishWorkflowMarquee(event);
+  const gesture = workflowPanGesture;
+  if (gesture?.id === event.pointerId && gesture.dismissEditorOnTap && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) < 4) {
+    closeWorkflowNodeEditor();
+  }
+  finishWorkflowPan(event.pointerId);
+});
+for (const eventType of ["pointercancel", "lostpointercapture"]) {
+  workflowViewport?.addEventListener(eventType, (event) => {
+    finishWorkflowMarquee(event);
+    finishWorkflowPan(event.pointerId);
+  });
+}
+workflowViewport?.addEventListener("auxclick", (event) => {
+  if (event.button === 1 && event.target instanceof Element && !event.target.closest(workflowCanvasFields)) event.preventDefault();
 });
 workflowViewport?.addEventListener("wheel", (event) => {
-  const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+  if (event.target instanceof Element && event.target.closest(workflowCanvasFields)) return;
   event.preventDefault();
+  if (workflowPanGesture || workflowMarqueeGesture) return;
+  if (selectedWorkflowEdgeId && !workflowEdgeDeleteButton?.hidden) hideWorkflowEdgeDeleteButton();
+  const unit = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? workflowViewportSize.height || 1 : 1);
+  const deltaX = event.deltaX * unit;
+  const deltaY = event.deltaY * unit;
+  if (!event.ctrlKey && !event.metaKey) {
+    workflowState.panX -= event.shiftKey ? deltaX || deltaY : deltaX;
+    if (!event.shiftKey) workflowState.panY -= deltaY;
+    scheduleWorkflowTransform();
+    return;
+  }
+  const nextZoom = Math.max(.18, Math.min(1.35, workflowState.zoom * Math.exp(-deltaY * .002)));
+  if (nextZoom === workflowState.zoom) return;
   const rect = workflowViewport.getBoundingClientRect();
   const pointerX = event.clientX - rect.left;
   const pointerY = event.clientY - rect.top;
   const worldX = (pointerX - workflowState.panX) / workflowState.zoom;
   const worldY = (pointerY - workflowState.panY) / workflowState.zoom;
-  const nextZoom = Math.max(.18, Math.min(1.35, workflowState.zoom * (event.deltaY > 0 ? .92 : 1.08)));
   workflowState.panX = pointerX - worldX * nextZoom;
   workflowState.panY = pointerY - worldY * nextZoom;
   workflowState.zoom = nextZoom;
   scheduleWorkflowTransform();
 }, { passive:false });
+workflowHandButton?.addEventListener("click", () => setWorkflowHandTool(!workflowHandTool));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && workflowMarqueeGesture) {
+    event.preventDefault();
+    event.stopPropagation();
+    finishWorkflowMarquee();
+    return;
+  }
+  if (event.key === "Escape" && !workflowArrangePanel.hidden) {
+    event.preventDefault();
+    event.stopPropagation();
+    setWorkflowArrangeOpen(false);
+    workflowArrangeToggle.focus();
+    return;
+  }
+  if (!document.body.classList.contains("workflow-active") || event.defaultPrevented || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (workflowMarqueeGesture) return;
+  const target = event.target;
+  if (target instanceof Element && target.closest(`${workflowCanvasFields}, dialog, [role="dialog"]`)) return;
+  if (!workflowNodePicker?.hidden || !(target === document.body || workflowCanvasShell?.contains(target))) return;
+  if (event.code === "Space" || event.key === " ") {
+    if (target instanceof Element && target.closest("button, a")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    workflowSpaceHeld = true;
+    workflowViewport.classList.add("is-hand-tool");
+    return;
+  }
+  const key = event.key.toLowerCase();
+  if (key === "h" || key === "v") {
+    event.preventDefault();
+    setWorkflowHandTool(key === "h");
+  } else if (key === "a" && event.shiftKey && !event.repeat) {
+    event.preventDefault();
+    openCenteredWorkflowNodePicker();
+  }
+}, { capture:true });
+document.addEventListener("keyup", (event) => {
+  if (!workflowSpaceHeld || (event.code !== "Space" && event.key !== " ")) return;
+  workflowSpaceHeld = false;
+  setWorkflowHandTool(workflowHandTool);
+});
+window.addEventListener("blur", () => {
+  finishWorkflowPan();
+  finishWorkflowMarquee();
+  workflowSpaceHeld = false;
+  setWorkflowHandTool(workflowHandTool);
+});
+window.addEventListener("resize", () => finishWorkflowMarquee());
 
 renderWorkflowStyles();
 renderScenarios();
@@ -8121,14 +8598,42 @@ requestAnimationFrame(() => { applyWorkflowTransform(); updateWorkflowLines(); }
 
 /* v46: reusable workflow graphs. Complexity stays behind the canvas entry: users can
    begin from a scene, then reveal categorized nodes only when they double-click. */
-const WORKFLOW_LOCAL_KEY = "huiju.workflows.local.v1";
 let currentWorkflowDraft = null;
+let workflowGraphRevision = 0;
+let workflowSavePending = false;
+let workflowEditRevision = 0;
+let workflowSavedEditRevision = 0;
+let workflowEditSerial = 0;
+const workflowUndoStack = [];
+const workflowRedoStack = [];
+const workflowHistoryNodeRefs = new Map();
+const WORKFLOW_HISTORY_LIMIT = 50;
+let workflowNodeClipboard = null;
+let workflowClipboardPasteCount = 0;
+const workflowEditBar = document.querySelector("#workflow-edit-bar");
+const workflowUndoButton = document.querySelector("#workflow-undo");
+const workflowRedoButton = document.querySelector("#workflow-redo");
+const workflowPasteButton = document.querySelector("#workflow-paste-nodes");
+const workflowSelectionActions = document.querySelector("#workflow-selection-actions");
+const workflowSelectionCount = document.querySelector("#workflow-selection-count");
+const workflowArrangeToggle = document.querySelector("#workflow-arrange-toggle");
+const workflowArrangePanel = document.querySelector("#workflow-arrange-panel");
+const workflowDistributeButtons = workflowArrangePanel.querySelectorAll('[data-workflow-arrange^="space-"]');
+const workflowMinimapToggle = document.querySelector("#workflow-minimap-toggle");
+const workflowMinimap = document.querySelector("#workflow-minimap");
+const workflowMinimapCanvas = document.querySelector("#workflow-minimap-canvas");
+const workflowMinimapViewport = document.querySelector("#workflow-minimap-viewport");
+let workflowMinimapProjection = null;
+let workflowMinimapFrame = 0;
 const workflowLibraryTabs = [...document.querySelectorAll("[data-workflow-library-tab]")];
 const workflowLibraryPanels = [...document.querySelectorAll("[data-workflow-library-panel]")];
 const sharedWorkflowList = document.querySelector("#shared-workflow-list");
 const sharedWorkflowScopes = [...document.querySelectorAll("[data-workflow-scope]")];
 const workflowNodePicker = document.querySelector("#workflow-node-picker");
+const workflowAddNodeButton = document.querySelector("#workflow-add-node");
+const workflowNodeSearch = document.querySelector("#workflow-node-search");
 let workflowPickerReturnFocus = null;
+let workflowPickerPosition = null;
 const workflowNodeGroups = document.querySelector("#workflow-node-groups");
 const workflowNodeCategoryTabs = document.querySelector("#workflow-node-category-tabs");
 const workflowNodeEditor = document.querySelector("#workflow-node-editor");
@@ -8221,12 +8726,12 @@ workflowEdgeStyleSelect.value = window.localStorage.getItem(WORKFLOW_EDGE_STYLE_
 setWorkflowEdgeStyle(workflowEdgeStyleSelect.value);
 workflowEdgeStyleSelect.addEventListener("change", () => setWorkflowEdgeStyle(workflowEdgeStyleSelect.value));
 
-const DEFAULT_WORKFLOW_EDGES = Object.freeze([
+const LEGACY_WORKFLOW_EDGES = Object.freeze([
   { id:"edge-image-redraw", from_node:"image-input-base", to_node:"redraw-base", from_port:"image", to_port:"image1" },
   { id:"edge-redraw-upscale", from_node:"redraw-base", to_node:"upscale-base", from_port:"image", to_port:"image1" },
   { id:"edge-upscale-output", from_node:"upscale-base", to_node:"output-base", from_port:"image", to_port:"image" },
 ]);
-let workflowEdges = DEFAULT_WORKFLOW_EDGES.map((edge) => ({ ...edge }));
+let workflowEdges = [];
 
 function workflowCapabilityTemplates() {
   // 幕布只暴露稳定的媒体级节点。具体能力来自节点内下拉框，避免能力中心
@@ -8239,7 +8744,7 @@ function workflowCapabilityTemplates() {
 function showWorkflowToast(message) {
   if (!workflowToast) return;
   window.clearTimeout(workflowToastTimer);
-  workflowToast.textContent = message;
+  workflowToast.textContent = t(message);
   workflowToast.hidden = false;
   workflowToastTimer = window.setTimeout(() => { workflowToast.hidden = true; }, 2800);
 }
@@ -8257,9 +8762,10 @@ function workflowTemplateAcceptsType(template, sourceType = "") {
 function renderWorkflowNodePicker(sourceType = "") {
   if (!workflowNodeGroups || !workflowNodeCategoryTabs) return;
   workflowPickerSourceType = sourceType;
-  const nodeRegistry = workflowCapabilityTemplates();
+  const nodeRegistry = workflowCapabilityTemplates().filter((item) => workflowTemplateAcceptsType(item, sourceType));
+  const searchTerms = workflowNodeSearch.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const availableCategories = Object.keys(WORKFLOW_NODE_CATEGORIES).filter((category) =>
-    nodeRegistry.some((item) => item.category === category && workflowTemplateAcceptsType(item, sourceType))
+    nodeRegistry.some((item) => item.category === category)
   );
   if (activeWorkflowNodeCategory !== "all" && !availableCategories.includes(activeWorkflowNodeCategory)) {
     activeWorkflowNodeCategory = "all";
@@ -8268,21 +8774,23 @@ function renderWorkflowNodePicker(sourceType = "") {
   workflowNodeCategoryTabs.replaceChildren(...tabs.map(([category, label]) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.role = "tab";
     button.dataset.workflowNodeCategory = category;
-    button.setAttribute("aria-selected", String(activeWorkflowNodeCategory === category));
-    button.textContent = label;
+    button.setAttribute("aria-pressed", String(activeWorkflowNodeCategory === category));
+    button.textContent = t(label);
     return button;
   }));
   const groups = Object.entries(WORKFLOW_NODE_CATEGORIES).map(([category, metadata]) => {
     if (activeWorkflowNodeCategory !== "all" && activeWorkflowNodeCategory !== category) return null;
-    const templates = nodeRegistry.filter((item) => item.category === category && workflowTemplateAcceptsType(item, sourceType));
+    const templates = nodeRegistry.filter((item) => {
+      if (item.category !== category) return false;
+      const searchable = `${item.label} ${t(item.label)} ${item.type.replaceAll("_", " ")} ${item.note} ${t(metadata.label)}`.toLocaleLowerCase();
+      return searchTerms.every((term) => searchable.includes(term));
+    });
     if (!templates.length) return null;
     const section = document.createElement("section");
     section.className = "workflow-node-group";
-    section.style.setProperty("--node-accent", metadata.accent);
     const heading = document.createElement("h4");
-    heading.textContent = metadata.label;
+    heading.textContent = t(metadata.label);
     const options = document.createElement("div");
     options.className = "workflow-node-options";
     templates.forEach((template) => {
@@ -8295,20 +8803,24 @@ function renderWorkflowNodePicker(sourceType = "") {
       button.setAttribute("aria-disabled", String(!template.ready));
       const icon = document.createElement("span");
       icon.append(createWorkflowIcon(template.icon));
-      const copy = document.createElement("span");
       const title = document.createElement("b");
-      title.textContent = template.label;
-      const note = document.createElement("small");
-      note.textContent = template.ready ? template.note : `${template.note} · 当前未接入`;
-      copy.append(title, note);
-      button.append(icon, copy);
+      title.textContent = t(template.label);
+      button.append(icon, title);
       options.append(button);
     });
     section.append(heading, options);
     return section;
   }).filter(Boolean);
+  if (!groups.length) {
+    const empty = document.createElement("p");
+    empty.className = "workflow-node-empty";
+    empty.setAttribute("role", "status");
+    empty.textContent = t("没有匹配的节点", "No matching nodes");
+    groups.push(empty);
+  }
   workflowNodeGroups.replaceChildren(...groups);
   workflowNodeGroups.scrollTop = 0;
+  positionWorkflowNodePicker();
 }
 
 function createWorkflowField(field) {
@@ -8706,8 +9218,9 @@ function createWorkflowPromptMentionPicker(promptNode) {
   textarea.addEventListener("blur", () => window.setTimeout(() => closeWorkflowPromptMentionPicker(promptNode), 120));
 }
 
-function syncWorkflowPromptMentionPickers() {
-  workflowBoard?.querySelectorAll('[data-node-type="image_generator"], [data-node-type="video_generator"]').forEach((node) => {
+function syncWorkflowPromptMentionPickers(nodes = workflowBoard?.querySelectorAll('[data-node-type="image_generator"], [data-node-type="video_generator"]')) {
+  nodes?.forEach((node) => {
+    if (!["image_generator", "video_generator"].includes(node.dataset.nodeType)) return;
     createWorkflowPromptMentionPicker(node);
     const state = workflowPromptMentionStates.get(node);
     if (state && !state.picker.hidden) renderWorkflowPromptMentionPicker(node);
@@ -8864,6 +9377,7 @@ function createWorkflowOutputBody(article) {
 }
 
 function createWorkflowOutputBodyPlaceholder(article) {
+  releaseWorkflowOutput(article);
   const preview = article.querySelector("[data-workflow-output-preview]");
   if (!preview) return;
   const icon = document.createElement("span");
@@ -8910,6 +9424,7 @@ function renderWorkflowNodeRunResult(node, values) {
     }
   } else {
     const text = document.createElement("p");
+    text.setAttribute("data-user-content", "");
     text.textContent = String(value || "").slice(0, 600);
     result.append(text);
   }
@@ -8936,9 +9451,7 @@ function createWorkflowNodeResultPlaceholder(result, node) {
   icon.append(createWorkflowIcon(profile.icon));
   const title = document.createElement("b");
   title.textContent = profile.title;
-  const copy = document.createElement("small");
-  copy.textContent = workflowNodeUsesNaturalLanguagePrompt(node) ? "点击节点编辑提示词与参数" : "点击节点设置参数";
-  empty.append(icon, title, copy);
+  empty.append(icon, title);
   result.replaceChildren(empty);
 }
 
@@ -8957,11 +9470,12 @@ function updateWorkflowNodeSummary(node) {
   const selectorKey = nodeType === "video_generator" ? "mode" : nodeType === "audio_generator" ? "ability" : "tool";
   const selectedTool = node.querySelector('[data-node-field="tool"]')?.value || "";
   if (title) title.textContent = workflowSelectedFieldLabel(node, selectorKey) || node.querySelector("header b")?.textContent || "能力节点";
-  if (detail) detail.textContent = nodeType === "image_tool" && selectedTool === "upscale"
-    ? "AI 超分 · 细节增强"
-    : nodeType === "image_tool" && selectedTool === "cutout"
-      ? "AI 抠图 · 透明 PNG"
-    : workflowSelectedFieldLabel(node, "model") || ({ image_tool:"图片编辑", video_tool:"视频编辑", audio_tool:"音频编辑" })[nodeType] || "可单独运行";
+  if (detail) {
+    const imageToolDetail = nodeType === "image_tool" && (WORKFLOW_LOCAL_IMAGE_TOOLS.has(selectedTool)
+      ? "浏览器本地处理" : ({ upscale:"AI 超分 · 细节增强", cutout:"AI 抠图 · 透明 PNG" })[selectedTool]);
+    detail.textContent = imageToolDetail || workflowSelectedFieldLabel(node, "model") ||
+      ({ image_tool:"图片编辑", video_tool:"视频编辑", audio_tool:"音频编辑" })[nodeType] || "可单独运行";
+  }
   const statusCopy = ({ running:"运行中", completed:"已完成", failed:"未完成" })[node.dataset.runStatus] || "待运行";
   if (status) status.textContent = statusCopy;
   const result = node.querySelector("[data-workflow-node-result]");
@@ -8970,6 +9484,7 @@ function updateWorkflowNodeSummary(node) {
     ? `${node.querySelector("header b")?.textContent || "能力"}节点，按回车编辑提示词与参数`
     : `${node.querySelector("header b")?.textContent || "能力"}节点，按回车设置参数`);
   if (activeWorkflowEditorNode === node) updateWorkflowNodeEditorCredit(node);
+  if (node.isConnected) localizeUi(node);
 }
 
 function ensureWorkflowNodeRunButton(node) {
@@ -9125,7 +9640,7 @@ function renderWorkflowNodeEditorFields(node) {
       const triggerValue = document.createElement("b");
       const chevron = document.createElement("i");
       chevron.setAttribute("aria-hidden", "true");
-      chevron.textContent = "⌄";
+      chevron.innerHTML = uiIcon("chevron-down");
       trigger.append(triggerLabel, triggerValue, chevron);
       const popover = document.createElement("div");
       popover.className = "workflow-node-editor-range-popover";
@@ -9177,7 +9692,9 @@ function workflowNodeEditorCreditDetails(node) {
   const tool = node.querySelector('[data-node-field="tool"]')?.value || "";
   const localVideoTools = new Set(["extract_frame", "enhance_video", "trim_video", "crop_video"]);
   const localAudioTools = new Set(["trim", "normalize"]);
-  if (node.dataset.nodeType === "video_tool" && localVideoTools.has(tool) || node.dataset.nodeType === "audio_tool" && localAudioTools.has(tool)) {
+  if ((node.dataset.nodeType === "image_tool" && WORKFLOW_LOCAL_IMAGE_TOOLS.has(tool)) ||
+      (node.dataset.nodeType === "video_tool" && localVideoTools.has(tool)) ||
+      (node.dataset.nodeType === "audio_tool" && localAudioTools.has(tool))) {
     return { value:"0", label:"本地处理，不消耗 Credits" };
   }
   return { value:"按实际", label:"按所选能力与模型的实际用量结算" };
@@ -9192,10 +9709,18 @@ function updateWorkflowNodeEditorCredit(node) {
   workflowNodeEditorCredit.setAttribute("aria-label", credit.label);
 }
 
+const compactWorkflowEditor = window.matchMedia("(max-width: 800px)");
+
 function positionWorkflowNodeEditor(node) {
   if (!workflowNodeEditor || !workflowViewport || !node) return;
   if (workflowNodeEditor.classList.contains("is-expanded")) return;
   if (workflowNodeEditor.parentElement !== workflowViewport) workflowViewport.append(workflowNodeEditor);
+  if (compactWorkflowEditor.matches) {
+    workflowNodeEditor.style.removeProperty("left");
+    workflowNodeEditor.style.removeProperty("top");
+    workflowNodeEditor.style.removeProperty("transform");
+    return;
+  }
   const scaledWidth = workflowNodeEditor.offsetWidth * workflowState.zoom;
   const nodeX = Number(node.dataset.x || 0);
   const nodeY = Number(node.dataset.y || 0);
@@ -9227,6 +9752,8 @@ function renderWorkflowNodeEditor(node, { focusPrompt = true } = {}) {
   activeWorkflowEditorNode?.classList.remove("is-editor-active");
   activeWorkflowEditorNode = node;
   node.classList.add("is-editor-active");
+  const editorTitle = document.querySelector("#workflow-node-editor-title");
+  editorTitle.textContent = node.querySelector("header b")?.textContent || "节点设置";
   const usesNaturalLanguage = workflowNodeUsesNaturalLanguagePrompt(node);
   workflowNodeEditor.classList.toggle("is-compact", !usesNaturalLanguage);
   const promptSource = usesNaturalLanguage ? ensureWorkflowNodePromptState(node) : null;
@@ -9299,7 +9826,9 @@ function createWorkflowCameraSummary(article) {
   article.append(summary);
 }
 
-function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
+function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}, container = workflowBoard, record = true) {
+  const bulkLoad = container !== workflowBoard;
+  if (!config || typeof config !== "object") config = {};
   const baseTemplate = WORKFLOW_NODE_TEMPLATES.find((item) => item.type === type);
   const capabilityId = String(config?.capability_id || "").slice(0, 64);
   const capabilityTemplate = capabilityId
@@ -9307,6 +9836,10 @@ function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
     : null;
   const template = capabilityTemplate || baseTemplate;
   if (!template || !workflowBoard || template.ready === false) return null;
+  if (!bulkLoad && workflowBoard.querySelectorAll("[data-node-id]").length >= WORKFLOW_MAX_NODES) {
+    showWorkflowToast(`工作流最多支持 ${WORKFLOW_MAX_NODES} 个节点`);
+    return null;
+  }
   const safeId = /^[a-z0-9-]{1,64}$/.test(providedId) ? providedId : `node-${crypto.randomUUID().replaceAll("-", "").slice(0, 14)}`;
   const article = document.createElement("article");
   article.className = "workflow-node workflow-node-dynamic";
@@ -9327,8 +9860,8 @@ function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
   if (template.defaultModel && !config.model) config = { ...config, model:template.defaultModel };
   article.classList.add(`workflow-node-${type}`);
   if (["media-output", "text-output"].includes(template.custom)) article.classList.add("workflow-node-output");
-  article.dataset.x = String(Math.max(-50000, Math.min(50000, Number(x) || 520)));
-  article.dataset.y = String(Math.max(-50000, Math.min(50000, Number(y) || 320)));
+  article.dataset.x = String(Math.max(-50000, Math.min(50000, Number.isFinite(x) ? x : 520)));
+  article.dataset.y = String(Math.max(-50000, Math.min(50000, Number.isFinite(y) ? y : 320)));
   const header = document.createElement("header");
   const icon = document.createElement("span");
   icon.append(createWorkflowIcon(template.icon));
@@ -9357,18 +9890,21 @@ function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
   if (["media-output", "text-output"].includes(template.custom)) createWorkflowOutputBody(article);
   ensureWorkflowNodeRunButton(article);
   (template.outputs || []).forEach((port, index) => article.append(createWorkflowPort("output", safeId, template.label, port, index, template.outputs.length)));
-  Object.entries(config && typeof config === "object" ? config : {}).forEach(([key, value]) => {
-    const control = [...article.querySelectorAll("[data-node-field]")].find((item) => item.dataset.nodeField === key);
+  addWorkflowNodeResizeHandle(article);
+  const fields = new Map();
+  for (const control of article.querySelectorAll("[data-node-field]")) {
+    if (!fields.has(control.dataset.nodeField)) fields.set(control.dataset.nodeField, control);
+  }
+  Object.entries(config).forEach(([key, value]) => {
+    const control = fields.get(key);
     if (!control || !["string", "number", "boolean"].includes(typeof value)) return;
     if (control instanceof HTMLSelectElement && ![...control.options].some((option) => option.value === String(value))) return;
     if (control instanceof HTMLInputElement && control.type === "checkbox") control.checked = Boolean(value);
     else control.value = String(value);
   });
-  const inlineTool = article.querySelector("[data-workflow-inline-tool]");
+  const inlineTool = article.querySelector("[data-workflow-inline-tool] select");
   const toolControl = article.querySelector('[data-node-field="tool"]');
   if (inlineTool instanceof HTMLSelectElement && toolControl instanceof HTMLSelectElement) inlineTool.value = toolControl.value;
-  syncWorkflowModelDecorations(article);
-  syncWorkflowGenerationCredits(article);
   if (type === "media_input") {
     const assetUrl = safeGeneratedImageUrl(config?.url || "");
     const kind = ["image", "video", "audio"].includes(config?.input_type) ? config.input_type : "image";
@@ -9376,9 +9912,11 @@ function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
       workflowNodeImageStates.set(safeId, { url:assetUrl, kind, assetId:String(config?.asset_id || ""), assetType:String(config?.asset_type || kind), mediaType:String(config?.media_type || `${kind}/${kind === "video" ? "mp4" : kind === "audio" ? "wav" : "png"}`) });
       const preview = kind === "image" ? article.querySelector('[data-workflow-input-branch="image"] img') : article.querySelector(`.workflow-node-upload-${kind} ${kind}`);
       if (preview) {
+        if (bulkLoad && kind === "image") preview.loading = "lazy";
+        if (bulkLoad && kind !== "image") preview.preload = "none";
         preview.src = assetUrl;
         preview.hidden = false;
-        if (kind !== "image") preview.load();
+        if (!bulkLoad && kind !== "image") preview.load();
         preview.closest(".workflow-node-upload")?.classList.add("has-image");
       }
       if (kind !== "image") {
@@ -9388,64 +9926,309 @@ function createDynamicWorkflowNode(type, x, y, providedId = "", config = {}) {
       }
     }
   }
-  remove.addEventListener("click", () => {
-    if (activeWorkflowEditorNode === article) closeWorkflowNodeEditor();
-    disposeWorkflowCameraWorkbench(article);
-    const mediaState = workflowNodeImageStates.get(safeId);
-    if (mediaState?.objectUrl) URL.revokeObjectURL(mediaState.objectUrl);
-    workflowNodeImageStates.delete(safeId);
-    workflowEdges = workflowEdges.filter((edge) => edge.from_node !== safeId && edge.to_node !== safeId);
-    article.remove();
-    updateWorkflowLines();
-  });
-  workflowBoard.append(article);
+  remove.addEventListener("click", () => deleteWorkflowNodes([article]));
+  container.append(article);
   positionWorkflowNode(article);
   bindWorkflowNodeEditorActivation(article);
-  bindDynamicWorkflowNode(article);
+  bindWorkflowNodeDrag(article);
   bindWorkflowNodeControls(article);
   syncCanonicalWorkflowNode(article);
   updateWorkflowCameraSummary(article);
-  updateWorkflowLines();
+  if (!bulkLoad) {
+    if (record) recordWorkflowStructure({ addedNodes:[{ node:article, index:workflowBoard.childElementCount - 1 }] });
+    updateWorkflowLines();
+  }
   return article;
 }
 
-function bindDynamicWorkflowNode(node) {
+function refreshWorkflowNodeSize(node, size) {
+  if (!setWorkflowNodeSize(node, size)) return;
+  const width = node.offsetWidth;
+  if (width) {
+    workflowCanvasNodeSizes.set(node, { width, height:node.offsetHeight });
+  }
+  refreshWorkflowLineGeometry([node.dataset.nodeId]);
+  if (activeWorkflowEditorNode === node) positionWorkflowNodeEditor(node);
+}
+
+function finishWorkflowNodeSizeChange() {
+  updateWorkflowViewport();
+  invalidateWorkflowMinimap();
+}
+
+function recordWorkflowNodeSize(node, before) {
+  const after = workflowNodeSize(node);
+  if (before.width === after.width && before.height === after.height) return;
+  const restore = (size) => {
+    refreshWorkflowNodeSize(node, size);
+    finishWorkflowNodeSizeChange();
+  };
+  finishWorkflowNodeSizeChange();
+  recordWorkflowEdit(() => restore(before), () => restore(after), [node]);
+}
+
+function addWorkflowNodeResizeHandle(node) {
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "workflow-node-resize";
+  handle.title = t("调整节点大小", "Resize node");
+  handle.setAttribute("aria-label", handle.title);
+  handle.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight ArrowUp ArrowDown");
+  node.append(handle);
+}
+
+workflowBoard?.addEventListener("pointerdown", (event) => {
+  const handle = event.target instanceof Element ? event.target.closest(".workflow-node-resize") : null;
+  if (!handle) return;
+  const node = handle.parentElement;
+  if (!event.isPrimary || event.button !== 0 || workflowBoard.querySelector(".is-dragging")) return;
+  event.preventDefault();
+  event.stopPropagation();
+  handle.focus({ preventScroll:true });
+  const { clientX, clientY, pointerId } = event;
+  const initial = { width:node.offsetWidth, height:node.offsetHeight };
+  const before = workflowNodeSize(node);
+  const zoom = workflowState.zoom;
+  const listeners = new AbortController();
+  const options = { signal:listeners.signal };
+  let next = before;
+  let frame = 0;
+  node.classList.add("is-dragging");
+  handle.setPointerCapture(pointerId);
+
+  function update() {
+    frame = 0;
+    refreshWorkflowNodeSize(node, next);
+  }
+
+  function measure(pointer) {
+    const dx = Math.round((pointer.clientX - clientX) / zoom);
+    const dy = Math.round((pointer.clientY - clientY) / zoom);
+    next = {
+      width:dx ? initial.width + dx : before.width,
+      height:dy ? initial.height + dy : before.height,
+    };
+  }
+
+  function move(pointer) {
+    if (pointer.pointerId !== pointerId) return;
+    measure(pointer);
+    if (!frame) frame = requestAnimationFrame(update);
+  }
+
+  function end({ pointer, cancel = false } = {}) {
+    listeners.abort();
+    if (frame) cancelAnimationFrame(frame);
+    if (cancel) next = before;
+    else if (pointer?.type === "pointerup") measure(pointer);
+    update();
+    node.classList.remove("is-dragging");
+    if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+    if (!cancel && node.parentElement === workflowBoard) recordWorkflowNodeSize(node, before);
+  }
+
+  handle.addEventListener("pointermove", move, options);
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    handle.addEventListener(type, (pointer) => {
+      if (pointer.pointerId === pointerId) end({ pointer, cancel:type === "pointercancel" });
+    }, options);
+  }
+  window.addEventListener("blur", () => end({ cancel:true }), options);
+  handle.addEventListener("keydown", (keyEvent) => {
+    if (keyEvent.key !== "Escape") return;
+    keyEvent.preventDefault();
+    keyEvent.stopPropagation();
+    end({ cancel:true });
+  }, options);
+});
+
+workflowBoard?.addEventListener("keydown", (event) => {
+  const handle = event.target instanceof Element ? event.target.closest(".workflow-node-resize") : null;
+  if (!handle) return;
+  const node = handle.parentElement;
+  if (node.classList.contains("is-dragging") || event.ctrlKey || event.metaKey || event.altKey) return;
+  const step = event.shiftKey ? 40 : 10;
+  const before = workflowNodeSize(node);
+  const next = { ...before };
+  if (event.key === "ArrowLeft") next.width = node.offsetWidth - step;
+  else if (event.key === "ArrowRight") next.width = node.offsetWidth + step;
+  else if (event.key === "ArrowUp") next.height = node.offsetHeight - step;
+  else if (event.key === "ArrowDown") next.height = node.offsetHeight + step;
+  else return;
+  event.preventDefault();
+  refreshWorkflowNodeSize(node, next);
+  recordWorkflowNodeSize(node, before);
+});
+
+function workflowDragBounds(origins) {
+  let x = Infinity, y = Infinity, right = -Infinity, bottom = -Infinity;
+  for (const { item } of origins) {
+    const box = workflowNodeBounds(item);
+    x = Math.min(x, box.x);
+    y = Math.min(y, box.y);
+    right = Math.max(right, box.x + box.width);
+    bottom = Math.max(bottom, box.y + box.height);
+  }
+  return { x, y, width:right - x, height:bottom - y };
+}
+
+function workflowDragSnapIndex() {
+  const near = 144;
+  const { zoom, panX, panY } = workflowState;
+  const left = (-panX - near) / zoom;
+  const top = (-panY - near) / zoom;
+  const right = (workflowViewportSize.width - panX + near) / zoom;
+  const bottom = (workflowViewportSize.height - panY + near) / zoom;
+  const candidates = workflowBoard.hasAttribute("data-workflow-cull") ? workflowVisibleNodes : workflowBoard.children;
+  const boxes = [];
+  for (const node of candidates) {
+    if (!node.dataset.nodeId || workflowSelectedNodes.has(node)) continue;
+    const box = workflowNodeBounds(node);
+    if (box.x < right && box.x + box.width > left && box.y < bottom && box.y + box.height > top) boxes.push(box);
+  }
+  return indexWorkflowSnapEdges(boxes);
+}
+
+function showWorkflowSnapGuides(state) {
+  workflowGuideState = state;
+  workflowSnapGuides.toggleAttribute("hidden", !state);
+  renderWorkflowSnapGuides();
+}
+
+function renderWorkflowSnapGuides() {
+  if (!workflowGuideState) return;
+  const { matches, bounds, offset, insetX, insetY } = workflowGuideState;
+  const { zoom, panX, panY } = workflowState;
+  for (const line of workflowSnapLines) {
+    const axis = line.dataset.snapGuide;
+    const match = matches[axis];
+    line.toggleAttribute("hidden", !match);
+    if (!match) continue;
+    const vertical = axis === "x";
+    const cross = vertical ? "y" : "x";
+    const size = vertical ? "height" : "width";
+    const target = match.edge.box;
+    const crossStart = bounds[cross] + offset[cross];
+    const from = Math.min(crossStart, target[cross]);
+    const to = Math.max(crossStart + bounds[size], target[cross] + target[size]);
+    const mainPan = vertical ? panX : panY;
+    const crossPan = vertical ? panY : panX;
+    const cutoff = vertical ? workflowViewportSize.height : workflowViewportSize.width;
+    const coordinate = match.edge.value * zoom + mainPan;
+    const start = Math.max(0, from * zoom + crossPan - 6);
+    const end = Math.min(cutoff, to * zoom + crossPan + 6);
+    const mainCutoff = vertical ? workflowViewportSize.width : workflowViewportSize.height;
+    if (coordinate < 0 || coordinate > mainCutoff || start >= end) {
+      line.setAttribute("hidden", "");
+      continue;
+    }
+    line.setAttribute("x1", String(insetX + (vertical ? coordinate : start)));
+    line.setAttribute("x2", String(insetX + (vertical ? coordinate : end)));
+    line.setAttribute("y1", String(insetY + (vertical ? start : coordinate)));
+    line.setAttribute("y2", String(insetY + (vertical ? end : coordinate)));
+  }
+}
+
+function bindWorkflowNodeDrag(node) {
   const handle = node.querySelector("header");
   if (!handle || handle.dataset.dragBound === "true") return;
   handle.dataset.dragBound = "true";
   handle.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || event.target instanceof Element && event.target.closest("button")) return;
+    if (!event.isPrimary || event.button !== 0 || event.target instanceof Element && event.target.closest("button")) return;
     event.stopPropagation();
     const startX = event.clientX;
     const startY = event.clientY;
-    const originX = Number(node.dataset.x);
-    const originY = Number(node.dataset.y);
-    let dragged = false;
+    const viewport = workflowViewport.getBoundingClientRect();
+    const startWorldX = (startX - viewport.left - workflowState.panX) / workflowState.zoom;
+    const startWorldY = (startY - viewport.top - workflowState.panY) / workflowState.zoom;
+    let origins;
+    let bounds, edges, snapCamera, pointer;
+    let matches = { x:null, y:null };
+    let minX = -Infinity, maxX = Infinity, minY = -Infinity, maxY = Infinity;
+    let insetX, insetY;
     node.classList.add("is-dragging");
     handle.setPointerCapture(event.pointerId);
+    const update = () => {
+      if (!origins) {
+        if (Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 4) return;
+        if (!workflowSelectedNodes.has(node)) setWorkflowNodeSelection(new Set([node]));
+        origins = [...workflowSelectedNodes].map((item) => {
+          const x = Number(item.dataset.x);
+          const y = Number(item.dataset.y);
+          minX = Math.max(minX, -50000 - x);
+          maxX = Math.min(maxX, 50000 - x);
+          minY = Math.max(minY, -50000 - y);
+          maxY = Math.min(maxY, 50000 - y);
+          return { item, x, y };
+        });
+        const shell = workflowCanvasShell.getBoundingClientRect();
+        insetX = viewport.left - shell.left;
+        insetY = viewport.top - shell.top;
+        bounds = workflowDragBounds(origins);
+      }
+      const { panX, panY, zoom } = workflowState;
+      const dx = (pointer.clientX - viewport.left - panX) / zoom - startWorldX;
+      const dy = (pointer.clientY - viewport.top - panY) / zoom - startWorldY;
+      const raw = { x:Math.max(minX, Math.min(maxX, dx)), y:Math.max(minY, Math.min(maxY, dy)) };
+      if (pointer.altKey) {
+        matches = { x:null, y:null };
+      } else {
+        if (!snapCamera || snapCamera.panX !== panX || snapCamera.panY !== panY || snapCamera.zoom !== zoom) {
+          edges = workflowDragSnapIndex();
+          snapCamera = { panX, panY, zoom };
+          matches = { x:null, y:null };
+        }
+        matches = {
+          x:findWorkflowEdgeSnap(edges.x, "x", bounds, raw, { min:minX, max:maxX }, zoom, matches.x),
+          y:findWorkflowEdgeSnap(edges.y, "y", bounds, raw, { min:minY, max:maxY }, zoom, matches.y),
+        };
+      }
+      const offset = { x:matches.x?.offset ?? raw.x, y:matches.y?.offset ?? raw.y };
+      for (const { item, x, y } of origins) pendingWorkflowNodeMoves.set(item, { x:x + offset.x, y:y + offset.y });
+      showWorkflowSnapGuides(matches.x || matches.y ? { matches, bounds, offset, insetX, insetY } : null);
+    };
     const move = (moveEvent) => {
-      if (!dragged && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 4) return;
-      dragged = true;
-      node.dataset.x = String(Math.max(-50000, Math.min(50000, originX + (moveEvent.clientX - startX) / workflowState.zoom)));
-      node.dataset.y = String(Math.max(-50000, Math.min(50000, originY + (moveEvent.clientY - startY) / workflowState.zoom)));
-      positionWorkflowNode(node);
-      if (activeWorkflowEditorNode === node) positionWorkflowNodeEditor(node);
-      updateWorkflowLines();
+      if (moveEvent.pointerId !== event.pointerId) return;
+      const { clientX, clientY, altKey } = moveEvent;
+      pointer = { clientX, clientY, altKey };
+      pendingWorkflowNodeDrag = update;
+      queueWorkflowNodeMove();
+    };
+    const modifier = (keyEvent) => {
+      if (keyEvent.key !== "Alt" || !pointer || pointer.altKey === keyEvent.altKey) return;
+      pointer.altKey = keyEvent.altKey;
+      pendingWorkflowNodeDrag = update;
+      queueWorkflowNodeMove();
     };
     const end = (upEvent) => {
+      if (upEvent.pointerId !== event.pointerId) return;
+      if (upEvent.type === "pointerup" && pointer &&
+          (pointer.clientX !== upEvent.clientX || pointer.clientY !== upEvent.clientY || pointer.altKey !== upEvent.altKey)) move(upEvent);
+      flushWorkflowNodeMove();
+      showWorkflowSnapGuides(null);
       node.classList.remove("is-dragging");
-      if (dragged) {
+      if (origins && node.parentElement === workflowBoard) {
+        recordWorkflowPositions(origins.map(({ item, x, y }) => ({ item, x, y, nextX:Number(item.dataset.x), nextY:Number(item.dataset.y) })));
         node.dataset.suppressEditorClick = "true";
         requestAnimationFrame(() => { delete node.dataset.suppressEditorClick; });
       }
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", end);
       handle.removeEventListener("pointercancel", end);
+      handle.removeEventListener("lostpointercapture", end);
+      window.removeEventListener("keydown", modifier);
+      window.removeEventListener("keyup", modifier);
+      window.removeEventListener("blur", blur);
       if (handle.hasPointerCapture(upEvent.pointerId)) handle.releasePointerCapture(upEvent.pointerId);
     };
+    const blur = () => end({ pointerId:event.pointerId, type:"blur" });
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", end);
-    handle.addEventListener("pointercancel", end, { once:true });
+    handle.addEventListener("pointercancel", end);
+    handle.addEventListener("lostpointercapture", end);
+    window.addEventListener("keydown", modifier);
+    window.addEventListener("keyup", modifier);
+    window.addEventListener("blur", blur);
   });
 }
 
@@ -9544,7 +10327,7 @@ function openWorkflowCameraWorkbenchFocus(workspace) {
   dialog.setAttribute("aria-label", "放大三维机位");
   const close = document.createElement("button");
   close.type = "button";
-  close.className = "workflow-camera-focus-close";
+  close.className = "workflow-camera-focus-close dialog-close";
   close.setAttribute("aria-label", "关闭放大三维机位");
   close.append(createWorkflowIcon("close"));
   close.addEventListener("click", () => dialog.close());
@@ -9804,6 +10587,7 @@ function syncWorkflowCameraWorkbench(node) {
     disposeWorkflowCameraWorkbench(node);
     return;
   }
+  if (!node.isConnected || (workflowBoard.hasAttribute("data-workflow-cull") && !workflowVisibleNodes.has(node))) return;
   const existing = workflowCameraWorkspaces.get(node);
   if (existing) {
     if (existing.ready) updateWorkflowCameraWorkbench(existing);
@@ -9875,8 +10659,6 @@ function syncWorkflowRedrawSources() {
 
 function syncWorkflowVideoReferencePorts(node) {
   if (!node || node.dataset.nodeType !== "video_generator") return;
-  node.style.minHeight = "";
-  const naturalHeight = node.offsetHeight;
   const mode = node.querySelector('[data-node-field="mode"]')?.value || "text_to_video";
   const modelControl = node.querySelector('[data-node-field="model"]');
   const h3Allowed = ["text_to_video", "image_to_video"].includes(mode);
@@ -9920,9 +10702,7 @@ function syncWorkflowVideoReferencePorts(node) {
     port.hidden = !visible.has(port.dataset.portName);
   });
   node.dataset.referenceLimit = String(referenceLimit);
-  const lastReferenceTop = highestVisibleIndex >= 0 ? 82 + highestVisibleIndex * portGap : 0;
-  const requiredHeight = highestVisibleIndex >= 0 ? lastReferenceTop + 28 : naturalHeight;
-  if (requiredHeight > naturalHeight) node.style.minHeight = `${requiredHeight}px`;
+  node.style.minHeight = highestVisibleIndex >= 0 ? `${82 + highestVisibleIndex * portGap + 28}px` : "";
 }
 
 function syncWorkflowVideoResolutionOptions(node) {
@@ -9974,7 +10754,7 @@ function syncWorkflowStructuralMediaNode(node) {
     if (saveHistory) saveHistory.hidden = mediaType !== "image";
   }
   node.dataset.activeMediaType = mediaType;
-  requestAnimationFrame(updateWorkflowLines);
+  scheduleWorkflowLinesUpdate();
 }
 
 function syncCanonicalWorkflowNode(node) {
@@ -10015,7 +10795,7 @@ function syncCanonicalWorkflowNode(node) {
     showPorts(tool === "collage" ? ["image1","image2","image3","image4"] : ["image1", ...(tool === "edit" ? ["image2"] : [])]);
     const mask = node.querySelector('[data-workflow-conditional="redraw-mask"]');
     if (mask) mask.hidden = tool !== "redraw";
-    if (tool === "redraw") syncWorkflowRedrawSources();
+    if (tool === "redraw" && node.isConnected) syncWorkflowRedrawSources();
   } else if (node.dataset.nodeType === "video_generator") {
     showFields(["prompt","mode","model","resolution","ratio","duration"]);
     syncWorkflowVideoReferencePorts(node);
@@ -10041,7 +10821,7 @@ function syncCanonicalWorkflowNode(node) {
       segment_reshoot:["tool","prompt","model","resolution","start_time","end_time"],
       video_edit:["tool","prompt","model","resolution","duration"], video_extension:["tool","prompt","model","resolution","duration"],
       video_style:["tool","prompt","model","resolution","style_id","duration"], lip_sync:["tool","model","duration"],
-      character_swap_video:["tool","prompt","model","duration","consent"], video_depth:["tool","palette","target_fps","max_frames"],
+      character_swap_video:["tool","prompt","model","duration"], video_depth:["tool","palette","target_fps","max_frames"],
       digital_human:["tool","prompt","model","duration"],
     }[tool] || ["tool"];
     const ports = {
@@ -10074,7 +10854,6 @@ function syncCanonicalWorkflowNode(node) {
     const fields = ability === "custom_voice"
       ? ["ability","voice_description","preview_text","model","language_type","speed_ratio"]
       : ["ability","text","model","voice","language_type","speed_ratio","emotion"];
-    if (["reference_audio","custom_voice"].includes(ability)) fields.push("consent");
     showFields(fields);
     showPorts(ability === "image_dubbing" ? ["text","image"]
       : ability === "reference_audio" ? ["text","audio"]
@@ -10086,7 +10865,7 @@ function syncCanonicalWorkflowNode(node) {
   }
   updateWorkflowNodeSummary(node);
   syncWorkflowCameraWorkbench(node);
-  requestAnimationFrame(updateWorkflowLines);
+  scheduleWorkflowLinesUpdate();
 }
 
 function bindWorkflowNodeControls(node) {
@@ -10283,29 +11062,50 @@ function bindWorkflowNodeControls(node) {
   node.querySelectorAll('[data-node-field="azimuth"],[data-node-field="elevation"],[data-node-field="distance"]').forEach((input) => input.addEventListener("input", () => updateWorkflowCameraSummary(node)));
 }
 
+function findWorkflowPort(node, direction, portName) {
+  return [...node.querySelectorAll(`[data-port-direction="${direction}"]`)]
+    .find((port) => !portName || port.dataset.portName === portName);
+}
+
+function workflowPointInBoard(port, boardRect) {
+  const portRect = port.getBoundingClientRect();
+  const zoom = workflowState.zoom || 1;
+  return {
+    x:(portRect.left + portRect.width / 2 - boardRect.left) / zoom,
+    y:(portRect.top + portRect.height / 2 - boardRect.top) / zoom,
+  };
+}
+
 function workflowPortPoint(node, direction, portName = "") {
-  const escapedName = window.CSS?.escape ? CSS.escape(portName) : portName.replace(/[^a-z0-9_-]/gi, "");
-  const port = portName
-    ? node.querySelector(`[data-port-direction="${direction}"][data-port-name="${escapedName}"]`)
-    : node.querySelector(`[data-port-direction="${direction}"]`);
-  if (port && workflowBoard) {
-    const portRect = port.getBoundingClientRect();
-    const boardRect = workflowBoard.getBoundingClientRect();
-    const zoom = Number(workflowState.zoom) || 1;
-    return {
-      x:(portRect.left + portRect.width / 2 - boardRect.left) / zoom,
-      y:(portRect.top + portRect.height / 2 - boardRect.top) / zoom,
-    };
-  }
+  const port = findWorkflowPort(node, direction, portName);
+  if (port && workflowBoard) return workflowPointInBoard(port, workflowBoard.getBoundingClientRect());
   return {
     x:Number(node.dataset.x) + (direction === "output" ? node.offsetWidth : 0),
     y:Number(node.dataset.y) + node.offsetHeight / 2,
   };
 }
 
-function workflowPathData(fromPoint, toPoint) {
+function workflowPathData(fromPoint, toPoint, fromNode, toNode) {
   const delta = toPoint.x - fromPoint.x;
-  const bend = Math.max(54, Math.min(240, Math.abs(delta) * .46 + (delta < 0 ? 75 : 0)));
+  if (delta < 0 && fromNode && toNode) {
+    const from = workflowNodeBounds(fromNode);
+    const to = workflowNodeBounds(toNode);
+    const [upper, lower] = from.y < to.y ? [from, to] : [to, from];
+    if (upper.y + upper.height + 10 <= lower.y) {
+      const lane = (upper.y + upper.height + lower.y) / 2;
+      const right = fromPoint.x + 28;
+      const left = toPoint.x - 28;
+      const direction = from.y < to.y ? 1 : -1;
+      const radius = Math.min(10, Math.abs(lane - fromPoint.y) / 2, Math.abs(toPoint.y - lane) / 2);
+      const turn = radius * direction;
+      return `M ${fromPoint.x} ${fromPoint.y} H ${right - radius}
+        Q ${right} ${fromPoint.y} ${right} ${fromPoint.y + turn} V ${lane - turn}
+        Q ${right} ${lane} ${right - radius} ${lane} H ${left + radius}
+        Q ${left} ${lane} ${left} ${lane + turn} V ${toPoint.y - turn}
+        Q ${left} ${toPoint.y} ${left + radius} ${toPoint.y} H ${toPoint.x}`;
+    }
+  }
+  const bend = Math.max(54, Math.min(WORKFLOW_MAX_WIRE_BEND, Math.abs(delta) * .46 + (delta < 0 ? 75 : 0)));
   return `M ${fromPoint.x} ${fromPoint.y} C ${fromPoint.x + bend} ${fromPoint.y}, ${toPoint.x - bend} ${toPoint.y}, ${toPoint.x} ${toPoint.y}`;
 }
 
@@ -10314,6 +11114,15 @@ function hideWorkflowEdgeDeleteButton() {
   workflowEdgeDeleteButton.hidden = true;
   workflowEdgeDeleteButton.style.removeProperty("left");
   workflowEdgeDeleteButton.style.removeProperty("top");
+}
+
+function selectWorkflowEdge(edgeId) {
+  if (selectedWorkflowEdgeId === edgeId) return;
+  if (edgeId && workflowSelectedNodes.size) setWorkflowNodeSelection(new Set());
+  selectedWorkflowEdgeId = edgeId;
+  for (const { hitPath, visualPath } of workflowLinkViews.values()) {
+    visualPath.classList.toggle("is-selected", hitPath.dataset.link === edgeId);
+  }
 }
 
 function showWorkflowEdgeDeleteButton(path, clientX, clientY) {
@@ -10330,36 +11139,46 @@ function showWorkflowEdgeDeleteButton(path, clientX, clientY) {
 
 function deleteSelectedWorkflowEdge() {
   if (!selectedWorkflowEdgeId) return false;
-  const before = workflowEdges.length;
-  workflowEdges = workflowEdges.filter((edge) => edge.id !== selectedWorkflowEdgeId);
-  selectedWorkflowEdgeId = "";
-  hideWorkflowEdgeDeleteButton();
-  if (workflowEdges.length === before) return false;
-  updateWorkflowLines();
-  syncWorkflowRedrawSources();
+  const removedEdges = workflowEdges.filter((edge) => edge.id === selectedWorkflowEdgeId);
+  if (!removedEdges.length) return false;
+  applyWorkflowStructure([], [], [], removedEdges);
+  recordWorkflowStructure({ removedEdges });
   showWorkflowToast("连线已删除");
   document.querySelector("#workflow-canvas-shell")?.focus({ preventScroll:true });
   return true;
 }
 
-function drawWorkflowLink(edge) {
-  if (!workflowLines || !workflowBoard) return;
-  const from = workflowBoard.querySelector(`[data-node-id="${edge.from_node}"]`);
-  const to = workflowBoard.querySelector(`[data-node-id="${edge.to_node}"]`);
-  const fromPort = from?.querySelector(`[data-port-direction="output"][data-port-name="${edge.from_port}"]`) || from?.querySelector('[data-port-direction="output"]');
-  const toPort = to?.querySelector(`[data-port-direction="input"][data-port-name="${edge.to_port}"]`) || to?.querySelector('[data-port-direction="input"]');
-  if (!from || !to || !fromPort || !toPort) return;
-  const pathData = workflowPathData(
-    workflowPortPoint(from, "output", fromPort.dataset.portName || "output"),
-    workflowPortPoint(to, "input", toPort.dataset.portName || "input"),
-  );
+const workflowLinkViewsByNode = new Map();
+const workflowLinkViews = new Map();
+let workflowLinesFrame = 0;
+
+function scheduleWorkflowLinesUpdate() {
+  if (!workflowLinesFrame) workflowLinesFrame = requestAnimationFrame(updateWorkflowLines);
+}
+
+function updateWorkflowLinkView(view, boardRect, points) {
+  const point = (port) => {
+    if (!points.has(port)) points.set(port, workflowPointInBoard(port, boardRect));
+    return points.get(port);
+  };
+  const data = workflowPathData(point(view.fromPort), point(view.toPort), view.from, view.to);
+  view.hitPath.setAttribute("d", data);
+  view.visualPath.setAttribute("d", data);
+}
+
+function drawWorkflowLink(edge, getNode, fragment, boardRect, points) {
+  const from = getNode(edge.from_node);
+  const to = getNode(edge.to_node);
+  if (!from || !to) return;
+  const fromPort = findWorkflowPort(from, "output", edge.from_port) || findWorkflowPort(from, "output");
+  const toPort = findWorkflowPort(to, "input", edge.to_port) || findWorkflowPort(to, "input");
+  if (!fromPort || !toPort) return;
   const configurePath = (path) => {
     path.dataset.fromNode = edge.from_node;
     path.dataset.toNode = edge.to_node;
     path.dataset.fromPort = fromPort.dataset.portName || "output";
     path.dataset.toPort = toPort.dataset.portName || "input";
     path.dataset.portType = fromPort.dataset.portType || "any";
-    path.setAttribute("d", pathData);
   };
   const hitPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
   configurePath(hitPath);
@@ -10373,37 +11192,200 @@ function drawWorkflowLink(edge) {
   visualPath.classList.add("workflow-link-visible");
   visualPath.setAttribute("aria-hidden", "true");
   visualPath.classList.toggle("is-selected", edge.id === selectedWorkflowEdgeId);
-  workflowLines.append(hitPath, visualPath);
+  const view = { from, to, fromPort, toPort, hitPath, visualPath };
+  updateWorkflowLinkView(view, boardRect, points);
+  fragment.append(hitPath, visualPath);
+  return view;
 }
 
-function refreshWorkflowLineGeometry() {
-  if (!workflowLines || !workflowBoard) return;
-  workflowLines.querySelectorAll("path[data-from-node][data-to-node]").forEach((path) => {
-    const from = workflowBoard.querySelector(`[data-node-id="${path.dataset.fromNode}"]`);
-    const to = workflowBoard.querySelector(`[data-node-id="${path.dataset.toNode}"]`);
-    if (!from || !to) return;
-    path.setAttribute(
-      "d",
-      workflowPathData(
-        workflowPortPoint(from, "output", path.dataset.fromPort || "output"),
-        workflowPortPoint(to, "input", path.dataset.toPort || "input"),
-      ),
-    );
-  });
+function refreshWorkflowLineGeometry(nodeIds) {
+  const views = new Set();
+  for (const id of nodeIds) {
+    for (const view of workflowLinkViewsByNode.get(id) || []) views.add(view);
+  }
+  if (!views.size) return;
+  const boardRect = workflowBoard.getBoundingClientRect();
+  const points = new Map();
+  views.forEach((view) => updateWorkflowLinkView(view, boardRect, points));
 }
 
-updateWorkflowLines = function updateWorkflowLinesV47() {
+function renderWorkflowLinks(edges, getNode, redraw = false) {
+  if (redraw) {
+    workflowLines.replaceChildren();
+    workflowLinkViews.clear();
+  } else if (edges.length === workflowLinkViews.size && edges.every((edge) => workflowLinkViews.has(edge))) {
+    return;
+  }
+
+  const visibleEdges = new Set(edges);
+  for (const [edge, view] of workflowLinkViews) {
+    if (visibleEdges.has(edge)) continue;
+    view.hitPath.remove();
+    view.visualPath.remove();
+    workflowLinkViews.delete(edge);
+  }
+
+  workflowLinkViewsByNode.clear();
+  const fragment = document.createDocumentFragment();
+  const boardRect = edges.length ? workflowBoard.getBoundingClientRect() : null;
+  const points = new Map();
+  for (const edge of edges) {
+    const view = workflowLinkViews.get(edge) || drawWorkflowLink(edge, getNode, fragment, boardRect, points);
+    if (!view) continue;
+    workflowLinkViews.set(edge, view);
+    for (const nodeId of [edge.from_node, edge.to_node]) {
+      if (!workflowLinkViewsByNode.has(nodeId)) workflowLinkViewsByNode.set(nodeId, []);
+      workflowLinkViewsByNode.get(nodeId).push(view);
+    }
+  }
+  workflowLines.append(fragment);
+}
+
+function indexWorkflowViewport(nodesById) {
+  workflowIndexedChildCount = workflowBoard.childElementCount;
+  workflowViewportNeedsRedraw = true;
+  workflowCanvasNodes = new Map([...nodesById].map(([id, node]) => [id, {
+    node,
+    x:Number(node.dataset.x) || 0,
+    y:Number(node.dataset.y) || 0,
+  }]));
+  workflowCanvasEdges = [];
+  for (const edge of workflowEdges) {
+    const from = workflowCanvasNodes.get(edge.from_node);
+    const to = workflowCanvasNodes.get(edge.to_node);
+    if (from && to) workflowCanvasEdges.push({ edge, from, to });
+  }
+}
+
+function updateWorkflowViewport() {
+  if (!workflowBoard || workflowBoard.childElementCount <= WORKFLOW_CULL_MIN_NODES) {
+    if (!workflowIndexedChildCount) return;
+    for (const node of workflowVisibleNodes) node.removeAttribute("data-workflow-visible");
+    workflowVisibleNodes.clear();
+    workflowBoard.removeAttribute("data-workflow-cull");
+    workflowCanvasNodes.clear();
+    workflowCanvasEdges = [];
+    workflowIndexedChildCount = 0;
+    workflowViewportNeedsRedraw = false;
+    return;
+  }
+
+  if (workflowIndexedChildCount !== workflowBoard.childElementCount) {
+    const nodesById = new Map([...workflowBoard.children]
+      .filter((node) => node.dataset.nodeId)
+      .map((node) => [node.dataset.nodeId, node]));
+    indexWorkflowViewport(nodesById);
+  }
+
+  // Cache the viewport size via ResizeObserver so camera frames can do their
+  // visibility calculations before writing DOM, without forcing layout.
+  const { width, height } = workflowViewportSize;
+  if (!width || !height) return;
+  const redraw = workflowViewportNeedsRedraw;
+  workflowViewportNeedsRedraw = false;
+  const { panX, panY, zoom } = workflowState;
+  const left = (-panX - WORKFLOW_CULL_MARGIN) / zoom;
+  const top = (-panY - WORKFLOW_CULL_MARGIN) / zoom;
+  const right = (width - panX + WORKFLOW_CULL_MARGIN) / zoom;
+  const bottom = (height - panY + WORKFLOW_CULL_MARGIN) / zoom;
+  const nextNodes = new Set();
+  const focused = document.activeElement?.closest("[data-node-id]");
+  for (const node of [focused, activeWorkflowEditorNode, workflowCameraFocusWorkspace?.node, pendingWorkflowSource?.closest("[data-node-id]")]) {
+    if (node?.parentElement === workflowBoard) nextNodes.add(node);
+  }
+  for (const { node, x, y } of workflowCanvasNodes.values()) {
+    const size = workflowCanvasNodeSizes.get(node);
+    const inside = x <= right && y <= bottom &&
+      x + (size?.width || WORKFLOW_NODE_ESTIMATED_WIDTH) >= left &&
+      y + (size?.height || WORKFLOW_NODE_ESTIMATED_HEIGHT) >= top;
+    if (inside || (workflowVisibleNodes.has(node) && node.classList.contains("is-dragging"))) nextNodes.add(node);
+  }
+
+  const nextEdges = [];
+  const focusedEdge = document.activeElement?.dataset.link;
+  for (const { edge, from, to } of workflowCanvasEdges) {
+    // Include wires that cross the viewport even if both endpoint cards are outside it.
+    if (edge.id !== focusedEdge && edge.id !== selectedWorkflowEdgeId && (
+      Math.min(from.x, to.x) - WORKFLOW_MAX_WIRE_BEND > right ||
+      Math.max(from.x + (workflowCanvasNodeSizes.get(from.node)?.width || WORKFLOW_NODE_ESTIMATED_WIDTH),
+        to.x + (workflowCanvasNodeSizes.get(to.node)?.width || WORKFLOW_NODE_ESTIMATED_WIDTH)) + WORKFLOW_MAX_WIRE_BEND < left ||
+      Math.min(from.y, to.y) > bottom ||
+      Math.max(from.y + (workflowCanvasNodeSizes.get(from.node)?.height || WORKFLOW_NODE_ESTIMATED_HEIGHT),
+        to.y + (workflowCanvasNodeSizes.get(to.node)?.height || WORKFLOW_NODE_ESTIMATED_HEIGHT)) < top
+    )) continue;
+    nextEdges.push(edge);
+    nextNodes.add(from.node);
+    nextNodes.add(to.node);
+  }
+
+  for (const node of workflowVisibleNodes) {
+    if (!nextNodes.has(node)) {
+      node.removeAttribute("data-workflow-visible");
+      disposeWorkflowCameraWorkbench(node);
+    }
+  }
+  const enteringNodes = [];
+  for (const node of nextNodes) {
+    if (!workflowVisibleNodes.has(node)) {
+      node.setAttribute("data-workflow-visible", "");
+      enteringNodes.push(node);
+    }
+  }
+  workflowVisibleNodes = nextNodes;
+  workflowBoard.toggleAttribute("data-workflow-cull", true);
+
+  const changedNodes = redraw ? nextNodes : enteringNodes;
+  for (const node of changedNodes) {
+    if (node.dataset.nodeType === "video_generator") syncWorkflowVideoReferencePorts(node);
+    syncWorkflowPromptMentionPickers([node]);
+    syncWorkflowModelDecorations(node);
+    syncWorkflowGenerationCredits(node);
+    syncWorkflowCameraWorkbench(node);
+    localizeUi(node);
+  }
+  for (const node of changedNodes) {
+    workflowCanvasNodeSizes.set(node, { width:node.offsetWidth, height:node.offsetHeight });
+  }
+  if (redraw || workflowCanvasEdges.length || workflowLinkViews.size) {
+    renderWorkflowLinks(nextEdges, (id) => workflowCanvasNodes.get(id)?.node, redraw);
+  }
+}
+
+if (workflowViewport) {
+  new ResizeObserver(([entry]) => {
+    const { width, height } = entry.contentRect;
+    workflowViewportSize = { width, height };
+    updateWorkflowMinimapViewport();
+    if (workflowBoard?.childElementCount > WORKFLOW_CULL_MIN_NODES) scheduleWorkflowTransform();
+  }).observe(workflowViewport);
+}
+
+function updateWorkflowLines() {
+  if (workflowLinesFrame) cancelAnimationFrame(workflowLinesFrame);
+  workflowLinesFrame = 0;
   if (!workflowLines || !workflowBoard) return;
-  workflowLines.replaceChildren();
-  const nodeIds = new Set([...workflowBoard.querySelectorAll("[data-node-id]")].map((node) => node.dataset.nodeId));
-  workflowEdges = workflowEdges.filter((edge) => edge.from_node !== edge.to_node && nodeIds.has(edge.from_node) && nodeIds.has(edge.to_node));
-  workflowBoard.querySelectorAll('[data-node-type="video_generator"]').forEach(syncWorkflowVideoReferencePorts);
-  syncWorkflowPromptMentionPickers();
-  syncWorkflowModelDecorations(workflowBoard);
-  syncWorkflowGenerationCredits(workflowBoard);
-  workflowEdges.forEach(drawWorkflowLink);
+  const nodesById = new Map([...workflowBoard.children]
+    .filter((node) => node.dataset.nodeId)
+    .map((node) => [node.dataset.nodeId, node]));
+  workflowEdges = workflowEdges.filter((edge) => edge.from_node !== edge.to_node && nodesById.has(edge.from_node) && nodesById.has(edge.to_node));
+  if (nodesById.size >= WORKFLOW_CULL_MIN_NODES) {
+    indexWorkflowViewport(nodesById);
+    updateWorkflowViewport();
+  } else {
+    updateWorkflowViewport();
+    for (const node of nodesById.values()) {
+      if (node.dataset.nodeType === "video_generator") syncWorkflowVideoReferencePorts(node);
+      syncWorkflowCameraWorkbench(node);
+      localizeUi(node);
+    }
+    syncWorkflowPromptMentionPickers();
+    syncWorkflowModelDecorations(workflowBoard);
+    syncWorkflowGenerationCredits(workflowBoard);
+    renderWorkflowLinks(workflowEdges, (id) => nodesById.get(id), true);
+  }
   if (!selectedWorkflowEdgeId) hideWorkflowEdgeDeleteButton();
-};
+  invalidateWorkflowMinimap();
+}
 
 function clearWorkflowConnectionState() {
   pendingWorkflowSource?.classList.remove("is-source");
@@ -10427,9 +11409,12 @@ function beginWorkflowConnection(port) {
 function nearestCompatibleWorkflowInput(sourcePort, clientX, clientY, maxDistance = 48) {
   if (!sourcePort || !workflowBoard) return null;
   const sourceNode = sourcePort.closest("[data-node-id]");
+  const inputs = workflowBoard.hasAttribute("data-workflow-cull")
+    ? [...workflowVisibleNodes].flatMap((node) => [...node.querySelectorAll('[data-port-direction="input"]')])
+    : workflowBoard.querySelectorAll('[data-port-direction="input"]');
   const sourceType = sourcePort.dataset.portType || "any";
   let nearest = null;
-  workflowBoard.querySelectorAll('[data-port-direction="input"]').forEach((input) => {
+  inputs.forEach((input) => {
     if (input.hidden || input.closest("[data-node-id]") === sourceNode || !workflowPortTypesCompatible(sourceType, input.dataset.portType || "any")) return;
     const rect = input.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -10459,7 +11444,7 @@ function workflowWouldCreateCycle(fromNode, toNode) {
   return false;
 }
 
-function completeWorkflowConnection(inputPort) {
+function completeWorkflowConnection(inputPort, { record = true } = {}) {
   if (!pendingWorkflowSource) return showWorkflowToast("请先选择一个节点右侧的输出点");
   const fromNode = pendingWorkflowSource.closest("[data-node-id]")?.dataset.nodeId || "";
   const toNode = inputPort.closest("[data-node-id]")?.dataset.nodeId || "";
@@ -10481,21 +11466,39 @@ function completeWorkflowConnection(inputPort) {
     clearWorkflowConnectionState();
     return showWorkflowToast("这两个端口已经连接");
   }
-  workflowEdges = workflowEdges.filter((edge) => !(edge.to_node === toNode && edge.to_port === toPort));
+  if (workflowEdges.length >= WORKFLOW_MAX_EDGES && !workflowEdges.some((edge) => edge.to_node === toNode && edge.to_port === toPort)) {
+    clearWorkflowConnectionState();
+    return showWorkflowToast(`工作流最多支持 ${WORKFLOW_MAX_EDGES} 条连线`);
+  }
+  const removedEdges = workflowEdges.filter((edge) => edge.to_node === toNode && edge.to_port === toPort);
+  workflowEdges = workflowEdges.filter((edge) => !removedEdges.includes(edge));
   const edge = { id:`edge-${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`, from_node:fromNode, to_node:toNode, from_port:fromPort, to_port:toPort };
   workflowEdges.push(edge);
+  const change = { addedEdges:[edge], removedEdges };
+  if (record) recordWorkflowStructure(change);
   clearWorkflowConnectionState();
   updateWorkflowLines();
   syncWorkflowRedrawSources();
   showWorkflowToast(`已连接${sourceLabel}；点击连线后按 Delete 可删除`);
+  return change;
 }
 
-function showWorkflowNodePickerAt(clientX, clientY, sourcePort = null) {
-  if (!workflowNodePicker || !workflowViewport) return;
+function positionWorkflowNodePicker() {
+  if (!workflowPickerPosition || workflowNodePicker.hidden) return;
+  const { x, y, anchor } = workflowPickerPosition;
+  const shell = workflowCanvasShell.getBoundingClientRect();
+  const trigger = anchor?.getBoundingClientRect();
+  const compact = compactWorkflowEditor.matches;
+  const left = compact ? (shell.width - workflowNodePicker.offsetWidth) / 2 : (trigger ? trigger.left - shell.left : x + 10);
+  const top = compact ? 8 : (trigger ? trigger.bottom - shell.top + 8 : y + 10);
+  workflowNodePicker.style.left = `${Math.max(8, Math.min(shell.width - workflowNodePicker.offsetWidth - 8, left))}px`;
+  workflowNodePicker.style.top = `${Math.max(8, Math.min(shell.height - workflowNodePicker.offsetHeight - 8, top))}px`;
+}
+
+function showWorkflowNodePickerAt(clientX, clientY, sourcePort = null, anchor = null) {
+  if (!workflowNodePicker || !workflowViewport || !workflowCanvasShell) return;
   const viewportRect = workflowViewport.getBoundingClientRect();
-  const shell = document.querySelector("#workflow-canvas-shell");
-  if (!shell) return;
-  const shellRect = shell.getBoundingClientRect();
+  const shell = workflowCanvasShell.getBoundingClientRect();
   const pointerX = clientX - viewportRect.left;
   const pointerY = clientY - viewportRect.top;
   workflowPickerWorldPoint = {
@@ -10503,32 +11506,44 @@ function showWorkflowNodePickerAt(clientX, clientY, sourcePort = null) {
     y: Math.max(-50000, Math.min(50000, (pointerY - workflowState.panY) / workflowState.zoom)),
   };
   workflowPickerAutoConnectSource = sourcePort;
-  const sourceType = sourcePort?.dataset.portType || "";
-  renderWorkflowNodePicker(sourceType);
-  const pickerTitle = document.querySelector("#workflow-node-picker-title");
-  if (pickerTitle) pickerTitle.textContent = sourcePort ? `选择可连接“${sourcePort.dataset.portLabel || "数据"}”的节点` : "添加工作流节点";
-  workflowPickerReturnFocus = document.activeElement;
+  workflowNodeSearch.value = "";
+  activeWorkflowNodeCategory = "all";
+  workflowPickerReturnFocus = anchor || sourcePort || document.activeElement;
+  workflowPickerPosition = { x:clientX - shell.left, y:clientY - shell.top, anchor };
+  document.querySelector("#workflow-node-picker-title").textContent = sourcePort
+    ? t("添加并连接节点", "Add connected node")
+    : t("添加节点");
   workflowNodePicker.hidden = false;
-  const desiredLeft = clientX - shellRect.left + 12;
-  const desiredTop = clientY - shellRect.top + 12;
-  workflowNodePicker.style.left = `${Math.max(8, Math.min(shellRect.width - workflowNodePicker.offsetWidth - 8, desiredLeft))}px`;
-  workflowNodePicker.style.top = `${Math.max(8, Math.min(shellRect.height - workflowNodePicker.offsetHeight - 8, desiredTop))}px`;
-  workflowNodePicker.querySelector(".workflow-node-option:not(:disabled)")?.focus();
+  workflowAddNodeButton?.setAttribute("aria-expanded", "true");
+  renderWorkflowNodePicker(sourcePort?.dataset.portType || "");
+  (compactWorkflowEditor.matches ? workflowNodePicker : workflowNodeSearch).focus({ preventScroll:true });
+}
+
+function openCenteredWorkflowNodePicker(anchor = null) {
+  const rect = workflowViewport.getBoundingClientRect();
+  showWorkflowNodePickerAt(rect.left + rect.width / 2, rect.top + rect.height / 2, null, anchor);
+  workflowPickerWorldPoint.x = Math.max(-50000, workflowPickerWorldPoint.x - 150);
 }
 
 function openWorkflowNodePicker(event) {
   const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest(".workflow-node") || target?.closest(".workflow-canvas-toolbar")) return;
+  if (target?.closest(".workflow-node, [data-link]")) return;
+  if (event.type === "dblclick" && (event.button !== 0 || workflowHandTool || workflowSpaceHeld || workflowMarqueeDragged)) return;
   event.preventDefault();
+  workflowCanvasShell.focus({ preventScroll:true });
   showWorkflowNodePickerAt(event.clientX, event.clientY);
 }
 
-function closeWorkflowNodePicker({ cancelConnection = true } = {}) {
-  const restoreFocus = workflowNodePicker?.contains(document.activeElement);
-  if (workflowNodePicker) workflowNodePicker.hidden = true;
-  if (restoreFocus) workflowPickerReturnFocus?.focus();
+function closeWorkflowNodePicker({ cancelConnection = true, restoreFocus = true } = {}) {
+  if (!workflowNodePicker || workflowNodePicker.hidden) return;
+  const focusWasInside = workflowNodePicker.contains(document.activeElement);
+  workflowNodePicker.hidden = true;
+  workflowAddNodeButton?.setAttribute("aria-expanded", "false");
+  if (restoreFocus && focusWasInside) workflowPickerReturnFocus?.focus({ preventScroll:true });
   if (cancelConnection && workflowPickerAutoConnectSource) clearWorkflowConnectionState();
   workflowPickerAutoConnectSource = null;
+  workflowPickerPosition = null;
+  workflowPickerReturnFocus = null;
 }
 
 function workflowNodeConfig(node) {
@@ -10554,17 +11569,350 @@ function workflowNodeConfig(node) {
   return config;
 }
 
+function updateWorkflowEditControls() {
+  const count = workflowSelectedNodes.size;
+  workflowUndoButton.disabled = !workflowUndoStack.length;
+  workflowRedoButton.disabled = !workflowRedoStack.length;
+  workflowPasteButton.disabled = !workflowNodeClipboard;
+  workflowSelectionActions.hidden = !count;
+  workflowArrangeToggle.hidden = count < 2;
+  for (const button of workflowDistributeButtons) button.disabled = count < 3;
+  if (count < 2) setWorkflowArrangeOpen(false);
+  const label = count ? t(`已选 ${count} 个`) : "";
+  if (workflowSelectionCount.textContent !== label) workflowSelectionCount.textContent = label;
+}
+
+function setWorkflowArrangeOpen(open) {
+  workflowArrangePanel.hidden = !open;
+  workflowArrangeToggle.setAttribute("aria-expanded", String(open));
+  if (open) {
+    setWorkflowMinimapOpen(false);
+    workflowArrangePanel.querySelector("button")?.focus();
+  }
+}
+
+function applyWorkflowPositions(moves, forward) {
+  for (const { item, x, y, nextX, nextY } of moves) {
+    scheduleWorkflowNodeMove(item, forward ? nextX : x, forward ? nextY : y);
+  }
+  flushWorkflowNodeMove();
+  invalidateWorkflowMinimap();
+}
+
+function recordWorkflowPositions(positions) {
+  const moves = positions.filter(({ x, y, nextX, nextY }) => x !== nextX || y !== nextY);
+  if (!moves.length) return;
+  recordWorkflowEdit(() => applyWorkflowPositions(moves, false), () => applyWorkflowPositions(moves, true));
+  invalidateWorkflowMinimap();
+}
+
+function arrangeWorkflowNodes(mode) {
+  const items = Array.from(workflowSelectedNodes, (item) => ({ item, id:item.dataset.nodeId, ...workflowNodeBounds(item) }));
+  const moves = planWorkflowArrangement(items, mode, workflowEdges);
+  if (!moves) return showWorkflowToast(t("选区太大，无法在这条轴上排开", "The selection is too large to arrange along this axis"));
+  if (!moves.length) return;
+  setWorkflowArrangeOpen(false);
+  workflowArrangeToggle.focus({ preventScroll:true });
+  if (!moves.some(({ x, y, nextX, nextY }) => x !== nextX || y !== nextY)) return;
+  applyWorkflowPositions(moves, true);
+  recordWorkflowPositions(moves);
+  const { zoom, panX, panY } = workflowState;
+  const { width, top, height } = workflowSelectionViewport();
+  const stacked = ["left", "center", "right"].includes(mode)
+    ? moves.some(({ y, nextY }) => y !== nextY)
+    : !mode.startsWith("space-") && moves.some(({ x, nextX }) => x !== nextX);
+  if (stacked || moves.some((move) => move.nextX * zoom + panX < 12 || move.nextY * zoom + panY < top + 12 ||
+      (move.nextX + move.width) * zoom + panX > width - 12 || (move.nextY + move.height) * zoom + panY > top + height - 12)) {
+    fitWorkflowCanvas({ selection:workflowSelectedNodes });
+  }
+}
+
+function setWorkflowMinimapOpen(open) {
+  workflowMinimap.hidden = !open;
+  workflowMinimapToggle.setAttribute("aria-expanded", String(open));
+  if (open) {
+    setWorkflowArrangeOpen(false);
+    invalidateWorkflowMinimap();
+    workflowMinimapCanvas.focus({ preventScroll:true });
+  }
+}
+
+function invalidateWorkflowMinimap() {
+  if (workflowMinimap.hidden || workflowMinimapFrame) return;
+  workflowMinimapFrame = requestAnimationFrame(() => {
+    workflowMinimapFrame = 0;
+    if (!workflowMinimap.hidden) renderWorkflowMinimap();
+  });
+}
+
+function renderWorkflowMinimap() {
+  const canvas = workflowMinimapCanvas;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (!width || !height) return;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+
+  const nodes = workflowBoard.querySelectorAll("[data-node-id]");
+  if (!nodes.length) {
+    workflowMinimapProjection = null;
+    workflowMinimapViewport.hidden = true;
+    return;
+  }
+  const boxes = Array.from(nodes, workflowNodeBounds);
+  const left = Math.min(...boxes.map((box) => box.x));
+  const top = Math.min(...boxes.map((box) => box.y));
+  const right = Math.max(...boxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+  const scale = Math.min((width - 16) / (right - left), (height - 16) / (bottom - top));
+  const x = (width - (right + left) * scale) / 2;
+  const y = (height - (bottom + top) * scale) / 2;
+  workflowMinimapProjection = { width, height, scale, x, y };
+
+  context.fillStyle = getComputedStyle(canvas).color;
+  for (const box of boxes) {
+    context.fillRect(x + box.x * scale, y + box.y * scale, Math.max(1, box.width * scale), Math.max(1, box.height * scale));
+  }
+  updateWorkflowMinimapViewport();
+}
+
+function updateWorkflowMinimapViewport() {
+  if (workflowMinimap.hidden || !workflowMinimapProjection) return;
+  const { width, height, scale, x, y } = workflowMinimapProjection;
+  const { zoom, panX, panY } = workflowState;
+  const factor = scale / zoom;
+  const left = x - panX * factor;
+  const top = y - panY * factor;
+  const clippedLeft = Math.max(0, Math.min(width - 3, left));
+  const clippedTop = Math.max(0, Math.min(height - 3, top));
+  const right = Math.min(width, left + workflowViewportSize.width * factor);
+  const bottom = Math.min(height, top + workflowViewportSize.height * factor);
+  workflowMinimapViewport.style.transform = `translate(${clippedLeft}px,${clippedTop}px)`;
+  workflowMinimapViewport.style.width = `${Math.max(3, right - clippedLeft)}px`;
+  workflowMinimapViewport.style.height = `${Math.max(3, bottom - clippedTop)}px`;
+  workflowMinimapViewport.hidden = false;
+}
+
+function panWorkflowFromMinimap(event, rect) {
+  if (!workflowMinimapProjection) return;
+  const { scale, x, y } = workflowMinimapProjection;
+  const worldX = (event.clientX - rect.left - x) / scale;
+  const worldY = (event.clientY - rect.top - y) / scale;
+  workflowState.panX = workflowViewportSize.width / 2 - worldX * workflowState.zoom;
+  workflowState.panY = workflowViewportSize.height / 2 - worldY * workflowState.zoom;
+  scheduleWorkflowTransform();
+}
+
+function disposeWorkflowNodeData(node) {
+  disposeWorkflowCameraWorkbench(node);
+  releaseWorkflowOutput(node);
+  const id = node.dataset.nodeId;
+  const media = workflowNodeImageStates.get(id);
+  if (media?.objectUrl) URL.revokeObjectURL(media.objectUrl);
+  workflowNodeImageStates.delete(id);
+}
+
+function discardWorkflowHistoryEntries(entries) {
+  for (const entry of entries) {
+    for (const node of entry.nodes) {
+      const remaining = workflowHistoryNodeRefs.get(node) - 1;
+      if (remaining) workflowHistoryNodeRefs.set(node, remaining);
+      else {
+        workflowHistoryNodeRefs.delete(node);
+        if (node.parentElement !== workflowBoard) disposeWorkflowNodeData(node);
+      }
+    }
+  }
+}
+
+function recordWorkflowEdit(undo, redo, nodes = []) {
+  const before = workflowEditRevision;
+  for (const node of nodes) workflowHistoryNodeRefs.set(node, (workflowHistoryNodeRefs.get(node) || 0) + 1);
+  markWorkflowEdited();
+  workflowUndoStack.push({ undo, redo, nodes, before, after:workflowEditRevision });
+  while (workflowUndoStack.length > WORKFLOW_HISTORY_LIMIT ||
+         (workflowUndoStack.length > 1 && workflowHistoryNodeRefs.size > WORKFLOW_MAX_NODES * 2)) {
+    discardWorkflowHistoryEntries([workflowUndoStack.shift()]);
+  }
+  updateWorkflowEditControls();
+}
+
+function stepWorkflowHistory(redo = false) {
+  if (workflowNodeMoveFrame || workflowMarqueeGesture || workflowBoard.querySelector(".is-dragging")) return;
+  const from = redo ? workflowRedoStack : workflowUndoStack;
+  const to = redo ? workflowUndoStack : workflowRedoStack;
+  const entry = from.pop();
+  if (!entry) return;
+  if (redo) entry.redo();
+  else entry.undo();
+  to.push(entry);
+  const fromRevision = redo ? entry.before : entry.after;
+  workflowEditRevision = workflowEditRevision === fromRevision ? (redo ? entry.after : entry.before) : ++workflowEditSerial;
+  updateWorkflowDraftStatus();
+  updateWorkflowEditControls();
+  workflowCanvasShell.focus({ preventScroll:true });
+}
+
+function applyWorkflowStructure(addedNodes, removedNodes, addedEdges, removedEdges) {
+  const removed = new Set(removedNodes.map(({ node }) => node));
+  const removedIds = new Set([...removed].map((node) => node.dataset.nodeId));
+  const removedEdgeIds = new Set(removedEdges.map((edge) => edge.id));
+  if (removed.has(activeWorkflowEditorNode)) closeWorkflowNodeEditor();
+  if (pendingWorkflowSource) clearWorkflowConnectionState();
+  selectWorkflowEdge("");
+  hideWorkflowEdgeDeleteButton();
+  for (const node of removed) {
+    disposeWorkflowCameraWorkbench(node);
+    for (const media of node.querySelectorAll("audio,video")) media.pause();
+    node.remove();
+  }
+  for (const { node, index } of addedNodes) workflowBoard.insertBefore(node, workflowBoard.children[index] || null);
+  const next = new Set([...workflowSelectedNodes].filter((node) => !removed.has(node)));
+  for (const { node } of addedNodes) next.add(node);
+  setWorkflowNodeSelection(next);
+  workflowEdges = workflowEdges.filter((edge) => !removedEdgeIds.has(edge.id) && !removedIds.has(edge.from_node) && !removedIds.has(edge.to_node));
+  if (addedEdges.length) {
+    const nodesById = new Map([...workflowBoard.children].map((node) => [node.dataset.nodeId, node]));
+    for (const edge of addedEdges) {
+      const from = nodesById.get(edge.from_node);
+      const to = nodesById.get(edge.to_node);
+      if (!from || !to || (from.dataset.activeMediaType && !["output", from.dataset.activeMediaType].includes(edge.from_port)) ||
+          (to.dataset.activeMediaType && !["input", to.dataset.activeMediaType].includes(edge.to_port))) continue;
+      workflowEdges.push(edge);
+    }
+  }
+  updateWorkflowLines();
+  syncWorkflowRedrawSources();
+}
+
+function recordWorkflowStructure({ addedNodes = [], removedNodes = [], addedEdges = [], removedEdges = [], previousSelection = null, nextSelection = null }) {
+  recordWorkflowEdit(
+    () => {
+      applyWorkflowStructure(removedNodes, addedNodes, removedEdges, addedEdges);
+      if (previousSelection) setWorkflowNodeSelection(previousSelection);
+    },
+    () => {
+      applyWorkflowStructure(addedNodes, removedNodes, addedEdges, removedEdges);
+      if (nextSelection) setWorkflowNodeSelection(nextSelection);
+    },
+    [...addedNodes, ...removedNodes].map(({ node }) => node),
+  );
+}
+
+function workflowPositionsInBoard(nodes) {
+  const selected = new Set(nodes);
+  return [...workflowBoard.children].flatMap((node, index) => selected.has(node) ? [{ node, index }] : []);
+}
+
+function deleteWorkflowNodes(nodes) {
+  const removedNodes = workflowPositionsInBoard(nodes);
+  if (!removedNodes.length) return;
+  const ids = new Set(removedNodes.map(({ node }) => node.dataset.nodeId));
+  const removedEdges = workflowEdges.filter((edge) => ids.has(edge.from_node) || ids.has(edge.to_node));
+  const previousSelection = workflowSelectedNodes;
+  applyWorkflowStructure([], removedNodes, [], removedEdges);
+  recordWorkflowStructure({ removedNodes, removedEdges, previousSelection, nextSelection:workflowSelectedNodes });
+  workflowCanvasShell.focus({ preventScroll:true });
+}
+
+function captureWorkflowSelection() {
+  if (!workflowSelectedNodes.size) return null;
+  const nodes = [...workflowSelectedNodes].map((node) => ({
+    id:node.dataset.nodeId,
+    type:node.dataset.nodeType,
+    x:Number(node.dataset.x),
+    y:Number(node.dataset.y),
+    ...workflowNodeSize(node),
+    config:workflowNodeConfig(node),
+    file:workflowNodeImageStates.get(node.dataset.nodeId)?.file,
+  }));
+  const ids = new Set(nodes.map((node) => node.id));
+  const edges = workflowEdges.filter((edge) => ids.has(edge.from_node) && ids.has(edge.to_node));
+  return { nodes, edges };
+}
+
+function copyWorkflowSelection() {
+  const selection = captureWorkflowSelection();
+  if (!selection) return;
+  workflowNodeClipboard = selection;
+  workflowClipboardPasteCount = 0;
+  updateWorkflowEditControls();
+  showWorkflowToast(t("已复制选中节点", "Nodes copied"));
+}
+
+function pasteWorkflowNodes(clipboard, duplicate = false) {
+  if (!clipboard) return;
+  const issue = workflowGraphLimitIssue(workflowBoard.childElementCount - 1 + clipboard.nodes.length, workflowEdges.length + clipboard.edges.length);
+  if (issue) return showWorkflowToast(issue);
+  const { zoom, panX, panY } = workflowState;
+  const xs = clipboard.nodes.map((node) => node.x);
+  const ys = clipboard.nodes.map((node) => node.y);
+  const left = Math.min(...xs);
+  const top = Math.min(...ys);
+  const stagger = (24 * workflowClipboardPasteCount) / zoom;
+  const offsetX = duplicate ? 36 / zoom : (workflowViewport.clientWidth / 2 - panX) / zoom - (Math.max(...xs) - left) / 2 - left - 140 + stagger;
+  const offsetY = duplicate ? 36 / zoom : (workflowViewport.clientHeight / 2 - panY) / zoom - (Math.max(...ys) - top) / 2 - top - 100 + stagger;
+  const dx = Math.max(-50000 - left, Math.min(50000 - Math.max(...xs), offsetX));
+  const dy = Math.max(-50000 - top, Math.min(50000 - Math.max(...ys), offsetY));
+  const fragment = document.createDocumentFragment();
+  const ids = new Map();
+  const start = workflowBoard.childElementCount;
+  const addedNodes = [];
+  for (const { id, type, x, y, config, file, width, height } of clipboard.nodes) {
+    const node = createDynamicWorkflowNode(type, x + dx, y + dy, "", config, fragment);
+    if (!node) continue;
+    if (width || height) setWorkflowNodeSize(node, { width, height });
+    ids.set(id, node.dataset.nodeId);
+    addedNodes.push({ node, index:start + addedNodes.length });
+    if (file && type === "media_input") copyWorkflowInputFile(node, file, config.input_type);
+  }
+  if (!addedNodes.length) return;
+  const addedEdges = clipboard.edges.flatMap((edge) => {
+    const from = ids.get(edge.from_node);
+    const to = ids.get(edge.to_node);
+    return from && to ? [{ ...edge, id:`edge-${crypto.randomUUID()}`, from_node:from, to_node:to }] : [];
+  });
+  const previousSelection = workflowSelectedNodes;
+  const nextSelection = new Set(addedNodes.map(({ node }) => node));
+  workflowBoard.append(fragment);
+  workflowEdges.push(...addedEdges);
+  setWorkflowNodeSelection(nextSelection);
+  updateWorkflowLines();
+  syncWorkflowRedrawSources();
+  recordWorkflowStructure({ addedNodes, addedEdges, previousSelection, nextSelection });
+  if (!duplicate) workflowClipboardPasteCount += 1;
+  workflowCanvasShell.focus({ preventScroll:true });
+}
+
+function copyWorkflowInputFile(node, file, kind) {
+  const preview = node.querySelector(kind === "video" || kind === "audio"
+    ? `[data-workflow-input-branch="${kind}"] ${kind}` : '[data-workflow-input-branch="image"] img');
+  if (!preview) return;
+  const url = URL.createObjectURL(file);
+  workflowNodeImageStates.set(node.dataset.nodeId, { file, url, objectUrl:url, kind });
+  node.dataset.assetUrl = "";
+  node.dataset.assetId = "";
+  preview.src = url;
+  preview.hidden = false;
+  preview.closest(".workflow-node-upload")?.classList.add("has-image");
+}
+
 function serializeWorkflowGraph() {
-  const nodes = [...(workflowBoard?.querySelectorAll("[data-node-id]") || [])].slice(0, 30).map((node) => ({
+  const nodes = [...(workflowBoard?.querySelectorAll("[data-node-id]") || [])].map((node) => ({
     id: node.dataset.nodeId,
     type: node.dataset.nodeType,
     category: node.dataset.nodeCategory,
     x: Math.round(Number(node.dataset.x) || 0),
     y: Math.round(Number(node.dataset.y) || 0),
+    ...workflowNodeSize(node),
     config: workflowNodeConfig(node),
   }));
   const nodeIds = new Set(nodes.map((node) => node.id));
-  const edges = workflowEdges.filter((edge) => nodeIds.has(edge.from_node) && nodeIds.has(edge.to_node)).slice(0, 60).map((edge) => ({
+  const edges = workflowEdges.filter((edge) => nodeIds.has(edge.from_node) && nodeIds.has(edge.to_node)).map((edge) => ({
     id:edge.id, from_node:edge.from_node, to_node:edge.to_node, from_port:edge.from_port || "output", to_port:edge.to_port || "input",
   }));
   return { version:6, scene_preset:activeWorkflowScenePreset, nodes, edges };
@@ -10573,40 +11921,61 @@ function serializeWorkflowGraph() {
 function defaultWorkflowGraph() {
   return {
     version:6,
-    scene_preset:SCENE_WORKFLOWS[0]?.preset || "",
+    scene_preset:"",
     nodes:[
-      { id:"image-input-base", type:"media_input", category:"input", x:70, y:145, config:{ input_type:"image" } },
-      { id:"redraw-base", type:"image_tool", category:"image", x:460, y:105, config:{ tool:"redraw", model:"bailian_wan_2_7", resolution:"720p" } },
-      { id:"upscale-base", type:"image_tool", category:"image", x:855, y:245, config:{ tool:"upscale", model:"server_ultrasharp", resolution:"2k" } },
-      { id:"output-base", type:"media_output", category:"output", x:1195, y:255, config:{ output_type:"image", format:"png", save_history:"auto" } },
+      { id:"image-input-base", type:"media_input", category:"input", x:80, y:180, config:{ input_type:"image" } },
+      { id:"resize-base", type:"image_tool", category:"image", x:460, y:180, config:{ tool:"resize", width:1280, height:720 } },
+      { id:"output-base", type:"media_output", category:"output", x:970, y:180, config:{ output_type:"image", format:"png", save_history:"manual" } },
     ],
-    edges:DEFAULT_WORKFLOW_EDGES.map((edge) => ({ ...edge })),
+    edges:[
+      { id:"edge-image-resize", from_node:"image-input-base", to_node:"resize-base", from_port:"image", to_port:"image1" },
+      { id:"edge-resize-output", from_node:"resize-base", to_node:"output-base", from_port:"image", to_port:"image" },
+    ],
   };
 }
 
-function loadWorkflowGraph(graph) {
-  closeWorkflowNodeEditor();
+function loadWorkflowGraph(graph, { focusNodeId = "" } = {}) {
   if (!graph || typeof graph !== "object" || !Array.isArray(graph.nodes)) throw new Error("invalid_workflow");
+  const limitIssue = workflowGraphLimitIssue(graph.nodes.length, Array.isArray(graph.edges) ? graph.edges.length : 0);
+  if (limitIssue) throw new RangeError(limitIssue);
+  finishWorkflowMarquee();
+  showWorkflowSnapGuides(null);
+  discardWorkflowHistoryEntries(workflowUndoStack.splice(0));
+  discardWorkflowHistoryEntries(workflowRedoStack.splice(0));
+  setWorkflowNodeSelection(new Set());
+  updateWorkflowEditControls();
+  workflowGraphRevision += 1;
+  workflowSavedEditRevision = workflowEditRevision;
+  closeWorkflowNodeEditor();
+  clearWorkflowConnectionState();
+  selectedWorkflowEdgeId = "";
   currentWorkflowDraft = null;
-  workflowShareName.value = "未命名工作流";
+  workflowShareName.value = t("未命名工作流");
   workflowShareDescription.value = "";
   workflowShareTags.value = "";
   updateWorkflowDraftStatus();
-  workflowBoard?.querySelectorAll("[data-node-id]").forEach((node) => node.remove());
-  if (typeof graph.scene_preset === "string") {
-    const scene = SCENE_WORKFLOWS.find((item) => item.preset === graph.scene_preset);
-    if (scene) { activeWorkflowScenePreset = scene.preset; selectWorkflowScenario(scene); }
-  }
-  graph.nodes.slice(0, 30).forEach((item) => {
+  workflowBoard?.querySelectorAll("[data-node-id]").forEach((node) => {
+    disposeWorkflowNodeData(node);
+    node.remove();
+  });
+  const scene = SCENE_WORKFLOWS.find((item) => item.preset === graph.scene_preset);
+  activeWorkflowScenePreset = scene?.preset || "";
+  if (scene) selectWorkflowScenario(scene);
+  else scenarioList?.querySelector(".scenario-card.selected")?.classList.remove("selected");
+  workflowEdges = [];
+  const fragment = document.createDocumentFragment();
+  const nodesById = new Map();
+  graph.nodes.forEach((item) => {
     if (!item || typeof item !== "object") return;
     const id = typeof item.id === "string" && /^[a-z0-9-]{1,64}$/.test(item.id) ? item.id : "";
     const x = Math.max(-50000, Math.min(50000, Number(item.x) || 0));
     const y = Math.max(-50000, Math.min(50000, Number(item.y) || 0));
-    const base = id ? workflowBoard?.querySelector(`[data-node-id="${id}"]`) : null;
+    const base = nodesById.get(id);
     if (base) {
       base.dataset.x = String(x);
       base.dataset.y = String(y);
       positionWorkflowNode(base);
+      setWorkflowNodeSize(base, item);
       Object.entries(item.config && typeof item.config === "object" ? item.config : {}).forEach(([key, value]) => {
         const control = [...base.querySelectorAll("[data-node-field]")].find((entry) => entry.dataset.nodeField === key);
         if (!control || !["string", "number", "boolean"].includes(typeof value)) return;
@@ -10614,56 +11983,89 @@ function loadWorkflowGraph(graph) {
         else control.value = String(value).slice(0, 4000);
       });
     } else if (WORKFLOW_NODE_TYPES.has(item.type)) {
-      createDynamicWorkflowNode(item.type, x, y, id, item.config);
+      const node = createDynamicWorkflowNode(item.type, x, y, id, item.config, fragment);
+      if (node) {
+        if (item.width != null || item.height != null) setWorkflowNodeSize(node, item);
+        nodesById.set(node.dataset.nodeId, node);
+      }
     }
   });
-  const validIds = new Set([...(workflowBoard?.querySelectorAll("[data-node-id]") || [])].map((node) => node.dataset.nodeId));
-  workflowEdges = Array.isArray(graph.edges) ? graph.edges.slice(0, 60).flatMap((edge) => {
+  if (nodesById.size >= WORKFLOW_CULL_MIN_NODES) workflowBoard.setAttribute("data-workflow-cull", "");
+  workflowBoard.append(fragment);
+  workflowEdges = Array.isArray(graph.edges) ? graph.edges.flatMap((edge) => {
     if (!edge || typeof edge !== "object") return [];
     const from = typeof edge.from_node === "string" ? edge.from_node : "";
     const to = typeof edge.to_node === "string" ? edge.to_node : "";
     const id = typeof edge.id === "string" && /^[a-z0-9-]{1,64}$/.test(edge.id) ? edge.id : `edge-${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`;
-    if (from === to || !validIds.has(from) || !validIds.has(to)) return [];
+    if (from === to || !nodesById.has(from) || !nodesById.has(to)) return [];
     const fromPort = typeof edge.from_port === "string" ? edge.from_port.slice(0, 24) : "output";
     const toPort = typeof edge.to_port === "string" ? edge.to_port.slice(0, 24) : "input";
     return [{ id, from_node:from, to_node:to, from_port:fromPort, to_port:toPort }];
-  }) : DEFAULT_WORKFLOW_EDGES.filter((edge) => validIds.has(edge.from_node) && validIds.has(edge.to_node)).map((edge) => ({ ...edge }));
+  }) : LEGACY_WORKFLOW_EDGES.filter((edge) => nodesById.has(edge.from_node) && nodesById.has(edge.to_node)).map((edge) => ({ ...edge }));
   updateWorkflowOutputSummary();
   updateWorkflowLines();
-  workflowBoard?.querySelectorAll("[data-node-id]").forEach((node) => { bindWorkflowNodeControls(node); updateWorkflowCameraSummary(node); });
   syncWorkflowRedrawSources();
-  fitWorkflowCanvas();
+  workflowInitialFocusNode = nodesById.get(focusNodeId) || null;
+  workflowViewportNeedsFit = true;
+  fitWorkflowCanvas({ focusNode:workflowInitialFocusNode });
+  return true;
 }
 
-function readLocalWorkflows() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(WORKFLOW_LOCAL_KEY) || "[]");
-    return Array.isArray(value) ? value.filter((item) => item && typeof item === "object" && item.graph).slice(0, 40) : [];
-  } catch { return []; }
-}
+window.addEventListener("huiforge:languagechange", () => {
+  updateWorkflowDraftStatus();
+  updateWorkflowEditControls();
+  updateWorkflowLines();
+});
 
 function updateWorkflowDraftStatus() {
-  const status = currentWorkflowDraft ? "已有本机存档" : "尚未保存";
-  document.querySelector("#workflow-draft-status").textContent = `${workflowShareName.value} · ${status} · 需手动保存，仅限本机浏览器`;
+  const status = workflowEditRevision !== workflowSavedEditRevision ? "有未保存更改" : currentWorkflowDraft ? "已保存到本机" : "尚未保存";
+  const label = document.querySelector("#workflow-draft-status");
+  const text = `${workflowShareName.value} · ${t(status)}`;
+  if (label.textContent !== text) label.textContent = text;
 }
 
-function loadWorkflowRecord(record, source = "community") {
-  loadWorkflowGraph(record.graph);
-  workflowShareName.value = record.name;
-  workflowShareDescription.value = record.description;
-  workflowShareTags.value = record.tags.join("、");
-  if (source === "local") currentWorkflowDraft = record;
+function markWorkflowEdited() {
+  workflowEditRevision = ++workflowEditSerial;
+  if (workflowRedoStack.length) {
+    discardWorkflowHistoryEntries(workflowRedoStack.splice(0));
+    updateWorkflowEditControls();
+  }
   updateWorkflowDraftStatus();
 }
 
-function writeLocalWorkflows(items) {
-  try { window.localStorage.setItem(WORKFLOW_LOCAL_KEY, JSON.stringify(items.slice(0, 40))); return true; }
-  catch { return false; }
+async function confirmWorkflowReplacement() {
+  if (workflowEditRevision === workflowSavedEditRevision) return true;
+  const revision = workflowGraphRevision;
+  const confirmed = await confirmAction("当前工作流有未保存的更改。放弃更改并替换画布？", {
+    title:"替换工作流", confirmLabel:"放弃更改", destructive:true,
+  });
+  return confirmed && revision === workflowGraphRevision;
 }
 
-function renderSharedWorkflows() {
+function loadWorkflowRecord(record, source = "community", options) {
+  const name = typeof record.name === "string" ? record.name : "未命名工作流";
+  const description = typeof record.description === "string" ? record.description : "";
+  const tags = Array.isArray(record.tags) ? record.tags.filter((tag) => typeof tag === "string") : [];
+  loadWorkflowGraph(record.graph, options);
+  workflowShareName.value = name;
+  workflowShareDescription.value = description;
+  workflowShareTags.value = tags.join("、");
+  if (source === "local") currentWorkflowDraft = record;
+  updateWorkflowDraftStatus();
+  return true;
+}
+
+async function renderSharedWorkflows() {
   if (!sharedWorkflowList) return;
-  const items = activeWorkflowScope === "local" ? readLocalWorkflows() : communityWorkflows;
+  const scope = activeWorkflowScope;
+  let items;
+  try {
+    items = scope === "local" ? await listWorkflowDrafts() : communityWorkflows;
+  } catch {
+    if (activeWorkflowScope === scope) sharedWorkflowList.textContent = "本机草稿暂时无法读取。";
+    return;
+  }
+  if (activeWorkflowScope !== scope) return;
   if (!items.length) {
     const empty = document.createElement("p");
     empty.className = "workflow-list-status";
@@ -10678,15 +12080,20 @@ function renderSharedWorkflows() {
     button.dataset.workflowId = String(item.id || "");
     button.dataset.workflowSource = activeWorkflowScope;
     const icon = document.createElement("span");
-    icon.textContent = "⌘";
+    icon.innerHTML = uiIcon("workflow");
     const copy = document.createElement("span");
     const title = document.createElement("b");
     title.textContent = String(item.name || "未命名工作流").slice(0, 40);
-    const note = document.createElement("small");
-    note.textContent = String(item.description || "点击加载到当前幕布").slice(0, 120);
+    title.toggleAttribute("data-user-content", Boolean(item.name));
+    if (item.description) {
+      const description = document.createElement("small");
+      description.setAttribute("data-user-content", "");
+      description.textContent = String(item.description).slice(0, 120);
+      copy.append(title, description);
+    } else copy.append(title);
     const meta = document.createElement("em");
     meta.textContent = `${String(item.author || "本机创作").slice(0, 24)} · ${Number(item.node_count || item.graph?.nodes?.length || 0)} 个节点`;
-    copy.append(title, note, meta);
+    copy.append(meta);
     button.append(icon, copy);
     if (activeWorkflowScope !== "local") return button;
     const row = document.createElement("div");
@@ -10710,7 +12117,9 @@ async function loadCommunityWorkflows() {
     communityWorkflows = Array.isArray(body.items) ? body.items : [];
     renderSharedWorkflows();
   } catch {
-    sharedWorkflowList.replaceChildren(Object.assign(document.createElement("p"), { className:"workflow-list-status", textContent:"共享工作流暂时无法读取，请稍后重试。" }));
+    if (activeWorkflowScope === "community") {
+      sharedWorkflowList.replaceChildren(Object.assign(document.createElement("p"), { className:"workflow-list-status", textContent:"共享工作流暂时无法读取，请稍后重试。" }));
+    }
   }
 }
 
@@ -10735,10 +12144,10 @@ function renderWorkflowDiscovery(items = communityWorkflows) {
     const tags = [...(Array.isArray(item.media_types) ? item.media_types : []), ...(Array.isArray(item.tags) ? item.tags : [])].slice(0, 5);
     return `<article class="workflow-discovery-card" data-community-workflow="${id}">
       ${workflowCommunityPreviewMarkup()}
-      <div class="workflow-card-body"><div class="workflow-card-heading"><h3>${escapeMarkup(item.name || "未命名工作流")}</h3><span>${Number(item.node_count || 0)} 节点</span></div>
-      <p>${escapeMarkup(item.description || "一套可以直接复用并继续编辑的创作流程。")}</p>
-      <div class="workflow-card-tags">${tags.map((tag) => `<span>${escapeMarkup(tag)}</span>`).join("")}</div>
-      <div class="workflow-card-footer"><span class="workflow-card-author"><i>${escapeMarkup(author.slice(0, 1) || "神")}</i>${author}</span>${workflowCommunityStatsMarkup(item)}</div>
+      <div class="workflow-card-body"><div class="workflow-card-heading"><h3 data-user-content>${escapeMarkup(item.name || "未命名工作流")}</h3><span>${Number(item.node_count || 0)} 个节点</span></div>
+      ${item.description ? `<p data-user-content>${escapeMarkup(item.description)}</p>` : ""}
+      <div class="workflow-card-tags" data-user-content>${tags.map((tag) => `<span>${escapeMarkup(tag)}</span>`).join("")}</div>
+      <div class="workflow-card-footer"><span class="workflow-card-author" data-user-content><i>${escapeMarkup(author.slice(0, 1) || "神")}</i>${author}</span>${workflowCommunityStatsMarkup(item)}</div>
       <div class="workflow-card-actions"><button type="button" data-community-details="${id}">查看详情与评论</button><button type="button" data-community-use="${id}">加入幕布</button></div></div></article>`;
   }).join("");
 }
@@ -10851,9 +12260,13 @@ async function toggleCommunityWorkflowLike(workflowId) {
 }
 
 async function useCommunityWorkflow(workflowId) {
+  if (!await confirmWorkflowReplacement()) return;
+  const revision = workflowGraphRevision;
+  const edits = workflowEditRevision;
   try {
     const { body } = await fetchJson(`${API.workflows}/${encodeURIComponent(workflowId)}/use`, { method:"POST" }, 6000);
-    loadWorkflowRecord(body.workflow);
+    if (revision !== workflowGraphRevision || (edits !== workflowEditRevision && !await confirmWorkflowReplacement())) return;
+    loadWorkflowRecord(body.workflow, "community");
     workflowCommunityDialog?.close();
     setWorkspaceView("workflow");
     showWorkflowToast(`已加入「${String(body.workflow?.name || "社区工作流").slice(0, 30)}」，可继续编辑`);
@@ -10993,7 +12406,7 @@ function addWorkflowAssetNode(asset) {
   });
   if (node) {
     showWorkflowToast(`${assetTypeLabel(asset)}资产已添加到幕布；从输出点连接到兼容节点`);
-    requestAnimationFrame(updateWorkflowLines);
+    scheduleWorkflowLinesUpdate();
     if (!openPoint) {
       node.querySelector("img,video")?.addEventListener("loadeddata", fitWorkflowCanvas, { once:true });
       window.setTimeout(fitWorkflowCanvas, 320);
@@ -11017,36 +12430,58 @@ function workflowRecordFromDialog() {
 }
 
 function workflowPublishIssue(graph) {
+  const limitIssue = workflowGraphLimitIssue(graph.nodes.length, graph.edges.length);
+  if (limitIssue) return limitIssue;
   const nodeTypes = new Map(graph.nodes.map((node) => [node.id, node.type]));
-  const outputs = new Set(graph.nodes.filter((node) => ["media_output", "text_output"].includes(node.type)).map((node) => node.id));
-  if (!outputs.size) return "请先添加输出节点。";
-  const upstream = new Set(outputs);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    graph.edges.forEach((edge) => {
-      if (upstream.has(edge.to_node) && !upstream.has(edge.from_node)) { upstream.add(edge.from_node); changed = true; }
-    });
+  const pending = graph.nodes.filter((node) => ["media_output", "text_output"].includes(node.type)).map((node) => node.id);
+  if (!pending.length) return "请先添加输出节点。";
+  const sourcesByTarget = new Map();
+  for (const edge of graph.edges) {
+    if (!sourcesByTarget.has(edge.to_node)) sourcesByTarget.set(edge.to_node, []);
+    sourcesByTarget.get(edge.to_node).push(edge.from_node);
   }
-  if (![...upstream].some((id) => !["media_input", "media_output", "text_output"].includes(nodeTypes.get(id)))) {
-    return "请先把能力节点连接到输出，再发布工作流。";
+  const visited = new Set(pending);
+  for (const target of pending) {
+    for (const source of sourcesByTarget.get(target) || []) {
+      if (visited.has(source) || !nodeTypes.has(source)) continue;
+      if (!["media_input", "media_output", "text_output"].includes(nodeTypes.get(source))) return "";
+      visited.add(source);
+      pending.push(source);
+    }
   }
-  return "";
+  return "请先把能力节点连接到输出，再发布工作流。";
 }
 
-function saveWorkflowLocally(copy = false) {
+async function saveWorkflowLocally(copy = false) {
+  if (workflowSavePending) return;
+  const revision = workflowGraphRevision;
+  const edits = workflowEditRevision;
   const now = Date.now() / 1000;
   const previous = copy ? null : currentWorkflowDraft;
   const record = { ...workflowRecordFromDialog(), id:previous ? previous.id : `local-${crypto.randomUUID()}`, author:"本机创作", created_at:previous ? previous.created_at : now, updated_at:now };
-  const saved = writeLocalWorkflows([record, ...readLocalWorkflows().filter((item) => item.id !== record.id)]);
-  workflowShareStatus.textContent = saved ? (copy ? "已另存为独立副本，后续保存将更新此副本。" : "已保存；后续保存会更新这份草稿。仅保存在当前浏览器，不会跨设备同步。") : "浏览器存储空间不足，建议导出 JSON。";
-  if (saved) {
-    currentWorkflowDraft = record;
-    workflowShareName.value = record.name;
-    updateWorkflowDraftStatus();
-    showWorkflowToast(copy ? "已另存副本" : "工作流已保存到本机");
-    if (activeWorkflowScope === "local") renderSharedWorkflows();
+  const issue = workflowGraphLimitIssue(record.graph.nodes.length, record.graph.edges.length);
+  if (issue) {
+    workflowShareStatus.textContent = issue;
+    return;
   }
+  workflowSavePending = true;
+  workflowShareStatus.textContent = "正在保存…";
+  try {
+    await writeWorkflowDraft(record);
+  } catch {
+    if (revision === workflowGraphRevision) workflowShareStatus.textContent = "浏览器存储空间不足或不可用，建议导出 JSON。";
+    return;
+  } finally {
+    workflowSavePending = false;
+  }
+  if (activeWorkflowScope === "local") renderSharedWorkflows();
+  if (revision !== workflowGraphRevision) return;
+  currentWorkflowDraft = record;
+  workflowSavedEditRevision = edits;
+  if (workflowEditRevision === edits) workflowShareName.value = record.name;
+  workflowShareStatus.textContent = copy ? "已另存为独立副本，后续保存将更新此副本。" : "已保存到当前浏览器。";
+  updateWorkflowDraftStatus();
+  showWorkflowToast(copy ? "已另存副本" : "工作流已保存到本机");
 }
 
 function exportWorkflowJson() {
@@ -11072,15 +12507,14 @@ async function publishWorkflow() {
     const { body } = await fetchJson(API.workflows, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(record) }, 8000);
     const id = String(body.workflow?.id || "");
     if (!/^[a-f0-9]{12}$/.test(id)) throw new Error("invalid_response");
-    const link = `${window.location.origin}/studio.html?workspace=workflow&workflow=${id}`;
+    const link = new URL(localeUrl(`/studio.html?workspace=workflow&workflow=${id}`), window.location.origin).href;
     workflowShareLinkInput.value = link;
     workflowShareLink.hidden = false;
     workflowShareStatus.textContent = "已发布。拥有链接的人可以打开并复用这套节点。";
     showWorkflowToast("工作流已发布到社区");
-    activeWorkflowScope = "community";
     await loadCommunityWorkflows();
   } catch (error) {
-    workflowShareStatus.textContent = error.status === 422 ? "工作流连线无效或存在循环，请检查后重试。" : "发布失败，请检查网络后重试；也可以先保存到本机。";
+    workflowShareStatus.textContent = error.status === 413 ? "工作流文件超过 64 MB。" : error.status === 422 ? "工作流连线无效或存在循环，请检查后重试。" : "发布失败，请检查网络后重试；也可以先保存到本机。";
   } finally { publishButton.disabled = false; }
 }
 
@@ -11094,9 +12528,8 @@ async function publishSavedWorkflow(record) {
       }),
     }, 8000);
     showWorkflowToast("已发布到社区工作流分享");
-    activeWorkflowScope = "community";
     await loadCommunityWorkflows();
-  } catch (error) { showWorkflowToast(error.status === 422 ? "工作流连线无效或存在循环" : "发布失败，请稍后重试"); }
+  } catch (error) { showWorkflowToast(error.status === 413 ? "工作流文件超过 64 MB" : error.status === 422 ? "工作流连线无效或存在循环" : "发布失败，请稍后重试"); }
 }
 
 function closeWorkflowResourceDrawer() {
@@ -11142,22 +12575,28 @@ workflowAssetList?.addEventListener("click", (event) => {
 sharedWorkflowList?.addEventListener("click", async (event) => {
   const publish = event.target instanceof Element ? event.target.closest("[data-publish-local-workflow]") : null;
   if (publish) {
-    const record = readLocalWorkflows().find((item) => item.id === publish.dataset.publishLocalWorkflow);
-    if (record) await publishSavedWorkflow(record);
+    try {
+      const record = await readWorkflowDraft(publish.dataset.publishLocalWorkflow);
+      if (record) await publishSavedWorkflow(record);
+    } catch {
+      showWorkflowToast("本机草稿暂时无法读取");
+    }
     return;
   }
   const card = event.target instanceof Element ? event.target.closest(".shared-workflow-card") : null;
   if (!card) return;
+  const revision = workflowGraphRevision;
   try {
     let record;
-    if (card.dataset.workflowSource === "local") record = readLocalWorkflows().find((item) => item.id === card.dataset.workflowId);
+    if (card.dataset.workflowSource === "local") record = await readWorkflowDraft(card.dataset.workflowId);
     else {
       const { body } = await fetchJson(`${API.workflows}/${encodeURIComponent(card.dataset.workflowId)}`, { method:"GET" }, 5000);
       record = body.workflow;
     }
+    if (revision !== workflowGraphRevision || !await confirmWorkflowReplacement()) return;
     loadWorkflowRecord(record, card.dataset.workflowSource);
     showWorkflowToast(`已加载「${String(record?.name || "共享工作流").slice(0, 30)}」`);
-  } catch { showWorkflowToast("这个工作流暂时无法加载"); }
+  } catch (error) { showWorkflowToast(error instanceof RangeError ? error.message : "这个工作流暂时无法加载"); }
 });
 workflowSortTabs.forEach((button) => button.addEventListener("click", () => {
   activeWorkflowSort = button.dataset.workflowSort || "recommended";
@@ -11211,10 +12650,30 @@ scenarioList?.addEventListener("click", (event) => {
   if (card?.dataset.scenePreset) activeWorkflowScenePreset = card.dataset.scenePreset;
 });
 workflowViewport?.addEventListener("dblclick", openWorkflowNodePicker);
-document.querySelector("#workflow-add-node").addEventListener("click", () => {
-  const rect = workflowViewport.getBoundingClientRect();
-  showWorkflowNodePickerAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
-  workflowPickerWorldPoint.x -= 150;
+workflowViewport?.addEventListener("contextmenu", openWorkflowNodePicker);
+workflowAddNodeButton?.addEventListener("click", () => {
+  if (workflowNodePicker.hidden) openCenteredWorkflowNodePicker(workflowAddNodeButton);
+  else closeWorkflowNodePicker();
+});
+window.addEventListener("resize", positionWorkflowNodePicker);
+workflowNodeSearch?.addEventListener("input", () => {
+  activeWorkflowNodeCategory = "all";
+  renderWorkflowNodePicker(workflowPickerSourceType);
+});
+workflowNodePicker?.addEventListener("keydown", (event) => {
+  if (event.isComposing || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+  const options = [...workflowNodeGroups.querySelectorAll(".workflow-node-option:not(:disabled)")];
+  if (event.target === workflowNodeSearch && options.length && event.key !== "ArrowUp") {
+    event.preventDefault();
+    if (event.key === "Enter") options[0].click();
+    else options[0].focus();
+    return;
+  }
+  const index = options.indexOf(event.target);
+  if (index === -1 || event.key === "Enter") return;
+  event.preventDefault();
+  if (event.key === "ArrowUp") (options[index - 1] || workflowNodeSearch).focus();
+  else options[Math.min(index + 1, options.length - 1)].focus();
 });
 workflowNodeCategoryTabs?.addEventListener("click", (event) => {
   const tab = event.target instanceof Element ? event.target.closest("[data-workflow-node-category]") : null;
@@ -11235,19 +12694,79 @@ workflowNodeGroups?.addEventListener("click", (event) => {
   }
   const node = createDynamicWorkflowNode(
     option.dataset.nodeTemplate, workflowPickerWorldPoint.x, workflowPickerWorldPoint.y, "",
-    nodeConfig,
+    nodeConfig, workflowBoard, false,
   );
-  closeWorkflowNodePicker({ cancelConnection:false });
-  node?.focus();
+  closeWorkflowNodePicker({ cancelConnection:false, restoreFocus:!node });
+  node?.focus({ preventScroll:true });
+  let connection;
   if (node && source) {
     pendingWorkflowSource = source;
     const input = [...node.querySelectorAll('[data-port-direction="input"]')].find((port) => workflowPortTypesCompatible(sourceType || "any", port.dataset.portType || "any"));
-    if (input) completeWorkflowConnection(input);
+    if (input) connection = completeWorkflowConnection(input, { record:false });
     else clearWorkflowConnectionState();
-  } else if (node) showWorkflowToast(`已添加「${node.querySelector("header b")?.textContent || "节点"}」`);
+  } else if (node) {
+    if (compactWorkflowEditor.matches && !WORKFLOW_STRUCTURAL_NODE_TYPES.has(node.dataset.nodeType)) {
+      renderWorkflowNodeEditor(node, { focusPrompt:false });
+      document.querySelector("#workflow-node-editor-close")?.focus({ preventScroll:true });
+    } else {
+      showWorkflowToast(`已添加「${node.querySelector("header b")?.textContent || "节点"}」`);
+    }
+  }
   else if (source) clearWorkflowConnectionState();
+  if (node) recordWorkflowStructure({ addedNodes:workflowPositionsInBoard([node]), ...connection });
 });
 document.querySelector("#workflow-node-picker-close")?.addEventListener("click", closeWorkflowNodePicker);
+const workflowEditActions = {
+  "workflow-undo": () => stepWorkflowHistory(),
+  "workflow-redo": () => stepWorkflowHistory(true),
+  "workflow-copy-nodes": copyWorkflowSelection,
+  "workflow-paste-nodes": () => pasteWorkflowNodes(workflowNodeClipboard),
+  "workflow-duplicate-nodes": () => pasteWorkflowNodes(captureWorkflowSelection(), true),
+  "workflow-fit-selection": () => fitWorkflowCanvas({ selection:workflowSelectedNodes }),
+  "workflow-delete-nodes": () => deleteWorkflowNodes(workflowSelectedNodes),
+  "workflow-arrange-toggle": () => setWorkflowArrangeOpen(workflowArrangePanel.hidden),
+  "workflow-minimap-toggle": () => setWorkflowMinimapOpen(workflowMinimap.hidden),
+};
+workflowEditBar?.addEventListener("click", (event) => {
+  const button = event.target instanceof Element ? event.target.closest("button") : null;
+  if (!button || button.disabled) return;
+  if (button.dataset.workflowArrange) arrangeWorkflowNodes(button.dataset.workflowArrange);
+  else workflowEditActions[button.id]?.();
+});
+document.addEventListener("pointerdown", (event) => {
+  if (!workflowArrangePanel.hidden && !workflowArrangePanel.contains(event.target) && !workflowArrangeToggle.contains(event.target)) {
+    setWorkflowArrangeOpen(false);
+  }
+});
+let workflowMinimapDrag = null;
+workflowMinimapCanvas.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || !event.isPrimary || !workflowMinimapProjection) return;
+  event.stopPropagation();
+  workflowMinimapDrag = { id:event.pointerId, rect:workflowMinimapCanvas.getBoundingClientRect() };
+  workflowMinimapCanvas.setPointerCapture(event.pointerId);
+  panWorkflowFromMinimap(event, workflowMinimapDrag.rect);
+});
+workflowMinimapCanvas.addEventListener("pointermove", (event) => {
+  if (workflowMinimapDrag?.id === event.pointerId) panWorkflowFromMinimap(event, workflowMinimapDrag.rect);
+});
+workflowMinimapCanvas.addEventListener("lostpointercapture", () => { workflowMinimapDrag = null; });
+workflowMinimapCanvas.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.stopPropagation();
+    setWorkflowMinimapOpen(false);
+    workflowMinimapToggle.focus();
+    return;
+  }
+  const direction = ({
+    ArrowLeft:[1, 0], ArrowRight:[-1, 0], ArrowUp:[0, 1], ArrowDown:[0, -1],
+  })[event.key];
+  if (!direction) return;
+  event.preventDefault();
+  workflowState.panX += direction[0] * workflowViewportSize.width * .2;
+  workflowState.panY += direction[1] * workflowViewportSize.height * .2;
+  scheduleWorkflowTransform();
+});
+new MutationObserver(invalidateWorkflowMinimap).observe(document.documentElement, { attributeFilter:["data-studio-theme"] });
 workflowNodeEditorPrompt?.addEventListener("input", () => {
   if (!activeWorkflowEditorNode) return;
   const source = ensureWorkflowNodePromptState(activeWorkflowEditorNode);
@@ -11258,18 +12777,31 @@ workflowNodeEditorPrompt?.addEventListener("input", () => {
 workflowNodeEditorRun?.addEventListener("click", () => {
   if (activeWorkflowEditorNode) runWorkflow(activeWorkflowEditorNode.dataset.nodeId);
 });
+document.querySelector("#workflow-node-editor-close")?.addEventListener("click", () => {
+  const node = activeWorkflowEditorNode;
+  closeWorkflowNodeEditor();
+  node?.focus({ preventScroll:true });
+});
+compactWorkflowEditor.addEventListener("change", () => {
+  if (activeWorkflowEditorNode) positionWorkflowNodeEditor(activeWorkflowEditorNode);
+});
 workflowNodeEditorExpand?.addEventListener("click", () => {
   setWorkflowNodeEditorExpanded(!workflowNodeEditor.classList.contains("is-expanded"));
 });
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  closeWorkflowNodePicker();
-  closeWorkflowNodeEditor();
+  if (!workflowNodePicker?.hidden) {
+    event.preventDefault();
+    closeWorkflowNodePicker();
+  } else {
+    closeWorkflowNodeEditor();
+    if (document.body.classList.contains("workflow-active") && workflowSelectedNodes.size) setWorkflowNodeSelection(new Set());
+  }
 });
 document.addEventListener("pointerdown", (event) => {
   if (workflowNodePicker?.hidden) return;
   const target = event.target instanceof Element ? event.target : null;
-  if (!target?.closest("#workflow-node-picker")) closeWorkflowNodePicker();
+  if (!target?.closest("#workflow-node-picker, #workflow-add-node")) closeWorkflowNodePicker({ restoreFocus:false });
 });
 document.addEventListener("pointerdown", (event) => {
   const target = event.target instanceof Element ? event.target : null;
@@ -11300,7 +12832,18 @@ workflowBoard?.addEventListener("click", (event) => {
   const node = target?.closest("[data-node-id]");
   if (!node || target.closest("button,input,select,textarea,label,canvas,audio,video,[data-workflow-mask-stage],[data-workflow-file]")) return;
   if (node.dataset.suppressEditorClick === "true") return;
-  renderWorkflowNodeEditor(node);
+  selectWorkflowEdge("");
+  hideWorkflowEdgeDeleteButton();
+  if (event.shiftKey) {
+    const next = new Set(workflowSelectedNodes);
+    if (next.has(node)) next.delete(node);
+    else next.add(node);
+    setWorkflowNodeSelection(next);
+    closeWorkflowNodeEditor();
+    return;
+  }
+  setWorkflowNodeSelection(new Set([node]));
+  renderWorkflowNodeEditor(node, { focusPrompt: !compactWorkflowEditor.matches });
 });
 workflowBoard?.addEventListener("pointerdown", (event) => {
   const port = event.target instanceof Element ? event.target.closest('[data-port-direction="output"]') : null;
@@ -11353,17 +12896,14 @@ workflowBoard?.addEventListener("pointerdown", (event) => {
 workflowLines?.addEventListener("click", (event) => {
   const path = event.target instanceof Element ? event.target.closest("[data-link]") : null;
   if (!path) return;
-  selectedWorkflowEdgeId = path.dataset.link || "";
-  updateWorkflowLines();
-  const selectedPath = [...workflowLines.querySelectorAll("path[data-link]")].find((item) => item.dataset.link === selectedWorkflowEdgeId);
-  showWorkflowEdgeDeleteButton(selectedPath, event.clientX, event.clientY);
+  selectWorkflowEdge(path.dataset.link || "");
+  showWorkflowEdgeDeleteButton(path, event.clientX, event.clientY);
   showWorkflowToast("已选择连线；点击“删除连线”或按 Delete / Backspace");
 });
 workflowLines?.addEventListener("focusin", (event) => {
   const path = event.target instanceof Element ? event.target.closest("[data-link]") : null;
   if (!path) return;
-  selectedWorkflowEdgeId = path.dataset.link || "";
-  workflowLines.querySelectorAll(".workflow-link-visible").forEach((item) => item.classList.toggle("is-selected", item.previousElementSibling?.dataset.link === selectedWorkflowEdgeId));
+  selectWorkflowEdge(path.dataset.link || "");
   showWorkflowEdgeDeleteButton(path);
 });
 workflowLines?.addEventListener("keydown", (event) => {
@@ -11377,28 +12917,54 @@ workflowEdgeDeleteButton?.addEventListener("click", () => deleteSelectedWorkflow
 document.querySelector("#workflow-canvas-shell")?.addEventListener("pointerdown", (event) => {
   const target = event.target instanceof Element ? event.target : null;
   if (!selectedWorkflowEdgeId || target?.closest("[data-link], #workflow-edge-delete")) return;
-  selectedWorkflowEdgeId = "";
+  selectWorkflowEdge("");
   hideWorkflowEdgeDeleteButton();
-  updateWorkflowLines();
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && pendingWorkflowSource) {
     clearWorkflowConnectionState();
     showWorkflowToast("已取消连线");
   }
-  if (!["Delete", "Backspace"].includes(event.key) || !selectedWorkflowEdgeId) return;
+  if (!document.body.classList.contains("workflow-active") || event.defaultPrevented || event.isComposing ||
+      event.altKey || workflowMarqueeGesture || workflowPanGesture || !workflowNodePicker.hidden) return;
   const target = event.target;
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
-  deleteSelectedWorkflowEdge();
+  if (target instanceof Element && target.closest("input,textarea,select,[contenteditable],dialog,[role='dialog']")) return;
+  if (target !== document.body && !workflowCanvasShell.contains(target)) return;
+  const key = event.key.toLowerCase();
+  const command = event.metaKey || event.ctrlKey;
+  let action;
+  if (command && key === "z") action = event.shiftKey ? "workflow-redo" : "workflow-undo";
+  else if (command && key === "y") action = "workflow-redo";
+  else if (command && key === "c" && workflowSelectedNodes.size) action = "workflow-copy-nodes";
+  else if (command && key === "v" && workflowNodeClipboard) action = "workflow-paste-nodes";
+  else if (command && key === "d" && workflowSelectedNodes.size) action = "workflow-duplicate-nodes";
+  else if (!command && key === "f" && workflowSelectedNodes.size) action = "workflow-fit-selection";
+  else if (!command && ["delete", "backspace"].includes(key)) {
+    if (workflowSelectedNodes.size) action = "workflow-delete-nodes";
+    else if (selectedWorkflowEdgeId) {
+      event.preventDefault();
+      deleteSelectedWorkflowEdge();
+    }
+  }
+  if (!action) return;
+  event.preventDefault();
+  if (!workflowBoard.querySelector(".is-dragging")) workflowEditActions[action]();
 });
-document.querySelector("#workflow-reset")?.addEventListener("click", () => {
-  loadWorkflowGraph(defaultWorkflowGraph());
+for (const eventType of ["input", "change"]) {
+  workflowBoard?.addEventListener(eventType, (event) => {
+    if (event.target instanceof Element &&
+        event.target.matches("[data-node-field], [data-workflow-file], [data-workflow-asset-select]")) markWorkflowEdited();
+  });
+}
+[workflowShareName, workflowShareDescription, workflowShareTags].forEach((field) =>
+  field?.addEventListener("input", markWorkflowEdited));
+document.querySelector("#workflow-reset")?.addEventListener("click", async () => {
+  if (!await confirmWorkflowReplacement()) return;
+  loadWorkflowGraph(defaultWorkflowGraph(), { focusNodeId:"image-input-base" });
   showWorkflowToast("已恢复示例工作流");
 });
-document.querySelector("#workflow-new")?.addEventListener("click", () => {
-  clearWorkflowConnectionState();
-  selectedWorkflowEdgeId = "";
-  activeWorkflowScenePreset = "";
+document.querySelector("#workflow-new")?.addEventListener("click", async () => {
+  if (!await confirmWorkflowReplacement()) return;
   loadWorkflowGraph({ version:6, scene_preset:"", nodes:[], edges:[] });
   workflowState.zoom = .82;
   workflowState.panX = Math.max(28, (workflowViewport?.clientWidth || 0) * .08);
@@ -11421,19 +12987,20 @@ document.querySelector("#workflow-import")?.addEventListener("click", () => work
 workflowImportFile?.addEventListener("change", async () => {
   const file = workflowImportFile.files?.[0];
   workflowImportFile.value = "";
-  if (!file || file.size > 256 * 1024) return showWorkflowToast("只支持 256KB 以内的工作流 JSON");
+  if (!file) return;
+  if (file.size > WORKFLOW_MAX_JSON_BYTES) return showWorkflowToast("工作流 JSON 最大支持 64 MB");
   try {
     const value = JSON.parse(await file.text());
+    if (!await confirmWorkflowReplacement()) return;
     if (value.graph) loadWorkflowRecord(value, "import");
     else loadWorkflowGraph(value);
     setWorkspaceView("workflow");
     showWorkflowToast("工作流已导入");
-  } catch { showWorkflowToast("工作流文件格式不正确"); }
+  } catch (error) { showWorkflowToast(error instanceof RangeError ? error.message : "工作流文件格式不正确"); }
 });
 
-// HTML 中保留的首屏示例只用于无脚本降级；脚本启动后立即按 v5 契约
-// 重建，使首次打开和加载旧分享时都只出现统一媒体节点。
-loadWorkflowGraph(serializeWorkflowGraph());
+// HTML 中的首屏示例用于无脚本降级，交互画布使用当前工作流节点定义。
+loadWorkflowGraph(defaultWorkflowGraph(), { focusNodeId:"image-input-base" });
 renderWorkflowNodePicker();
 workflowBoard?.querySelectorAll("[data-node-id]").forEach(ensureWorkflowNodeRunButton);
 workflowBoard?.querySelectorAll("[data-node-id]").forEach((node) => { bindWorkflowNodeControls(node); updateWorkflowCameraSummary(node); });
@@ -11447,8 +13014,10 @@ if (workflowUrl.searchParams.get("workspace") === "assets") {
 }
 const workflowIdFromUrl = workflowUrl.searchParams.get("workflow") || "";
 if (/^[a-f0-9]{12}$/.test(workflowIdFromUrl)) {
-  fetchJson(`${API.workflows}/${workflowIdFromUrl}`, { method:"GET" }, 5000).then(({ body }) => {
-    loadWorkflowRecord(body.workflow);
+  const revision = workflowGraphRevision;
+  fetchJson(`${API.workflows}/${workflowIdFromUrl}`, { method:"GET" }, 5000).then(async ({ body }) => {
+    if (revision !== workflowGraphRevision || !await confirmWorkflowReplacement()) return;
+    loadWorkflowRecord(body.workflow, "community");
     setWorkspaceView("workflow");
     showWorkflowToast(`已打开「${String(body.workflow?.name || "共享工作流").slice(0, 30)}」`);
   }).catch(() => showWorkflowToast("分享的工作流不存在或已下架"));

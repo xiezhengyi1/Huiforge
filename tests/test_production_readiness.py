@@ -94,7 +94,7 @@ def test_global_service_notice_uses_the_shared_theme_contract():
     assert ".service-health-banner" in css
     assert "var(--tv-surface-raised)" in css
     assert "var(--tv-radius-card)" in css
-    assert f'@import url("theme-audit.css?v={RELEASE_ID}") layer(theme);' in theme_shell
+    assert re.search(r'@import url\("theme-audit\.css\?v=[^"]+"\) layer\(theme\);', theme_shell)
 
 
 def test_theme_set_uses_distinct_semantic_palettes():

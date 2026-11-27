@@ -125,6 +125,7 @@ async def security_headers(request: Request, call_next):
     if request.method in {"POST", "PATCH"} and request.url.path in {
         "/api/v1/users/register", "/api/v1/users/login", "/api/v1/users/logout",
         "/api/v1/users/sms/send",
+        "/api/v1/users/email/send", "/api/v1/users/email/register", "/api/v1/users/email/login",
         "/api/v1/users/me", "/api/v1/feedback", "/api/v1/workflows",
         "/api/v1/assets", "/api/v1/assets/categories",
     }:
@@ -138,7 +139,8 @@ async def security_headers(request: Request, call_next):
             content_length = int(content_length_header or "0")
         except ValueError:
             return _reject(request, "invalid_content_length", 400)
-        if content_length < 0 or content_length > MAX_ACCOUNT_BODY_BYTES:
+        maximum = MAX_WORKFLOW_BODY_BYTES if request.url.path == "/api/v1/workflows" else MAX_ACCOUNT_BODY_BYTES
+        if content_length < 0 or content_length > maximum:
             return _reject(request, "request_too_large", 413)
     if request.method == "POST" and request.url.path in {"/api/v1/images/uploads", "/api/v1/images/masks"}:
         content_type = request.headers.get("content-type", "")

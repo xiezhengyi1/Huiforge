@@ -1,7 +1,7 @@
 const textOf = (id, value) => { const node = document.querySelector(id); if (node) node.textContent = value; };
 let tariff = null;
 let activeTariff = 'image';
-
+import { locale, t } from "./core/locale.js?v=20261125-ui-polish-v3";
 const MODEL_NAMES = {
   qwen_image:'Qwen Standard', qwen_image_edit:'Qwen Image Edit', zimage_turbo:'Z-Image Turbo', zimage:'Z-Image',
   flux:'FLUX.1', flux2:'FLUX.2', gpt_image:'GPT Image', seedream_4_0:'Seedream 4.0', seedream_4_5:'Seedream 4.5',
@@ -19,7 +19,8 @@ const MODEL_NAMES = {
 
 function tariffRow(model, specification, publicPrice, memberPrice, unit) {
   const row = document.createElement('div');
-  for (const value of [MODEL_NAMES[model] || model, specification, `${publicPrice} ${unit}`, `${memberPrice} ${unit}`]) {
+  const modelName = MODEL_NAMES[model] || model;
+  for (const value of [locale !== "zh-CN" && /[\u3400-\u9fff]/.test(modelName) ? model : modelName, specification, `${publicPrice} ${unit}`, `${memberPrice} ${unit}`]) {
     const cell = document.createElement('span');
     cell.textContent = value;
     row.append(cell);
@@ -42,19 +43,19 @@ function renderTariff() {
   if (activeTariff === 'image') {
     for (const [model, rule] of Object.entries(tariff.image || {})) {
       for (const [resolution, publicPrice] of Object.entries(rule.by_resolution_public || {})) {
-        table.append(tariffRow(model, resolution, publicPrice, rule.by_resolution_member?.[resolution] ?? publicPrice, '额度/张'));
+        table.append(tariffRow(model, resolution, publicPrice, rule.by_resolution_member?.[resolution] ?? publicPrice, t('额度/张','credits/image')));
       }
     }
   } else if (activeTariff === 'video') {
     for (const [model, rules] of Object.entries(tariff.video || {})) {
       for (const [specification, price] of Object.entries(rules)) {
-        const label = specification.replace(':video',' · 含视频').replace(':no_video',' · 不含视频');
-        table.append(tariffRow(model, label, price.public, price.member, '额度/秒'));
+        const label = specification.replace(':video',t(' · 含视频',' · With input video')).replace(':no_video',t(' · 不含视频',' · No input video'));
+        table.append(tariffRow(model, label, price.public, price.member, t('额度/秒','credits/sec')));
       }
     }
   } else {
     for (const [model, price] of Object.entries(tariff.audio || {})) {
-      table.append(tariffRow(model, '按输出时长预估', price.public, price.member, '额度/秒'));
+      table.append(tariffRow(model, t('按输出时长预估'), price.public, price.member, t('额度/秒','credits/sec')));
     }
   }
 }

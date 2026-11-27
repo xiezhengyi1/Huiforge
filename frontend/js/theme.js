@@ -2,14 +2,14 @@
   "use strict";
 
   const storageKey = "huiyu-studio-theme";
-  const allowedThemes = new Set(["jade", "indigo", "cinnabar", "monochrome-blue", "monochrome-accent", "graphite-amber"]);
+  const allowedThemes = new Set(["forge", "jade", "indigo", "cinnabar", "monochrome-blue", "monochrome-accent", "graphite-amber"]);
 
   const readStoredTheme = () => {
     try {
       const stored = localStorage.getItem(storageKey);
-      return allowedThemes.has(stored) ? stored : "jade";
+      return allowedThemes.has(stored) ? stored : "forge";
     } catch (_error) {
-      return "jade";
+      return "forge";
     }
   };
 
@@ -32,7 +32,7 @@
     if (!picker || !trigger || !menu || options.length === 0) return;
 
     const renderTheme = (theme, persist) => {
-      activeTheme = allowedThemes.has(theme) ? theme : "jade";
+      activeTheme = allowedThemes.has(theme) ? theme : "forge";
       document.documentElement.dataset.studioTheme = activeTheme;
       options.forEach((option) => {
         option.setAttribute("aria-checked", String(option.dataset.themeOption === activeTheme));
@@ -87,7 +87,7 @@
     const marker = document.createElement("span");
     marker.className = "service-health-marker";
     marker.setAttribute("aria-hidden", "true");
-    marker.textContent = "!";
+    marker.innerHTML = '<svg class="ui-icon" aria-hidden="true"><use href="/static/ui/icons-v1.svg#alert"></use></svg>';
     const message = document.createElement("span");
     message.className = "service-health-message";
     const action = document.createElement("button");

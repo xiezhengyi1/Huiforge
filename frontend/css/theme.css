@@ -7,10 +7,10 @@
 @import url("theme-graphite-amber.css?v=20260908-member-access-v41") layer(theme);
 @import url("theme-global.css?v=20260908-member-access-v41") layer(theme);
 @import url("home-surface.css?v=20260908-member-access-v41") layer(theme);
-@import url("theme-audit.css?v=20260908-member-access-v41") layer(theme);
+@import url("theme-audit.css?v=20261125-ui-polish-v3") layer(theme);
 
 /* The default palette uses the same semantic roles as every alternate theme. */
-html[data-studio-theme="jade"] {
+html:is([data-studio-theme="jade"], [data-studio-theme="forge"]) {
   --tv-canvas: #f5f7f5;
   --tv-canvas-art: radial-gradient(circle at 88% 5%, rgba(103,151,122,.18), transparent 31%), radial-gradient(circle at 14% 84%, rgba(183,109,81,.15), transparent 27%);
   --tv-surface: #f9fbf9;
@@ -75,6 +75,64 @@ html[data-studio-theme="jade"] {
   --tv-inverse: #20372d;
   --tv-on-inverse: #f7fbf8;
 }
+
+html[data-studio-theme="forge"] {
+  --tv-canvas: #f8f8f2;
+  --tv-canvas-art: none;
+  --tv-surface: #f8f8f2;
+  --tv-surface-raised: #fff;
+  --tv-surface-muted: #eff0e9;
+  --tv-text: #141b15;
+  --tv-text-secondary: #51594f;
+  --tv-text-muted: #60695e;
+  --tv-border: #d9dbd2;
+  --tv-border-strong: #a5aca0;
+  --tv-control: #fafaf6;
+  --tv-control-hover: #edf0e6;
+  --tv-control-text: #20271e;
+  --tv-primary: #c8ef18;
+  --tv-primary-hover: #b7dc12;
+  --tv-primary-soft: #edf5c8;
+  --tv-primary-ink: #3a4c09;
+  --tv-on-primary: #141b15;
+  --tv-accent: #6c830e;
+  --tv-accent-ink: #3a4c09;
+  --tv-credit-accent: #4a5b16;
+  --tv-selection: #e0f287;
+  --tv-selection-text: #141b15;
+  --tv-focus: rgba(85,106,14,.42);
+  --tv-scrollbar: #a5aca0;
+  --tv-shadow: rgba(20,27,21,.12);
+  --tv-shadow-soft: rgba(20,27,21,.055);
+  --tv-primary-shadow: transparent;
+  --tv-dialog-shadow: rgba(20,27,21,.22);
+  --tv-backdrop: rgba(20,27,21,.43);
+  --tv-image-placeholder: #eef0e8;
+  --tv-workspace: #f2f3ed;
+  --tv-editor-shell: #f8f8f2;
+  --tv-editor-canvas: #edefe7;
+  --tv-editor-check: #d9dbd2;
+  --tv-sidebar: #f2f3ec;
+  --tv-sidebar-control: #fafaf6;
+  --tv-sidebar-hover: #e8ebe0;
+  --tv-sidebar-active: #e7f1b6;
+  --tv-sidebar-border: #d9dbd2;
+  --tv-sidebar-text: #414b3d;
+  --tv-sidebar-strong: #141b15;
+  --tv-sidebar-muted: #60695e;
+  --tv-sidebar-icon: #485544;
+  --tv-sidebar-accent: #6b810d;
+  --tv-on-sidebar-accent: #fff;
+  --tv-sidebar-active-text: #1d2910;
+  --tv-sidebar-active-icon: #3e510f;
+  --tv-disabled: #687164;
+  --tv-disabled-soft: #eceee6;
+  --tv-inverse: #20271e;
+}
+
+.theme-swatches.forge i:nth-child(1) { background: #f8f8f2; }
+.theme-swatches.forge i:nth-child(2) { background: #c8ef18; }
+.theme-swatches.forge i:nth-child(3) { background: #141b15; }
 
 /* Compact theme selector. It is the only new control; product layout and workflows stay unchanged. */
 .studio-page .theme-picker { position: relative; }

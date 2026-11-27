@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from ..core.config import MAX_WORKFLOW_EDGES, MAX_WORKFLOW_NODES
 
 class GenerationInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -72,6 +73,27 @@ class LoginInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     phone: str = Field(pattern=r"^1[3-9]\d{9}$")
     password: str = Field(min_length=8, max_length=72)
+
+class EmailAddressInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    email: str = Field(max_length=254, pattern=r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$")
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        local, domain = value.rsplit("@", 1)
+        if len(local) > 64 or local.startswith(".") or local.endswith(".") or ".." in local:
+            raise ValueError("invalid_email_address")
+        if any(len(label) > 63 or label.startswith("-") or label.endswith("-") for label in domain.split(".")):
+            raise ValueError("invalid_email_address")
+        return value.lower()
+
+class EmailLoginInput(EmailAddressInput):
+    password: str = Field(min_length=8, max_length=72)
+
+class EmailRegisterInput(EmailLoginInput):
+    code: str = Field(pattern=r"^[0-9]{6}$")
+    display_name: str = Field(default="", max_length=24)
 
 class ProfileInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -346,6 +368,8 @@ class WorkflowNodeInput(BaseModel):
     category: Literal["input", "image", "video", "audio", "output"]
     x: float = Field(ge=-50000, le=50000)
     y: float = Field(ge=-50000, le=50000)
+    width: int | None = Field(default=None, ge=240, le=1120)
+    height: int | None = Field(default=None, ge=160, le=1400)
     config: dict[str, str | int | float | bool] = Field(default_factory=dict, max_length=24)
 
 class WorkflowEdgeInput(BaseModel):
@@ -360,8 +384,8 @@ class WorkflowGraphInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     version: Literal[6] = 6
     scene_preset: str = Field(default="", max_length=64, pattern=r"^[a-z0-9-]*$")
-    nodes: list[WorkflowNodeInput] = Field(min_length=1, max_length=30)
-    edges: list[WorkflowEdgeInput] = Field(default_factory=list, max_length=60)
+    nodes: list[WorkflowNodeInput] = Field(min_length=1, max_length=MAX_WORKFLOW_NODES)
+    edges: list[WorkflowEdgeInput] = Field(default_factory=list, max_length=MAX_WORKFLOW_EDGES)
 
 class WorkflowCreateInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)

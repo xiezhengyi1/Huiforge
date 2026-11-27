@@ -99,7 +99,7 @@ html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
 html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
   :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select)::placeholder { color: var(--tv-text-muted) !important; opacity: 1; }
 html[data-studio-theme] :is(.studio-page,.home-page,.pricing-page,.profile-page)
-  :is(input,textarea:not(#prompt):not(#workflow-node-editor-prompt),select):focus {
+  :is(input:not(:where(#workflow-node-search)),textarea:not(#prompt):not(#workflow-node-editor-prompt),select):focus {
   border-color: var(--tv-primary) !important;
   box-shadow: 0 0 0 3px var(--tv-focus) !important;
 }
@@ -169,7 +169,7 @@ html[data-studio-theme] .studio-page :where(
   border-radius: var(--tv-radius-card) !important;
 }
 html[data-studio-theme] .studio-page :where(
-  .workflow-node-option,.model-select-item,.theme-option,.plan-option,
+  .model-select-item,.theme-option,.plan-option,
   .ratio-option,.output-settings-menu button) {
   border-radius: var(--tv-radius-control) !important;
 }
@@ -204,7 +204,7 @@ html[data-studio-theme] .studio-page :where(
   color: var(--tv-text) !important;
 }
 html[data-studio-theme] .studio-page :where(
-  .workflow-node-option,.shared-workflow-card,.workflow-asset-card,
+  .shared-workflow-card,.workflow-asset-card,
   .workflow-node-run-result,.workflow-output-preview) {
   border-color: var(--tv-border) !important;
   background: var(--tv-surface-muted) !important;
@@ -388,7 +388,7 @@ html[data-studio-theme] body.studio-page :is(.model-select-trigger,.output-setti
   font-weight: 700 !important;
   box-shadow: none !important;
 }
-html[data-studio-theme] body.studio-page :is(.model-select-menu,.output-settings-menu,.toolbar-select-menu,.sidebar-select-menu,.sidebar-pin-menu,.workflow-node-picker) {
+html[data-studio-theme] body.studio-page :is(.model-select-menu,.output-settings-menu,.toolbar-select-menu,.sidebar-select-menu,.sidebar-pin-menu) {
   z-index: 1100 !important;
   overflow: auto !important;
   border: 1px solid var(--tv-border) !important;
@@ -397,15 +397,15 @@ html[data-studio-theme] body.studio-page :is(.model-select-menu,.output-settings
   color: var(--tv-text) !important;
   box-shadow: 0 18px 46px var(--tv-dialog-shadow) !important;
 }
-html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button) {
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option) {
   min-height: 42px !important;
   border: 0 !important;
   border-radius: var(--tv-radius-control) !important;
   background: transparent !important;
   color: var(--tv-text) !important;
 }
-html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button):hover,
-html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option,.workflow-node-picker button)[aria-selected="true"] {
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option):hover,
+html[data-studio-theme] body.studio-page :is(.model-select-item,.toolbar-select-item,.sidebar-select-option)[aria-selected="true"] {
   background: var(--tv-primary-soft) !important;
   color: var(--tv-primary-ink) !important;
 }
@@ -419,40 +419,40 @@ html[data-studio-theme] .studio-page :is(.tool-command-panel,.analysis-input-pan
   background: var(--tv-surface-raised) !important;
   color: var(--tv-text) !important;
 }
-html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) {
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.source-preview-shell) {
   border-color: var(--tv-border-strong) !important;
   background: var(--tv-surface-muted) !important;
   color: var(--tv-text) !important;
 }
-html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell):hover {
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.source-preview-shell):hover {
   border-color: var(--tv-primary) !important;
   background: var(--tv-control-hover) !important;
 }
-html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) :is(b,strong) { color: var(--tv-text) !important; }
-html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.result-placeholder,.source-preview-shell) :is(p,small,span) { color: var(--tv-text-secondary) !important; }
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.source-preview-shell) :is(b,strong) { color: var(--tv-text) !important; }
+html[data-studio-theme] .studio-page :is(.upload-drop,.analysis-upload,.asset-upload,.workflow-node-upload,.source-preview-shell) :is(p,small,span) { color: var(--tv-text-secondary) !important; }
 
 /* Reference-driven modes share the text composer's one-card language. The
-   upload slot and prompt are compartments of one input, never stacked cards. */
+   prompt, attachments and tool settings fit a compact column. */
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) {
   grid-template-columns: minmax(0,1fr) !important;
-  gap: 0 !important;
-  padding: 0 !important;
+  gap: 9px !important;
+  padding: 12px !important;
   overflow: visible !important;
-  border: 0 !important;
-  border-radius: var(--tv-radius-card) !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: 10px !important;
   background: var(--tv-surface-raised) !important;
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .active-capability-chip {
-  margin: 14px 18px 10px !important;
+  margin: 0 !important;
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .reference-composer {
-  padding: 0 18px 16px !important;
+  padding: 0 !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .image-tool-grid {
-  grid-template-columns: clamp(132px,17vw,170px) minmax(0,1fr) !important;
-  gap: 14px !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  gap: 8px !important;
   overflow: visible !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -460,7 +460,7 @@ html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-upload-surface {
-  min-height: 168px !important;
+  min-height: 0 !important;
   border: 0 !important;
   border-right: 0 !important;
   border-radius: 0 !important;
@@ -468,21 +468,21 @@ html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel {
-  min-height: 168px !important;
+  min-height: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .upload-drop {
-  min-height: 168px !important;
+  min-height: 0 !important;
   border: 1px dashed var(--tv-border-strong) !important;
   border-radius: var(--tv-radius-control) !important;
   background: var(--tv-surface-muted) !important;
   box-shadow: none !important;
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-preview-shell {
-  min-height: 168px !important;
+  min-height: 0 !important;
   border: 0 !important;
   border-radius: var(--tv-radius-control) !important;
   background: var(--tv-surface-muted) !important;
@@ -492,7 +492,7 @@ html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="
   width: 100% !important;
   height: 100% !important;
   max-width: none !important;
-  max-height: 360px !important;
+  max-height: 230px !important;
   margin: 0 !important;
   border: 0 !important;
   border-radius: var(--tv-radius-control) !important;
@@ -519,24 +519,22 @@ html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="
   background: var(--tv-control) !important;
   box-shadow: none !important;
 }
-html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea {
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .tool-command-panel textarea {
   width: 100% !important;
-  height: 100% !important;
-  min-height: 128px !important;
+  height: auto !important;
+  min-height: 104px !important;
   margin: 0 !important;
-  padding: 10px 2px !important;
-  resize: none !important;
-  border: 0 !important;
-  outline: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+  padding: 10px !important;
+  resize: vertical !important;
+  border: 1px solid var(--tv-border) !important;
+  border-radius: 7px !important;
+  background: var(--tv-control) !important;
   box-shadow: none !important;
 }
-html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea:focus,
-html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]):not([data-mode="unified_image"]) .tool-command-panel textarea:focus-visible {
-  border: 0 !important;
-  outline: 0 !important;
-  box-shadow: none !important;
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .tool-command-panel textarea:focus,
+html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .tool-command-panel textarea:focus-visible {
+  border-color: var(--tv-border-strong) !important;
+  box-shadow: 0 0 0 2px var(--tv-focus) !important;
 }
 html[data-studio-theme] .studio-page .controls-panel .prompt-tools .tool-preset-field {
   display: inline-flex !important;
@@ -559,22 +557,12 @@ html[data-studio-theme] .studio-page .controls-panel .prompt-tools #tool-preset-
 }
 html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .prompt-toolbar {
   margin: 0 !important;
-  padding: 14px 18px !important;
+  padding: 0 !important;
   border: 0 !important;
   border-top: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-}
-@media (max-width: 760px) {
-  html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .image-tool-grid {
-    grid-template-columns: minmax(0,1fr) !important;
-  }
-  html[data-studio-theme] .studio-page .controls-panel[data-mode]:not([data-mode="text"]):not([data-mode="video_text"]):not([data-mode="audio_tts"]) .source-upload-surface {
-    min-height: 116px !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-  }
 }
 html[data-studio-theme] .studio-page :is(.prompt-reference-trigger,.image-editor-open,#local-editor-open-assets,#local-tool-save-asset,.button-secondary,.button-ghost) {
   border-color: var(--tv-border) !important;
@@ -684,7 +672,7 @@ html[data-studio-theme] .studio-page :is(.workflow-resource-dock,.workflow-libra
   background-color: var(--tv-surface-raised) !important;
   color: var(--tv-text) !important;
 }
-html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic,.workflow-detail-node,.workflow-node-option) {
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic,.workflow-detail-node) {
   border-color: var(--tv-border) !important;
   background-color: var(--tv-surface-raised) !important;
   color: var(--tv-text) !important;
@@ -692,7 +680,7 @@ html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic,.
 }
 html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(h3,h4,b,strong,label) { color: var(--tv-text) !important; }
 html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(p,small,i,.workflow-port-caption,.workflow-input-meta) { color: var(--tv-text-muted) !important; }
-html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(input,textarea,select,button:not(.workflow-port):not(.workflow-node-run-button)) {
+html[data-studio-theme] .studio-page :is(.workflow-node,.workflow-node-dynamic) :is(input,textarea,select,button:not(.workflow-port,.workflow-node-run-button,.workflow-node-resize)) {
   border-color: var(--tv-border) !important;
   background-color: var(--tv-control) !important;
   color: var(--tv-control-text) !important;
@@ -891,6 +879,11 @@ html[data-studio-theme] .studio-page .workflow-canvas-shell[data-edge-style="das
 html[data-studio-theme] .studio-page .workflow-canvas-shell[data-edge-style="hidden"] .workflow-lines path.workflow-link-visible { opacity: 0 !important; }
 html[data-studio-theme] .studio-page .workflow-edge-style-control { color: var(--tv-text-muted) !important; }
 html[data-studio-theme] body.studio-page .workflow-edge-style-control select { min-height: 26px !important; border: 0 !important; background: transparent !important; color: var(--tv-control-text) !important; box-shadow: none !important; }
+html[data-studio-theme] .studio-page #workflow-hand-tool[aria-pressed="true"] {
+  background: var(--tv-primary-soft) !important;
+  color: var(--tv-primary-ink) !important;
+}
+html[data-studio-theme] .studio-page #workflow-node-search:focus { box-shadow: none !important; }
 html[data-studio-theme] .studio-page .workflow-node-remove { background: transparent !important; color: var(--tv-text-muted) !important; }
 html[data-studio-theme] .studio-page .workflow-node-remove:hover { background: var(--tv-danger-soft) !important; color: var(--tv-danger) !important; }
 html[data-studio-theme] .studio-page .model-status-tag {
@@ -1256,4 +1249,43 @@ html[data-studio-theme] .studio-page #camera-stage.camera-stage-viewport {
   border-color: var(--tv-border-strong) !important;
   background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tv-surface-raised) 64%, var(--tv-primary-soft)) 0, var(--tv-editor-canvas) 54%, color-mix(in srgb, var(--tv-editor-canvas) 76%, var(--tv-border)) 100%) !important;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tv-surface-raised) 84%, transparent), inset 0 0 0 4px color-mix(in srgb, var(--tv-primary) 9%, transparent), 0 16px 28px var(--tv-shadow) !important;
+}
+
+/* Dialog chrome uses one theme contract, including transient app panels. */
+html[data-studio-theme] :is(.studio-page, .profile-page, .pricing-page) dialog {
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-panel) !important;
+  box-shadow: 0 24px 70px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] :is(.studio-page, .profile-page, .pricing-page) dialog::backdrop {
+  background: var(--tv-backdrop) !important;
+  backdrop-filter: blur(4px) !important;
+}
+html[data-studio-theme] .studio-page :is(.workflow-node-picker, .workflow-node-editor, .onboarding-popover, .mask-brush-popover) {
+  border: 1px solid var(--tv-border) !important;
+  border-radius: var(--tv-radius-card) !important;
+  background: var(--tv-surface-raised) !important;
+  color: var(--tv-text) !important;
+  box-shadow: 0 16px 38px var(--tv-dialog-shadow) !important;
+}
+html[data-studio-theme] .studio-page .onboarding-popover::before { border-color: var(--tv-border); background: var(--tv-surface-raised); }
+html[data-studio-theme] .studio-page .onboarding-focus-ring {
+  border-color: var(--tv-primary);
+  box-shadow: 0 0 0 5px var(--tv-focus-ring), 0 0 0 9999px var(--tv-backdrop);
+}
+html[data-studio-theme] .studio-page .onboarding-focus-ring::after { border-color: var(--tv-primary); }
+html[data-studio-theme] .studio-page .onboarding-popover :is(p, .onboarding-skip, .onboarding-back) { color: var(--tv-text-secondary); }
+html[data-studio-theme] .studio-page .onboarding-popover :is(.onboarding-step-label, .onboarding-back) { border-color: var(--tv-border); background: var(--tv-control); }
+html[data-studio-theme] .studio-page .onboarding-popover .onboarding-progress i { background: var(--tv-border-strong); }
+html[data-studio-theme] .studio-page .onboarding-popover :is(.onboarding-progress i.active, .onboarding-next) { border-color: var(--tv-primary); background: var(--tv-primary); color: var(--tv-on-primary); box-shadow: none; }
+html[data-studio-theme] body.studio-page .asset-head-actions .asset-upload {
+  border-color: var(--tv-primary) !important;
+  background: var(--tv-primary) !important;
+  color: var(--tv-on-primary) !important;
+}
+html[data-studio-theme] body.studio-page .asset-head-actions .asset-upload:hover { background: var(--tv-primary-hover) !important; }
+html[data-studio-theme] body.studio-page dialog .decision-actions button[data-destructive] {
+  border-color: var(--tv-danger) !important;
+  background: var(--tv-danger-soft) !important;
+  color: var(--tv-danger) !important;
 }

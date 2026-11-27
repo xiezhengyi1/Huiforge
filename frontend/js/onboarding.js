@@ -15,7 +15,6 @@
       <div class="onboarding-head"><span class="onboarding-step-label"></span><button class="onboarding-skip" type="button">跳过引导</button></div>
       <h2 id="onboarding-title"></h2>
       <p id="onboarding-description"></p>
-      <small class="onboarding-click-hint">点击卡片空白处继续 →</small>
       <div class="onboarding-footer"><div class="onboarding-progress" aria-label="引导进度"></div><div class="onboarding-actions"><button class="onboarding-back" type="button">上一步</button><button class="onboarding-next" type="button">下一步</button></div></div>
     </section>`;
   document.body.append(layer);
@@ -31,12 +30,12 @@
   const skipButton = layer.querySelector(".onboarding-skip");
 
   const replay = document.createElement("button");
-  replay.className = "onboarding-replay";
+  replay.className = "onboarding-replay studio-utility";
   replay.type = "button";
-  replay.title = "重新查看当前界面的新手引导";
-  replay.setAttribute("aria-label", "重新查看新手引导");
-  replay.innerHTML = '<span aria-hidden="true">?</span><b>新手引导</b>';
-  document.body.append(replay);
+  replay.title = "新手引导";
+  replay.setAttribute("aria-label", "查看新手引导");
+  replay.innerHTML = '<svg class="ui-icon" aria-hidden="true"><use href="/static/ui/icons-v1.svg#alert"></use></svg>';
+  document.querySelector(".topbar-actions").prepend(replay);
 
   function currentView() {
     return document.body.classList.contains("workflow-active") ? "workflow" : "main";
@@ -216,12 +215,6 @@
     replay.focus({ preventScroll: true });
   }
 
-  function maybeStart(flowId = currentView()) {
-    const flow = flows[flowId];
-    if (!flow || wasSeen(flow) || state.open) return;
-    window.setTimeout(() => start(flowId), flowId === "workflow" ? 380 : 120);
-  }
-
   nextButton.addEventListener("click", () => show(state.index + 1, 1));
   popover.addEventListener("click", (event) => {
     if (state.open && !state.transitioning && !event.target.closest("button")) show(state.index + 1, 1);
@@ -231,10 +224,11 @@
   replay.addEventListener("click", () => start(currentView(), { force: true }));
   window.addEventListener("resize", place, { passive: true });
   window.addEventListener("scroll", place, { passive: true, capture: true });
-  window.addEventListener("huiju:workspace-view", (event) => maybeStart(event.detail?.view === "workflow" ? "workflow" : "main"));
+  window.addEventListener("huiju:workspace-view", () => {
+    if (state.open && state.flowId !== currentView()) finish("view-changed");
+  });
   window.addEventListener("huiju:onboarding-identity", (event) => {
     state.identity = String(event.detail?.key || "anonymous-device");
-    maybeStart(currentView());
   });
   document.addEventListener("keydown", (event) => {
     if (!state.open) return;
@@ -252,7 +246,5 @@
     }
   });
 
-  window.HuijuOnboarding = Object.freeze({ start, finish, maybeStart, reset(flowId = currentView()) { const flow = flows[flowId]; if (!flow) return; try { localStorage.removeItem(storageKey(flow)); } catch {} } });
-  if (state.identity) maybeStart(currentView());
-  else window.setTimeout(() => { if (!state.identity) { state.identity = "anonymous-device"; maybeStart(currentView()); } }, 2200);
+  window.HuijuOnboarding = Object.freeze({ start, finish, reset(flowId = currentView()) { const flow = flows[flowId]; if (!flow) return; try { localStorage.removeItem(storageKey(flow)); } catch {} } });
 })();

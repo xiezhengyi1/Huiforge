@@ -149,8 +149,13 @@ class FrontendAudioHistoryTests(unittest.TestCase):
         self.assertIn("historyDialog?.close()", self.app)
         self.assertIn('kind:activeHistoryEntry.kind || "history"', self.app)
 
-    def test_workflow_form_wheel_does_not_zoom_canvas(self):
-        self.assertIn('target?.closest("input, textarea, select, [contenteditable=\'true\']")', self.app)
+    def test_workflow_form_wheel_does_not_move_canvas(self):
+        self.assertIn('const workflowCanvasFields = "input, textarea, select, [contenteditable]', self.app)
+        wheel_handler = self.app.split('workflowViewport?.addEventListener("wheel",', 1)[1]
+        self.assertLess(
+            wheel_handler.index("event.target.closest(workflowCanvasFields)"),
+            wheel_handler.index("event.preventDefault()"),
+        )
 
     def test_asset_download_link_is_centered_like_button(self):
         self.assertIn(".asset-page-card footer a", self.css)

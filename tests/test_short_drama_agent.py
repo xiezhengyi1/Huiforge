@@ -143,6 +143,48 @@ def test_omitted_execution_flag_cannot_execute_a_provider_tool_call(agent_env):
     assert agents.relay.jobs == {}
 
 
+def test_parallel_tool_calls_respect_total_per_turn_limit(agent_env, monkeypatch):
+    client, _ = agent_env.user()
+    session_id = create_session(client)
+    monkeypatch.setattr(agents, "MAX_AGENT_TOOL_CALLS", 2)
+    calls = tool_response("generate_image", IMAGE_ARGUMENTS)
+    template = calls["output"][0]
+    calls["output"] = [
+        {**template, "call_id": "call-invalid", "arguments": "[]"},
+        *[{**template, "call_id": f"call-{index}"} for index in range(3)],
+    ]
+    requests = agent_env.provider(calls, text_response())
+
+    response = client.post(f"{SESSIONS}/{session_id}/messages", json={"message": "确认生成角色图", "auto_execute": True})
+
+    assert response.status_code == 200
+    results = [event["result"] for event in response.json()["tool_calls"]]
+    assert results[0]["error"] == "invalid_arguments"
+    assert all(result["ok"] for result in results[1:3])
+    assert results[3]["error"] == "tool_call_limit_reached"
+    assert agents.relay.queue.qsize() == 2
+    assert requests[1]["tool_choice"] == "none"
+
+
+def test_agent_cannot_confirm_portrait_rights_on_behalf_of_user(agent_env):
+    client, _ = agent_env.user()
+    session_id = create_session(client)
+    agent_env.provider(tool_response("edit_video", {
+        "prompt": "制作角色替换视频",
+        "operation": "character_swap_video",
+        "model": "wan2.2-animate-mix",
+        "upload_ids": ["0" * 32, "1" * 32],
+        "rights_confirmed": True,
+    }), text_response())
+
+    response = client.post(f"{SESSIONS}/{session_id}/messages", json={"message": "确认执行视频任务", "auto_execute": True})
+
+    assert response.status_code == 200
+    assert response.json()["tool_calls"][0]["result"] == {
+        "ok": False, "error": "portrait_rights_confirmation_required",
+    }
+
+
 def test_confirmed_image_tool_enqueues_a_real_owned_job_and_persists_receipt(agent_env):
     client, owner = agent_env.user()
     session_id = create_session(client)
